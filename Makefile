@@ -39,6 +39,7 @@ $(BUILD_DIR)/test/%.o: test/%.c
 
 .PHONY: test
 test: $(BUILD_DIR)/$(TEST_BINARY)
+	$(BUILD_DIR)/$(TEST_BINARY)
 
 $(BUILD_DIR)/$(TEST_BINARY): $(TEST_OBJS)
 	mkdir -p $(@D)
