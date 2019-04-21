@@ -32,5 +32,6 @@ clean:
 distclean: clean
 	$(RM) -f $(BUILD_DIR)/$(BINARY)
 
-# vim:ft=make
-#
+.PHONY: test
+test:
+	$(MAKE) -C test
