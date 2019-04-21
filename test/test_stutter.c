@@ -9,19 +9,21 @@
 #include <string.h>
 #include "minunit.h"
 
+#include "lexer.h"
+
 int tests_run = 0;
 
-static char* test_some_function()
+static char* test_lexer()
 {
-    printf("%s... ", __func__);
-    mu_assert(1 == 1, "The universe is broken");
-    printf("OK\n");
+    lexer_t* lexer = lexer_new(NULL);
+    mu_assert(lexer != NULL, "Failed to create a lexer object");
+    lexer_delete(lexer);
     return 0;
 }
 
 static char * test_suite()
 {
-    mu_run_test(test_some_function);
+    mu_run_test(test_lexer);
     return 0;
 }
 
