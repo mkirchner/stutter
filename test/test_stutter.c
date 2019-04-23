@@ -13,11 +13,33 @@
 
 int tests_run = 0;
 
+static char* type_names[] = {
+    "ERROR", "INT", "FLOAT", "STRING", "SYMBOL", "LPAREN", "RPAREN"
+};
+
 static char* test_lexer()
 {
-    lexer_t* lexer = lexer_new(NULL);
+    FILE* fd = fopen("test/lexer_test_file_01.str", "r");
+    mu_assert(fd != NULL, "Failed to open test file");
+    lexer_t* lexer = lexer_new(fd);
     mu_assert(lexer != NULL, "Failed to create a lexer object");
+    lexer_token_t* tok = lexer_get_token(lexer);
+    size_t row = lexer->line_no;
+    while (tok != NULL) {
+        if (lexer->line_no > row) {
+            row = lexer->line_no;
+            printf("\n");
+        }
+        printf("%s ", type_names[tok->type]);
+        if (tok->type == ERROR) {
+            printf("[line %lu, pos %lu] ", lexer->line_no, lexer->char_no);
+        }
+        lexer_delete_token(tok);
+        tok = lexer_get_token(lexer);
+    }
+    printf("\n");
     lexer_delete(lexer);
+    fclose(fd);
     return 0;
 }
 
