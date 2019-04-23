@@ -54,6 +54,7 @@ static lexer_token_t* lexer_make_token(token_type_t token_type, char* buf)
     case SYMBOL:
     case LPAREN:
     case RPAREN:
+    case QUOTE:
         tok->value = (char*) malloc(strlen(buf)*sizeof(char));
         strcpy((char*) tok->value, buf);
     }
@@ -77,6 +78,10 @@ lexer_token_t* lexer_get_token(lexer_t* l)
             case ')':
                 buf[bufpos++] = c;
                 return lexer_make_token(RPAREN, buf);
+                break;
+            case '\'':
+                buf[bufpos++] = c;
+                return lexer_make_token(QUOTE, buf);
                 break;
             /* start a string */
             case '\"':

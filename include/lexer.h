@@ -10,7 +10,10 @@
 
 #include <stdio.h>
 
-typedef enum {ERROR, INT, FLOAT, STRING, SYMBOL, LPAREN, RPAREN} token_type_t;
+typedef enum {
+    ERROR, INT, FLOAT, STRING, SYMBOL,
+    LPAREN, RPAREN, QUOTE
+} token_type_t;
 
 typedef struct {
     token_type_t type;

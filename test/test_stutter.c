@@ -14,7 +14,8 @@
 int tests_run = 0;
 
 static char* type_names[] = {
-    "ERROR", "INT", "FLOAT", "STRING", "SYMBOL", "LPAREN", "RPAREN"
+    "ERROR", "INT", "FLOAT", "STRING", "SYMBOL",
+    "LPAREN", "RPAREN", "QUOTE"
 };
 
 static char* test_lexer()
