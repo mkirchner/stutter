@@ -19,27 +19,34 @@ static char* type_names[] = {
 
 static char* test_lexer()
 {
-    FILE* fd = fopen("test/lexer_test_file_01.str", "r");
-    mu_assert(fd != NULL, "Failed to open test file");
-    lexer_t* lexer = lexer_new(fd);
+    /* set up lexer to read from input file */
+    FILE* input_fd = fopen("test/data/lexer_test.str", "r");
+    mu_assert(input_fd!= NULL, "Failed to open lexer test file");
+    lexer_t* lexer = lexer_new(input_fd);
     mu_assert(lexer != NULL, "Failed to create a lexer object");
+
+    /* at the same time, we'll read the expected symbols
+       from  the reference file */
+    FILE* ref_fd = fopen("test/data/lexer_reference.txt", "r");
+    mu_assert(ref_fd!= NULL, "Failed to open lexer test reference file");
+    char *ref_line = NULL;
+    size_t linecap = 0;
+    ssize_t linelen;
     lexer_token_t* tok = lexer_get_token(lexer);
-    size_t row = lexer->line_no;
-    while (tok != NULL) {
-        if (lexer->line_no > row) {
-            row = lexer->line_no;
-            printf("\n");
-        }
-        printf("%s ", type_names[tok->type]);
-        if (tok->type == ERROR) {
-            printf("[line %lu, pos %lu] ", lexer->line_no, lexer->char_no);
-        }
+    linelen = getdelim(&ref_line, &linecap, ' ', ref_fd);
+    while (tok != NULL && linelen > 0) {
+        ref_line[linelen-1] = '\0';
+        // printf("'%s' =?= '%s'\n", type_names[tok->type], ref_line);
+        mu_assert(strcmp(type_names[tok->type], ref_line) == 0,
+                  "Unexpected symbol");
         lexer_delete_token(tok);
         tok = lexer_get_token(lexer);
+        linelen = getdelim(&ref_line, &linecap, ' ', ref_fd);
     }
-    printf("\n");
+    mu_assert(tok == NULL && linelen == -1, "Incorrect number of symbols");
     lexer_delete(lexer);
-    fclose(fd);
+    fclose(ref_fd);
+    fclose(input_fd);
     return 0;
 }
 
