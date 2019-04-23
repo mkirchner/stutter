@@ -10,7 +10,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-static char* symbol_chars = "!*+-0123456789<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+static char* symbol_chars = "!*+-0123456789<=>?@"
+                            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                            "abcdefghijklmnopqrstuvwxyz";
 
 lexer_t* lexer_new(FILE* fp)
 {
@@ -63,6 +65,7 @@ lexer_token_t* lexer_get_token(lexer_t* l)
     char buf[1024] = {0};
     size_t bufpos = 0;
     int c;
+    char* pos;
     while ((c = fgetc(l->fp)) != EOF) {
         switch (l->state) {
             case LEXER_STATE_ZERO:
@@ -84,6 +87,13 @@ lexer_token_t* lexer_get_token(lexer_t* l)
                     case '0' ... '9':
                         buf[bufpos++] = c;
                         l->state = LEXER_STATE_NUMBER;
+                        break;
+                    /* start a symbol */
+                    case 'a' ... 'z':
+                    case 'A' ... 'Z':
+                        buf[bufpos++] = c;
+                        l->state = LEXER_STATE_SYMBOL;
+                        break;
                     /* eat whitespace */
                     case ' ':
                     case '\r':
@@ -160,7 +170,14 @@ lexer_token_t* lexer_get_token(lexer_t* l)
                 }
                 break;
             case LEXER_STATE_SYMBOL:
-                printf("Not implemented");
+                pos = strchr(symbol_chars, c);
+                if (pos != NULL) {
+                    buf[bufpos++] = c;
+                } else {
+                    ungetc(c, l->fp);
+                    l->state = LEXER_STATE_ZERO;
+                    return lexer_make_token(SYMBOL, buf);
+                }
                 break;
             default:
                 buf[bufpos++] = c;
