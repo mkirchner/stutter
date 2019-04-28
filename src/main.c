@@ -5,12 +5,20 @@
  * Distributed under terms of the MIT license.
  */
 
+#define __STUTTER_VERSION__ "0.0.1-alpha"
+
 #include <stdio.h>
 #include <stdlib.h>
-
 #include <editline/readline.h>
 
-#define __STUTTER_VERSION__ "0.0.1-alpha"
+char* read(char* input) {
+    return input;
+}
+
+char* eval(char* ast, void* env) {
+    return ast;
+}
+
 
 int main(int argc, char* argv[])
 {
@@ -22,7 +30,7 @@ int main(int argc, char* argv[])
             return 0;
         }
         add_history(input);
-        printf("%s\n", input);
+        printf("%s\n", eval(read(input), NULL));
         free(input);
     }
     return 0;
