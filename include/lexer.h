@@ -22,7 +22,7 @@ typedef struct {
 
 #define LEXER_TOKEN_VAL_AS_STR(t) ((char*) (t)->value)
 #define LEXER_TOKEN_VAL_AS_INT(t) ((int*) (t)->value)
-#define LEXER_TOKEN_VAL_AS_FLOAT(t) ((float*) (t)->value)
+#define LEXER_TOKEN_VAL_AS_FLOAT(t) ((double*) (t)->value)
 
 typedef enum {
     LEXER_STATE_ZERO,
