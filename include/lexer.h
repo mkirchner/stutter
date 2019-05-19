@@ -11,9 +11,18 @@
 #include <stdio.h>
 
 typedef enum {
-    ERROR, INT, FLOAT, STRING, SYMBOL,
-    LPAREN, RPAREN, QUOTE
+    LEXER_TOK_ERROR,
+    LEXER_TOK_INT,
+    LEXER_TOK_FLOAT,
+    LEXER_TOK_STRING,
+    LEXER_TOK_SYMBOL,
+    LEXER_TOK_LPAREN,
+    LEXER_TOK_RPAREN,
+    LEXER_TOK_QUOTE,
+    LEXER_TOK_EOF
 } token_type_t;
+
+extern const char* token_type_names[];
 
 typedef struct {
     token_type_t type;

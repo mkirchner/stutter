@@ -52,11 +52,14 @@ typedef struct ast_atom_t {
     } value;
 } ast_atom_t;
 
+ast_sexpr_t* ast_new_sexpr();
 ast_sexpr_t* ast_sexpr_from_list(ast_list_t* list);
 ast_sexpr_t* ast_sexpr_from_atom(ast_atom_t* atom);
 ast_sexpr_t* ast_sexpr_from_quote(ast_sexpr_t* quoted);
+ast_list_t* ast_new_list();
 ast_list_t* ast_list_from_compound_list(ast_sexpr_t* s, ast_list_t* l);
 ast_list_t* ast_list_empty();
+ast_atom_t* ast_new_atom();
 ast_atom_t* ast_atom_from_symbol(char* symbol);
 ast_atom_t* ast_atom_from_string(char* string);
 ast_atom_t* ast_atom_from_int(int number);

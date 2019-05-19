@@ -7,16 +7,31 @@
 
 #define __STUTTER_VERSION__ "0.0.1-alpha"
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <editline/readline.h>
 
-char* read(char* input) {
-    return input;
+#include "ast.h"
+#include "reader.h"
+
+ast_sexpr_t* read(char* input) {
+    size_t n = strlen(input);
+    FILE* stream = fmemopen(input, n, "r");
+    if (!stream) {
+        printf("%s\n", strerror(errno));
+        return NULL;
+    }
+    reader_t* reader = reader_new(stream);
+    ast_sexpr_t* ast = reader_read(reader);
+    reader_delete(reader);
+    return ast;
 }
 
-char* eval(char* ast, void* env) {
-    return ast;
+char* eval(ast_sexpr_t* ast, void* env) {
+    if (ast) ast_print(ast);
+    return "";
 }
 
 
