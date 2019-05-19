@@ -10,6 +10,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+const char* token_type_names[] = {
+    "LEXER_TOK_ERROR",
+    "LEXER_TOK_INT",
+    "LEXER_TOK_FLOAT",
+    "LEXER_TOK_STRING",
+    "LEXER_TOK_SYMBOL",
+    "LEXER_TOK_LPAREN",
+    "LEXER_TOK_RPAREN",
+    "LEXER_TOK_QUOTE",
+    "LEXER_TOK_EOF"
+};
+
 static char* symbol_chars = "!*+-0123456789<=>?@"
                             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                             "abcdefghijklmnopqrstuvwxyz";
@@ -43,20 +55,26 @@ static lexer_token_t* lexer_make_token(token_type_t token_type, char* buf)
     lexer_token_t* tok = (lexer_token_t*) malloc(sizeof(lexer_token_t));
     tok->type = token_type;
     switch(token_type) {
-    case INT:
+    case LEXER_TOK_INT:
         tok->value = (int*) malloc(sizeof(int));
         *((int*)tok->value) = atoi(buf);
-    case FLOAT:
+        break;
+    case LEXER_TOK_FLOAT:
         tok->value = (double*) malloc(sizeof(double));
         *((double*)tok->value) = atof(buf);
-    case STRING:
-    case ERROR:
-    case SYMBOL:
-    case LPAREN:
-    case RPAREN:
-    case QUOTE:
+        break;
+    case LEXER_TOK_STRING:
+    case LEXER_TOK_ERROR:
+    case LEXER_TOK_SYMBOL:
+    case LEXER_TOK_LPAREN:
+    case LEXER_TOK_RPAREN:
+    case LEXER_TOK_QUOTE:
         tok->value = (char*) malloc(strlen(buf)*sizeof(char));
         strcpy((char*) tok->value, buf);
+        break;
+    case LEXER_TOK_EOF:
+        tok->value = NULL;
+        break;
     }
     return tok;
 }
@@ -73,15 +91,15 @@ lexer_token_t* lexer_get_token(lexer_t* l)
             switch(c) {
             case '(':
                 buf[bufpos++] = c;
-                return lexer_make_token(LPAREN, buf);
+                return lexer_make_token(LEXER_TOK_LPAREN, buf);
                 break;
             case ')':
                 buf[bufpos++] = c;
-                return lexer_make_token(RPAREN, buf);
+                return lexer_make_token(LEXER_TOK_RPAREN, buf);
                 break;
             case '\'':
                 buf[bufpos++] = c;
-                return lexer_make_token(QUOTE, buf);
+                return lexer_make_token(LEXER_TOK_QUOTE, buf);
                 break;
             /* start a string */
             case '\"':
@@ -110,7 +128,7 @@ lexer_token_t* lexer_get_token(lexer_t* l)
             /* error */
             default:
                 buf[bufpos++] = c;
-                return lexer_make_token(ERROR, buf);
+                return lexer_make_token(LEXER_TOK_ERROR, buf);
             }
             break;
         case LEXER_STATE_STRING:
@@ -120,7 +138,7 @@ lexer_token_t* lexer_get_token(lexer_t* l)
             } else {
                 /* don't put c in the buffer */
                 l->state = LEXER_STATE_ZERO;
-                return lexer_make_token(STRING, buf);
+                return lexer_make_token(LEXER_TOK_STRING, buf);
             }
             break;
 
@@ -130,14 +148,14 @@ lexer_token_t* lexer_get_token(lexer_t* l)
             case ')':
                 ungetc(c, l->fp);
                 l->state = LEXER_STATE_ZERO;
-                return lexer_make_token(INT, buf);
+                return lexer_make_token(LEXER_TOK_INT, buf);
             case '\n':
                 ungetc(c, l->fp);
             case '\t':
             case '\r':
             case ' ':
                 l->state = LEXER_STATE_ZERO;
-                return lexer_make_token(INT, buf);
+                return lexer_make_token(LEXER_TOK_INT, buf);
             case '.':
                 buf[bufpos++] = c;
                 l->state = LEXER_STATE_FLOAT;
@@ -148,7 +166,7 @@ lexer_token_t* lexer_get_token(lexer_t* l)
             default:
                 /* error */
                 buf[bufpos++] = c;
-                return lexer_make_token(ERROR, buf);
+                return lexer_make_token(LEXER_TOK_ERROR, buf);
             }
             break;
         case LEXER_STATE_FLOAT:
@@ -157,21 +175,21 @@ lexer_token_t* lexer_get_token(lexer_t* l)
             case ')':
                 ungetc(c, l->fp);
                 l->state = LEXER_STATE_ZERO;
-                return lexer_make_token(FLOAT, buf);
+                return lexer_make_token(LEXER_TOK_FLOAT, buf);
             case '\n':
                 ungetc(c, l->fp);
             case '\t':
             case '\r':
             case ' ':
                 l->state = LEXER_STATE_ZERO;
-                return lexer_make_token(FLOAT, buf);
+                return lexer_make_token(LEXER_TOK_FLOAT, buf);
             case '0' ... '9':
                 buf[bufpos++] = c;
                 break;
             default:
                 /* error */
                 l->state = LEXER_STATE_ZERO;
-                return lexer_make_token(ERROR, buf);
+                return lexer_make_token(LEXER_TOK_ERROR, buf);
             }
             break;
         case LEXER_STATE_SYMBOL:
@@ -181,18 +199,18 @@ lexer_token_t* lexer_get_token(lexer_t* l)
             } else {
                 ungetc(c, l->fp);
                 l->state = LEXER_STATE_ZERO;
-                return lexer_make_token(SYMBOL, buf);
+                return lexer_make_token(LEXER_TOK_SYMBOL, buf);
             }
             break;
         default:
             buf[bufpos++] = c;
-            return lexer_make_token(ERROR, buf);
+            return lexer_make_token(LEXER_TOK_ERROR, buf);
         }
     }
     if (l->state != LEXER_STATE_ZERO) {
-        return lexer_make_token(ERROR, buf);
+        return lexer_make_token(LEXER_TOK_ERROR, buf);
     } else {
-        return NULL;
+        return lexer_make_token(LEXER_TOK_EOF, NULL);
     }
 }
 

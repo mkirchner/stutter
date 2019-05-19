@@ -16,7 +16,7 @@ int tests_run = 0;
 
 static char* type_names[] = {
     "ERROR", "INT", "FLOAT", "STRING", "SYMBOL",
-    "LPAREN", "RPAREN", "QUOTE"
+    "LPAREN", "RPAREN", "QUOTE", "EOF"
 };
 
 static char* test_lexer()
@@ -36,7 +36,7 @@ static char* test_lexer()
     ssize_t linelen;
     lexer_token_t* tok = lexer_get_token(lexer);
     linelen = getdelim(&ref_line, &linecap, ' ', ref_fd);
-    while (tok != NULL && linelen > 0) {
+    while (tok != NULL && tok->type != LEXER_TOK_EOF && linelen > 0) {
         ref_line[linelen-1] = '\0';
         // printf("'%s' =?= '%s'\n", type_names[tok->type], ref_line);
         mu_assert(strcmp(type_names[tok->type], ref_line) == 0,
@@ -45,7 +45,8 @@ static char* test_lexer()
         tok = lexer_get_token(lexer);
         linelen = getdelim(&ref_line, &linecap, ' ', ref_fd);
     }
-    mu_assert(tok == NULL && linelen == -1, "Incorrect number of symbols");
+    mu_assert(tok != NULL && tok->type == LEXER_TOK_EOF
+              && linelen == -1, "Incorrect number of symbols");
     lexer_delete(lexer);
     fclose(ref_fd);
     fclose(input_fd);
@@ -69,20 +70,20 @@ static char* test_ast()
                         ast_list_empty()))));
 
     mu_assert(strcmp(ast->ast.list
-                        ->ast.compound.sexpr
-                        ->ast.atom
-                        ->value.symbol, "add") == 0, "Wrong symbol name");
+                     ->ast.compound.sexpr
+                     ->ast.atom
+                     ->value.symbol, "add") == 0, "Wrong symbol name");
     mu_assert(ast->ast.list
-                 ->ast.compound.list
-                 ->ast.compound.sexpr
-                 ->ast.atom
-                 ->value.int_ == 5, "Wrong LHS int");
+              ->ast.compound.list
+              ->ast.compound.sexpr
+              ->ast.atom
+              ->value.int_ == 5, "Wrong LHS int");
     mu_assert(ast->ast.list
-                 ->ast.compound.list
-                 ->ast.compound.list
-                 ->ast.compound.sexpr
-                 ->ast.atom
-                 ->value.float_ == 7.0, "Wrong RHS float");
+              ->ast.compound.list
+              ->ast.compound.list
+              ->ast.compound.sexpr
+              ->ast.atom
+              ->value.float_ == 7.0, "Wrong RHS float");
     // ast_print(ast);
     ast_delete_sexpr(ast);
     return 0;
