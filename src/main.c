@@ -16,7 +16,7 @@
 #include "ast.h"
 #include "reader.h"
 
-ast_sexpr_t* read(char* input) {
+ast_sexpr_t* read_(char* input) {
     size_t n = strlen(input);
     FILE* stream = fmemopen(input, n, "r");
     if (!stream) {
@@ -31,6 +31,7 @@ ast_sexpr_t* read(char* input) {
 
 char* eval(ast_sexpr_t* ast, void* env) {
     if (ast) ast_print(ast);
+    ast_delete_sexpr(ast);
     return "";
 }
 
@@ -42,10 +43,10 @@ int main(int argc, char* argv[])
     while(1) {
         char* input = readline("stutter> ");
         if (input == NULL) {
-            return 0;
+            break;
         }
         add_history(input);
-        printf("%s\n", eval(read(input), NULL));
+        printf("%s\n", eval(read_(input), NULL));
         free(input);
     }
     return 0;

@@ -9,8 +9,9 @@
 #include <string.h>
 #include "minunit.h"
 
-#include "lexer.h"
 #include "ast.h"
+#include "djb2.h"
+#include "lexer.h"
 
 int tests_run = 0;
 
@@ -56,11 +57,13 @@ static char* test_lexer()
 static char* test_ast()
 {
     // (add 5 7)
+    char* add = malloc(4*sizeof(char));
+    strcpy(add, "add");
     ast_sexpr_t* ast =
         ast_sexpr_from_list(
             ast_list_from_compound_list(
                 ast_sexpr_from_atom(
-                    ast_atom_from_symbol("add")),
+                    ast_atom_from_symbol(add)),
                 ast_list_from_compound_list(
                     ast_sexpr_from_atom(
                         ast_atom_from_int(5)),
@@ -89,10 +92,23 @@ static char* test_ast()
     return 0;
 }
 
-static char * test_suite()
+static char* test_djb2()
+{
+    /* Basic testing for the djb2 hash: can we call it and
+     * does it return a reasonable result?
+     */
+    unsigned long hash = djb2("");
+    mu_assert(hash == 5381, "djb2 implementation error");
+    hash = djb2("Hello World!");
+    mu_assert(hash != 5381, "djb2 addition failure");
+    return 0;
+}
+
+static char* test_suite()
 {
     mu_run_test(test_ast);
     mu_run_test(test_lexer);
+    mu_run_test(test_djb2);
     return 0;
 }
 

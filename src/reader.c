@@ -12,7 +12,6 @@
 #include <string.h>
 #include "log.h"
 
-
 reader_t* reader_new(FILE* stream)
 {
     lexer_t* lexer = lexer_new(stream);

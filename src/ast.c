@@ -5,8 +5,8 @@
  * Distributed under terms of the MIT license.
  */
 
-#include "ast.h"
 #include <stdio.h>
+#include "ast.h"
 
 ast_sexpr_t* ast_new_sexpr()
 {
@@ -146,8 +146,8 @@ void ast_delete_atom(ast_atom_t* a)
             default:
                 break;
         }
+        free(a);
     }
-    free(a);
 }
 
 
