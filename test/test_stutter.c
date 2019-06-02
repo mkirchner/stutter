@@ -11,6 +11,8 @@
 
 #include "ast.h"
 #include "djb2.h"
+#include "ht.h"
+#include "log.h"
 #include "lexer.h"
 
 int tests_run = 0;
@@ -104,11 +106,53 @@ static char* test_djb2()
     return 0;
 }
 
+static char* test_hashtable()
+{
+    ht_t* ht = ht_new(3);
+    LOG_DEBUG("Capacity: %lu", ht->capacity);
+    mu_assert(ht->capacity == 3, "Capacity sizing failure");
+    ht_put(ht, "key", "value", strlen("value")+1);
+    // set/get item
+    char* value = (char*) ht_get(ht, "key");
+    mu_assert(value != NULL, "Query must find inserted key");
+    mu_assert(strcmp(value, "value") == 0, "Query must return inserted value");
+
+    // update item
+    ht_put(ht, "key", "other", strlen("other")+1);
+    value = (char*) ht_get(ht, "key");
+    mu_assert(value != NULL, "Query must find key");
+    mu_assert(strcmp(value, "other") == 0, "Query must return updated value");
+
+    // delete item
+    ht_remove(ht, "key");
+    value = (char*) ht_get(ht, "key");
+    mu_assert(value == NULL, "Query must NOT find deleted key");
+
+    ht_delete(ht);
+    return 0;
+}
+
+static char* test_primes()
+{
+    /*
+     * Test a few known cases.
+     */
+    mu_assert(!is_prime(0), "Prime test failure for 0");
+    mu_assert(!is_prime(1), "Prime test failure for 1");
+    mu_assert(is_prime(2), "Prime test failure for 2");
+    mu_assert(is_prime(3), "Prime test failure for 3");
+    mu_assert(is_prime(611953), "Prime test failure for 611953");
+    mu_assert(is_prime(479001599), "Prime test failure for 479001599");
+    return 0;
+}
+
 static char* test_suite()
 {
     mu_run_test(test_ast);
     mu_run_test(test_lexer);
     mu_run_test(test_djb2);
+    mu_run_test(test_hashtable);
+    mu_run_test(test_primes);
     return 0;
 }
 

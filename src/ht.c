@@ -9,13 +9,46 @@
 #include "djb2.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "log.h"
+
+
+bool is_prime(size_t n)
+{
+    // https://stackoverflow.com/questions/1538644/c-determine-if-a-number-is-prime
+    if (n <= 1)
+        return false;
+    else if (n <= 3 && n > 1)
+        return true;            // as 2 and 3 are prime
+    else if (n % 2==0 || n % 3==0)
+        return false;     // check if n is divisible by 2 or 3
+    else {
+        for (size_t i=5; i*i<=n; i+=6) {
+            if (n % i == 0 || n%(i + 2) == 0)
+                return false;
+        }
+        return true;
+    }
+}
+
+size_t next_prime(size_t n)
+{
+    while (!is_prime(n)) ++n;
+    return n;
+}
+
+static double load_factor(ht_t* ht)
+{
+    LOG_DEBUG("Load factor: %.2f", (double) ht->size / (double) ht->capacity);
+    return (double) ht->size / (double) ht->capacity;
+}
 
 static ht_item_t* ht_item_new(char* key, void* value, size_t siz)
 {
     ht_item_t* item = (ht_item_t*) malloc(sizeof(ht_item_t));
     item->key = strdup(key);
+    item->size = siz;
     item->value = malloc(siz);
     memcpy(item->value, value, siz);
     item->next = NULL;
@@ -31,18 +64,18 @@ static void ht_item_delete(ht_item_t* item)
     }
 }
 
-ht_t* ht_new(size_t n)
+ht_t* ht_new(size_t capacity)
 {
     ht_t* ht = (ht_t*) malloc(sizeof(ht_t));
-    ht->size = n;
-    ht->count = 0;
-    ht->items = calloc(n, sizeof(ht_item_t*));
+    ht->capacity = next_prime(capacity);
+    ht->size = 0;
+    ht->items = calloc(ht->capacity, sizeof(ht_item_t*));
     return ht;
 }
 
 void ht_delete(ht_t* ht)
 {
-    for (size_t i=0; i < ht->size; ++i) {
+    for (size_t i=0; i < ht->capacity; ++i) {
         if (ht->items[i] != NULL) {
             ht_item_delete(ht->items[i]);
         }
@@ -53,7 +86,7 @@ void ht_delete(ht_t* ht)
 void ht_put(ht_t* ht, char* key, void* value, size_t siz)
 {
     // hash
-    unsigned long index = djb2(key) % ht->size;
+    unsigned long index = djb2(key) % ht->capacity;
     LOG_DEBUG("index: %lu", index);
     // create item
     ht_item_t* item = ht_item_new(key, value, siz);
@@ -81,14 +114,17 @@ void ht_put(ht_t* ht, char* key, void* value, size_t siz)
     cur = ht->items[index];
     item->next = cur;
     ht->items[index] = item;
+    ht->size++;
+    if (load_factor(ht) > 0.7)
+        ht_resize(ht, next_prime(ht->capacity*2));
 }
 
 void* ht_get(ht_t* ht, char* key)
 {
-    unsigned long index = djb2(key) % ht->size;
+    unsigned long index = djb2(key) % ht->capacity;
     LOG_DEBUG("index: %lu", index);
     ht_item_t* cur = ht->items[index];
-    LOG_DEBUG("ptr: %p", cur);
+    LOG_DEBUG("ptr: %p", (void *)cur);
     while(cur != NULL) {
         if (strcmp(cur->key, key) == 0) {
             return cur->value;
@@ -101,7 +137,7 @@ void* ht_get(ht_t* ht, char* key)
 void ht_remove(ht_t* ht, char* key)
 {
     // ignores unknown keys
-    unsigned long index = djb2(key) % ht->size;
+    unsigned long index = djb2(key) % ht->capacity;
     ht_item_t* cur = ht->items[index];
     ht_item_t* prev = NULL;
     while(cur != NULL) {
@@ -115,6 +151,7 @@ void ht_remove(ht_t* ht, char* key)
                 prev->next = cur->next;
             }
             ht_item_delete(cur);
+            ht->size--;
         } else {
             // move on
             prev = cur;
@@ -122,4 +159,26 @@ void ht_remove(ht_t* ht, char* key)
         }
         cur = cur->next;
     }
+    if (load_factor(ht) < 0.1)
+        ht_resize(ht, next_prime(ht->capacity/2));
+}
+
+void ht_resize(ht_t* ht, size_t new_capacity)
+{
+    LOG_DEBUG("Resizing to %lu", new_capacity);
+    ht_item_t** resized_items = calloc(new_capacity, sizeof(ht_item_t*));
+
+    for (size_t i=0; i<ht->capacity; ++i) {
+        ht_item_t* item = ht->items[i];
+        while(item) {
+            ht_item_t* next_item = item->next;
+            unsigned long new_index = djb2(item->key) % new_capacity;
+            item->next = resized_items[new_index];
+            resized_items[new_index] = item;
+            item = next_item;
+        }
+    }
+    free(ht->items);
+    ht->capacity = new_capacity;
+    ht->items = resized_items;
 }
