@@ -11,6 +11,7 @@
 
 #include "ast.h"
 #include "djb2.h"
+#include "env.h"
 #include "ht.h"
 #include "log.h"
 #include "lexer.h"
@@ -141,8 +142,41 @@ static char* test_primes()
     mu_assert(!is_prime(1), "Prime test failure for 1");
     mu_assert(is_prime(2), "Prime test failure for 2");
     mu_assert(is_prime(3), "Prime test failure for 3");
+    mu_assert(!is_prime(12742382), "Prime test failure for 12742382");
     mu_assert(is_prime(611953), "Prime test failure for 611953");
     mu_assert(is_prime(479001599), "Prime test failure for 479001599");
+    return 0;
+}
+
+static char* test_env()
+{
+    /*
+     * creation
+     */
+    env_t* env0 = env_new(NULL);
+    mu_assert(env_get(env0, "some_key") == NULL, "New env should be empty");
+    /*
+     * get/set
+     */
+    int value = 42;
+    env_set(env0, "key1", &value);
+    value_t* p = env_get(env0, "key1");
+    mu_assert(42 == *(int*)p, "Value must not change");
+    /*
+     * nesting
+     */
+    env_t* env1 = env_new(env0);
+    mu_assert(env1->parent == env0, "Failed to set parent");
+    env_t* env2 = env_new(env1);
+    mu_assert(env2->parent == env1, "Failed to set parent");
+    p = env_get(env2, "key1");
+    mu_assert(p != NULL, "Should find key in nested env");
+    mu_assert(42 == *(int*)p, "Should return nested value");
+
+    env_delete(env2);
+    env_delete(env1);
+    env_delete(env0);
+
     return 0;
 }
 
@@ -153,6 +187,7 @@ static char* test_suite()
     mu_run_test(test_djb2);
     mu_run_test(test_hashtable);
     mu_run_test(test_primes);
+    mu_run_test(test_env);
     return 0;
 }
 
