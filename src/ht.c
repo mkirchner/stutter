@@ -165,6 +165,8 @@ void ht_remove(ht_t* ht, char* key)
 
 void ht_resize(ht_t* ht, size_t new_capacity)
 {
+    // Replaces the existing items array in the hash table
+    // with a resized one and pushes items into the new, correct buckets
     LOG_DEBUG("Resizing to %lu", new_capacity);
     ht_item_t** resized_items = calloc(new_capacity, sizeof(ht_item_t*));
 
