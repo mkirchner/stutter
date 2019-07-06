@@ -1,5 +1,5 @@
 /*
- * stack.h
+* stack.h
  * Copyright (C) 2019 Marc Kirchner
  *
  * Distributed under terms of the MIT license.
@@ -26,34 +26,34 @@ typedef enum {
     T_FLOAT,
     T_STR,
     T_SYM
-} reader_stack_token_type_t;
+} ReaderStackTokenType;
 
 extern const char* reader_stack_token_type_names[];
 
-typedef struct reader_stack_token_t {
-    reader_stack_token_type_t type;
+typedef struct ReaderStackToken {
+    ReaderStackTokenType type;
     union {
-        struct ast_list_t* list;
-        struct ast_atom_t* atom;
-        struct ast_sexpr_t* quoted;
-        struct ast_sexpr_t* sexp;
+        struct AstList* list;
+        struct AstAtom* atom;
+        struct AstSexpr* quoted;
+        struct AstSexpr* sexp;
     } ast;
-} reader_stack_token_t;
+} ReaderStackToken;
 
 
-typedef struct reader_stack_t {
+typedef struct ReaderStack {
     size_t capacity;
     size_t size;
-    reader_stack_token_t* bos;  /* bottom of stack */
-} reader_stack_t;
+    ReaderStackToken* bos;  /* bottom of stack */
+} ReaderStack;
 
-reader_stack_t* reader_stack_new(size_t capacity);
-void reader_stack_delete(reader_stack_t* stack);
+ReaderStack* reader_stack_new(size_t capacity);
+void reader_stack_delete(ReaderStack* stack);
 
-void reader_stack_push(reader_stack_t* stack, reader_stack_token_t item);
-int reader_stack_pop(reader_stack_t* stack, reader_stack_token_t* value);
-int reader_stack_peek(reader_stack_t* stack, reader_stack_token_t* value);
-bool reader_is_terminal(reader_stack_token_t value);
-bool reader_is_nonterminal(reader_stack_token_t value);
+void reader_stack_push(ReaderStack* stack, ReaderStackToken item);
+int reader_stack_pop(ReaderStack* stack, ReaderStackToken* value);
+int reader_stack_peek(ReaderStack* stack, ReaderStackToken* value);
+bool reader_is_terminal(ReaderStackToken value);
+bool reader_is_nonterminal(ReaderStackToken value);
 
 #endif /* !__STACK_H__ */

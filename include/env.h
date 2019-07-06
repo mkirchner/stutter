@@ -9,19 +9,17 @@
 #define __ENV_H__
 
 #include <stdlib.h>
-#include "ht.h"
+#include "map.h"
 
-typedef struct env_t {
-    ht_t* kv;
-    struct env_t* parent;
-} env_t;
+typedef struct Environment {
+    Map* kv;
+    struct Environment* parent;
+} Environment;
 
-env_t* env_new(env_t* parent);
-void env_delete(env_t* env);
+Environment* env_new(Environment* parent);
+void env_delete(Environment* env);
 
-typedef void value_t; // FIXME: need value type
-
-void env_set(env_t* env, char* symbol, value_t* value);
-value_t* env_get(env_t* env, char* symbol);
+void env_set(Environment* env, char* symbol, void* value);
+void* env_get(Environment* env, char* symbol);
 
 #endif /* !__ENV_H__ */

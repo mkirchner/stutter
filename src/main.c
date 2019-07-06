@@ -16,20 +16,20 @@
 #include "ast.h"
 #include "reader.h"
 
-ast_sexpr_t* read_(char* input) {
+AstSexpr* read_(char* input) {
     size_t n = strlen(input);
     FILE* stream = fmemopen(input, n, "r");
     if (!stream) {
         printf("%s\n", strerror(errno));
         return NULL;
     }
-    reader_t* reader = reader_new(stream);
-    ast_sexpr_t* ast = reader_read(reader);
+    Reader* reader = reader_new(stream);
+    AstSexpr* ast = reader_read(reader);
     reader_delete(reader);
     return ast;
 }
 
-char* eval(ast_sexpr_t* ast, void* env) {
+char* eval(AstSexpr* ast, void* env) {
     if (ast) ast_print(ast);
     ast_delete_sexpr(ast);
     return "";

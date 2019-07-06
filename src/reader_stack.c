@@ -10,7 +10,7 @@
 #include <assert.h>
 
 
-const char* reader_stack_token_type_names[] = { 
+const char* reader_stack_token_type_names[] = {
     "N_PROG",
     "N_SEXP",
     "N_LIST",
@@ -25,25 +25,25 @@ const char* reader_stack_token_type_names[] = {
     "T_SYM"
 };
 
-reader_stack_t* reader_stack_new(size_t capacity)
+ReaderStack* reader_stack_new(size_t capacity)
 {
     assert(capacity > 0);
-    reader_stack_t* stack = (reader_stack_t*) malloc(sizeof(reader_stack_t));
-    *stack = (reader_stack_t) {
+    ReaderStack* stack = (ReaderStack*) malloc(sizeof(ReaderStack));
+    *stack = (ReaderStack) {
         .capacity = capacity,
         .size = 0,
-        .bos = (reader_stack_token_t*) malloc(sizeof(reader_stack_token_t) * capacity)
+        .bos = (ReaderStackToken*) malloc(sizeof(ReaderStackToken) * capacity)
     };
     return stack;
 }
 
-void reader_stack_delete(reader_stack_t* stack)
+void reader_stack_delete(ReaderStack* stack)
 {
     free(stack->bos);
     free(stack);
 }
 
-void reader_stack_push(reader_stack_t* stack, reader_stack_token_t item)
+void reader_stack_push(ReaderStack* stack, ReaderStackToken item)
 {
     if (stack->size >= stack->capacity) {
         stack->bos = realloc(stack->bos, 2*stack->capacity);
@@ -51,7 +51,7 @@ void reader_stack_push(reader_stack_t* stack, reader_stack_token_t item)
     stack->bos[stack->size++] = item;
 }
 
-int reader_stack_pop(reader_stack_t* stack, reader_stack_token_t* value)
+int reader_stack_pop(ReaderStack* stack, ReaderStackToken* value)
 {
     if (stack->size > 0) {
         *value = stack->bos[--stack->size];
@@ -60,7 +60,7 @@ int reader_stack_pop(reader_stack_t* stack, reader_stack_token_t* value)
     return 1;
 }
 
-int reader_stack_peek(reader_stack_t* stack, reader_stack_token_t* value)
+int reader_stack_peek(ReaderStack* stack, ReaderStackToken* value)
 {
     if (stack->size > 0) {
         *value = stack->bos[stack->size-1];
@@ -69,7 +69,7 @@ int reader_stack_peek(reader_stack_t* stack, reader_stack_token_t* value)
     return 1;
 }
 
-static int _get_stack_symbol_type(reader_stack_token_t symbol)
+static int _get_stack_symbol_type(ReaderStackToken symbol)
 {
     // returns 0 for terminals, 1 for non-terminals
     switch(symbol.type) {
@@ -90,12 +90,12 @@ static int _get_stack_symbol_type(reader_stack_token_t symbol)
     }
 }
 
-bool reader_is_terminal(reader_stack_token_t value)
+bool reader_is_terminal(ReaderStackToken value)
 {
     return (_get_stack_symbol_type(value) != 0);
 }
 
-bool reader_is_nonterminal(reader_stack_token_t value)
+bool reader_is_nonterminal(ReaderStackToken value)
 {
     return (_get_stack_symbol_type(value) == 0);
 }

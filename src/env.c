@@ -8,30 +8,30 @@
 #include "env.h"
 #include "log.h"
 
-env_t* env_new(env_t* parent)
+Environment* env_new(Environment* parent)
 {
-    env_t* env = malloc(sizeof(env_t));
+    Environment* env = malloc(sizeof(Environment));
     env->parent = parent;
-    env->kv = ht_new(32);
+    env->kv = map_new(32);
     return env;
 }
 
-void env_delete(env_t* env)
+void env_delete(Environment* env)
 {
-    ht_delete(env->kv);
+    map_delete(env->kv);
     free(env);
 }
 
-void env_set(env_t* env, char* symbol, value_t* value)
+void env_set(Environment* env, char* symbol, void* value)
 {
-    ht_put(env->kv, symbol, value, sizeof(value_t));
+    map_put(env->kv, symbol, value, sizeof(void));
 }
 
-value_t* env_get(env_t* env, char* symbol)
+void* env_get(Environment* env, char* symbol)
 {
-    env_t* cur_env = env;
+    Environment* cur_env = env;
     while(cur_env) {
-        value_t* value = ht_get(cur_env->kv, symbol);
+        void* value = map_get(cur_env->kv, symbol);
         if (value) {
             return value;
         }

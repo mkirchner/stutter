@@ -14,26 +14,26 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-typedef struct ht_item_t {
+typedef struct MapItem {
     char* key;
     void* value;
     size_t size;
-    struct ht_item_t* next;
-} ht_item_t;
+    struct MapItem* next;
+} MapItem;
 
-typedef struct ht_t {
+typedef struct Map {
     size_t capacity;
     size_t size;
-    ht_item_t** items;
-} ht_t;
+    MapItem** items;
+} Map;
 
-ht_t* ht_new(size_t n);
-void ht_delete(ht_t*);
+Map* map_new(size_t n);
+void map_delete(Map*);
 
-void* ht_get(ht_t* ht, char* key);
-void ht_put(ht_t* ht, char* key, void* value, size_t siz);
-void ht_remove(ht_t* ht, char* key);
-void ht_resize(ht_t* ht, size_t capacity);
+void* map_get(Map* ht, char* key);
+void map_put(Map* ht, char* key, void* value, size_t siz);
+void map_remove(Map* ht, char* key);
+void map_resize(Map* ht, size_t capacity);
 
 // helpers
 

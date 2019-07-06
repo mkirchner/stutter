@@ -17,8 +17,8 @@
 #define READER_FAILURE 1
 
 typedef struct {
-    lexer_t* lexer;
-} reader_t;
+    Lexer* lexer;
+} Reader;
 
 /*
  * Macros to simplify AST interaction
@@ -27,8 +27,8 @@ typedef struct {
 /*
  * The reader interface
  */
-reader_t* reader_new(FILE* stream);
-void reader_delete(reader_t* r);
-ast_sexpr_t* reader_read(reader_t* r);
+Reader* reader_new(FILE* stream);
+void reader_delete(Reader* r);
+AstSexpr* reader_read(Reader* r);
 
 #endif /* !__READER_H__ */

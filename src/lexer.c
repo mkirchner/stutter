@@ -26,10 +26,10 @@ static char* symbol_chars = "!*+-0123456789<=>?@"
                             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                             "abcdefghijklmnopqrstuvwxyz";
 
-lexer_t* lexer_new(FILE* fp)
+Lexer* lexer_new(FILE* fp)
 {
-    lexer_t* lexer = (lexer_t*) malloc(sizeof(lexer_t));
-    *lexer = (lexer_t) {
+    Lexer* lexer = (Lexer*) malloc(sizeof(Lexer));
+    *lexer = (Lexer) {
         .fp=fp,
         .state=LEXER_STATE_ZERO,
         .line_no=1,
@@ -38,21 +38,21 @@ lexer_t* lexer_new(FILE* fp)
     return lexer;
 }
 
-void lexer_delete(lexer_t* l)
+void lexer_delete(Lexer* l)
 {
     free(l);
 }
 
-void lexer_delete_token(lexer_token_t* t)
+void lexer_delete_token(LexerToken* t)
 {
     free(t->value);
     free(t);
 }
 
-static lexer_token_t* lexer_make_token(token_type_t token_type, char* buf)
+static LexerToken* lexer_make_token(TokenType token_type, char* buf)
 {
     /* FIXME: check malloc return values for NULL */
-    lexer_token_t* tok = (lexer_token_t*) malloc(sizeof(lexer_token_t));
+    LexerToken* tok = (LexerToken*) malloc(sizeof(LexerToken));
     tok->type = token_type;
     switch(token_type) {
     case LEXER_TOK_INT:
@@ -79,7 +79,7 @@ static lexer_token_t* lexer_make_token(token_type_t token_type, char* buf)
     return tok;
 }
 
-lexer_token_t* lexer_get_token(lexer_t* l)
+LexerToken* lexer_get_token(Lexer* l)
 {
     char buf[1024] = {0};
     size_t bufpos = 0;

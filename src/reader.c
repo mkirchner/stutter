@@ -12,32 +12,32 @@
 #include <string.h>
 #include "log.h"
 
-reader_t* reader_new(FILE* stream)
+Reader* reader_new(FILE* stream)
 {
-    lexer_t* lexer = lexer_new(stream);
-    reader_t* reader = (reader_t*) malloc(sizeof(reader_t));
-    *reader = (reader_t) {
+    Lexer* lexer = lexer_new(stream);
+    Reader* reader = (Reader*) malloc(sizeof(Reader));
+    *reader = (Reader) {
         .lexer = lexer
     };
     return reader;
 }
 
-void reader_delete(reader_t* r)
+void reader_delete(Reader* r)
 {
     free(r->lexer);
     free(r);
 }
 
-ast_sexpr_t* reader_read(reader_t* reader)
+AstSexpr* reader_read(Reader* reader)
 {
-    ast_sexpr_t* ast = NULL;
-    reader_stack_t* stack = reader_stack_new(1024);
-    reader_stack_token_t eof = { .type = T_EOF, .ast = {NULL} };
-    reader_stack_token_t start = { .type = N_PROG, .ast = {NULL} };
+    AstSexpr* ast = NULL;
+    ReaderStack* stack = reader_stack_new(1024);
+    ReaderStackToken eof = { .type = T_EOF, .ast = {NULL} };
+    ReaderStackToken start = { .type = N_PROG, .ast = {NULL} };
     reader_stack_push(stack, eof);
     reader_stack_push(stack, start);
-    lexer_token_t* tok;
-    reader_stack_token_t tos;
+    LexerToken* tok;
+    ReaderStackToken tos;
 
     tok = lexer_get_token(reader->lexer);
     while (tok != NULL) {
@@ -107,7 +107,7 @@ ast_sexpr_t* reader_read(reader_t* reader)
                     tos.ast.list->ast.compound.list = ast_new_list();
                     tos.ast.list->ast.compound.sexpr = ast_new_sexpr();
                     // push rule RHS onto stack in reverse order
-                    reader_stack_token_t token;
+                    ReaderStackToken token;
                     token.type = N_LIST;
                     token.ast.list = tos.ast.list->ast.compound.list;
                     reader_stack_push(stack, token);
@@ -138,7 +138,7 @@ ast_sexpr_t* reader_read(reader_t* reader)
                     reader_stack_pop(stack, &tos);
                     tos.ast.sexp->type = SEXPR_ATOM;
                     tos.ast.sexp->ast.atom = ast_new_atom();
-                    reader_stack_token_t token;
+                    ReaderStackToken token;
                     token.type = N_ATOM;
                     token.ast.atom = tos.ast.sexp->ast.atom;
                     reader_stack_push(stack, token);
@@ -151,7 +151,7 @@ ast_sexpr_t* reader_read(reader_t* reader)
                     tos.ast.sexp->type = SEXPR_LIST;
                     tos.ast.sexp->ast.list = ast_new_list();
                     // push rule RHS onto stack in reverse order
-                    reader_stack_token_t token;
+                    ReaderStackToken token;
                     token.type = T_RPAREN;
                     reader_stack_push(stack, token);
                     token.type = N_LIST;
@@ -168,7 +168,7 @@ ast_sexpr_t* reader_read(reader_t* reader)
                     tos.ast.sexp->type = SEXPR_QUOTE;
                     tos.ast.sexp->ast.quoted = ast_new_sexpr();
                     // push rule RHS onto stack in reverse order
-                    reader_stack_token_t token;
+                    ReaderStackToken token;
                     token.type = N_SEXP;
                     token.ast.sexp = tos.ast.list->ast.compound.sexpr;
                     reader_stack_push(stack, token);
@@ -199,7 +199,7 @@ ast_sexpr_t* reader_read(reader_t* reader)
                     reader_stack_pop(stack, &tos);
                     // create root of AST
                     ast = ast_new_sexpr();
-                    reader_stack_token_t token;
+                    ReaderStackToken token;
                     token.type = N_SEXP;
                     token.ast.sexp = ast;
                     reader_stack_push(stack, token);

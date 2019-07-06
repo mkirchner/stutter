@@ -8,98 +8,98 @@
 #include <stdio.h>
 #include "ast.h"
 
-ast_sexpr_t* ast_new_sexpr()
+AstSexpr* ast_new_sexpr()
 {
-    ast_sexpr_t* sexpr = malloc(sizeof(ast_sexpr_t));
+    AstSexpr* sexpr = malloc(sizeof(AstSexpr));
     return sexpr;
 }
 
-ast_sexpr_t* ast_sexpr_from_list(ast_list_t* list)
+AstSexpr* ast_sexpr_from_list(AstList* list)
 {
-    ast_sexpr_t* sexpr = malloc(sizeof(ast_sexpr_t));
+    AstSexpr* sexpr = malloc(sizeof(AstSexpr));
     sexpr->type = SEXPR_LIST;
     sexpr->ast.list = list;
     return sexpr;
 }
 
-ast_sexpr_t* ast_sexpr_from_atom(ast_atom_t* atom)
+AstSexpr* ast_sexpr_from_atom(AstAtom* atom)
 {
-    ast_sexpr_t* sexpr = malloc(sizeof(ast_sexpr_t));
+    AstSexpr* sexpr = malloc(sizeof(AstSexpr));
     sexpr->type = SEXPR_ATOM;
     sexpr->ast.atom = atom;
     return sexpr;
 }
 
-ast_sexpr_t* ast_sexpr_from_quote(ast_sexpr_t* quoted)
+AstSexpr* ast_sexpr_from_quote(AstSexpr* quoted)
 {
-    ast_sexpr_t* sexpr = malloc(sizeof(ast_sexpr_t));
+    AstSexpr* sexpr = malloc(sizeof(AstSexpr));
     sexpr->type = SEXPR_QUOTE;
     sexpr->ast.quoted = quoted;
     return sexpr;
 }
 
-ast_list_t* ast_new_list()
+AstList* ast_new_list()
 {
-    ast_list_t* list = malloc(sizeof(ast_list_t));
+    AstList* list = malloc(sizeof(AstList));
     list->type = LIST_EMPTY; // default to empty list
     return list;
 }
 
-ast_list_t* ast_list_from_compound_list(ast_sexpr_t* s, ast_list_t* l)
+AstList* ast_list_from_compound_list(AstSexpr* s, AstList* l)
 {
-    ast_list_t* list = malloc(sizeof(ast_list_t));
+    AstList* list = malloc(sizeof(AstList));
     list->type = LIST_COMPOUND;
     list->ast.compound.sexpr = s;
     list->ast.compound.list = l;
     return list;
 }
 
-ast_list_t* ast_list_empty()
+AstList* ast_list_empty()
 {
-    ast_list_t* list = malloc(sizeof(ast_list_t));
+    AstList* list = malloc(sizeof(AstList));
     list->type = LIST_EMPTY;
     return list;
 }
 
-ast_atom_t* ast_new_atom()
+AstAtom* ast_new_atom()
 {
-    ast_atom_t* atom = malloc(sizeof(ast_atom_t));
+    AstAtom* atom = malloc(sizeof(AstAtom));
     return atom;
 }
 
-ast_atom_t* ast_atom_from_symbol(char* symbol)
+AstAtom* ast_atom_from_symbol(char* symbol)
 {
-    ast_atom_t* atom = malloc(sizeof(ast_atom_t));
+    AstAtom* atom = malloc(sizeof(AstAtom));
     atom->type = ATOM_SYMBOL;
     atom->value.symbol = symbol;
     return atom;
 }
 
-ast_atom_t* ast_atom_from_string(char* string)
+AstAtom* ast_atom_from_string(char* string)
 {
-    ast_atom_t* atom = malloc(sizeof(ast_atom_t));
+    AstAtom* atom = malloc(sizeof(AstAtom));
     atom->type = ATOM_STRING;
     atom->value.string = string;
     return atom;
 }
 
-ast_atom_t* ast_atom_from_int(int number)
+AstAtom* ast_atom_from_int(int number)
 {
-    ast_atom_t* atom = malloc(sizeof(ast_atom_t));
+    AstAtom* atom = malloc(sizeof(AstAtom));
     atom->type = ATOM_INT;
     atom->value.int_ = number;
     return atom;
 }
 
-ast_atom_t* ast_atom_from_float(double number)
+AstAtom* ast_atom_from_float(double number)
 {
-    ast_atom_t* atom = malloc(sizeof(ast_atom_t));
+    AstAtom* atom = malloc(sizeof(AstAtom));
     atom->type = ATOM_FLOAT;
     atom->value.float_ = number;
     return atom;
 }
 
-void ast_delete_sexpr(ast_sexpr_t* s)
+void ast_delete_sexpr(AstSexpr* s)
 {
     if (s) {
         switch(s->type) {
@@ -117,7 +117,7 @@ void ast_delete_sexpr(ast_sexpr_t* s)
     }
 }
 
-void ast_delete_list(ast_list_t* l)
+void ast_delete_list(AstList* l)
 {
     if (l) {
         switch(l->type) {
@@ -132,7 +132,7 @@ void ast_delete_list(ast_list_t* l)
     }
 }
 
-void ast_delete_atom(ast_atom_t* a)
+void ast_delete_atom(AstAtom* a)
 {
     // atoms do not reserve memory for member but use const refs
     if (a) {
@@ -151,12 +151,12 @@ void ast_delete_atom(ast_atom_t* a)
 }
 
 
-void ast_print(ast_sexpr_t* ast)
+void ast_print(AstSexpr* ast)
 {
     ast_print_sexpr(ast, 0);
 }
 
-void ast_print_sexpr(ast_sexpr_t* s, int indent)
+void ast_print_sexpr(AstSexpr* s, int indent)
 {
     if (s) {
         printf("%*s<sexpr>\n", indent, "");
@@ -175,7 +175,7 @@ void ast_print_sexpr(ast_sexpr_t* s, int indent)
     }
 }
 
-void ast_print_list(ast_list_t* l, int indent)
+void ast_print_list(AstList* l, int indent)
 {
     if (l) {
         printf("%*s<list>\n", indent, "");
@@ -191,7 +191,7 @@ void ast_print_list(ast_list_t* l, int indent)
     }
 }
 
-void ast_print_atom(ast_atom_t* a, int indent)
+void ast_print_atom(AstAtom* a, int indent)
 {
     if (a) {
         switch(a->type) {
