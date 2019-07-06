@@ -184,7 +184,7 @@ static char* test_env()
 static char* test_array()
 {
     // creation
-    array_t* a = array_new(sizeof(int));
+    Array* a = array_new(sizeof(int));
     mu_assert(a != NULL, "New array should not be NULL");
 
     // get/set

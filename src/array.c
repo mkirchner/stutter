@@ -11,15 +11,15 @@
 #include <string.h>
 
 
-array_t* array_new(const size_t item_size)
+Array* array_new(const size_t item_size)
 {
     // default to 2 elements for empty arrays
     return array_new_with_capacity(item_size, 2);
 }
 
-array_t* array_new_with_capacity(const size_t item_size, const size_t capacity)
+Array* array_new_with_capacity(const size_t item_size, const size_t capacity)
 {
-    array_t* array = malloc(sizeof(array_t));
+    Array* array = malloc(sizeof(Array));
     array->p = calloc(capacity, item_size);
     array->bytes = item_size;
     array->capacity = capacity;
@@ -27,7 +27,7 @@ array_t* array_new_with_capacity(const size_t item_size, const size_t capacity)
     return array;
 }
 
-void array_delete(array_t* a)
+void array_delete(Array* a)
 {
     free(a->p);
     free(a);
@@ -47,7 +47,7 @@ static uint64_t next_power_of_2(uint64_t v)
     return v;
 }
 
-static void array_resize(array_t* a, size_t requested_capacity)
+static void array_resize(Array* a, size_t requested_capacity)
 {
     size_t new_capacity = next_power_of_2(requested_capacity);
     if (a->size > new_capacity) a->size = new_capacity;
@@ -55,12 +55,12 @@ static void array_resize(array_t* a, size_t requested_capacity)
     a->capacity = new_capacity;
 }
 
-void* array_at(array_t* a, size_t i)
+void* array_at(Array* a, size_t i)
 {
     return (void*) (a->p + i * a->bytes);
 }
 
-void array_push_back(array_t* a, const void* value, size_t n)
+void array_push_back(Array* a, const void* value, size_t n)
 {
     size_t total = n + a->size;
     array_resize(a, total);
@@ -69,7 +69,7 @@ void array_push_back(array_t* a, const void* value, size_t n)
     a->size += n;
 }
 
-void array_push_front(array_t* a, const void* value, size_t n)
+void array_push_front(Array* a, const void* value, size_t n)
 {
     size_t total = n + a->size;
     // allocate sufficient memory
@@ -84,14 +84,14 @@ void array_push_front(array_t* a, const void* value, size_t n)
     a->size += n;
 }
 
-void* array_pop_back(array_t* a)
+void* array_pop_back(Array* a)
 {
     if (a->size == 0) return NULL;
     a->size--;
     return a->p + a->size * a->bytes;
 }
 
-void* array_pop_front(array_t* a)
+void* array_pop_front(Array* a)
 {
     if (a->size == 0)
         return NULL;
@@ -104,7 +104,7 @@ void* array_pop_front(array_t* a)
     return (void*) (a->p + a->size * a->bytes);
 }
 
-void array_shrink(array_t* a)
+void array_shrink(Array* a)
 {
    array_resize(a, a->size);
 }
