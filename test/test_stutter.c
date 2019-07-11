@@ -13,10 +13,12 @@
 #include "ast.h"
 #include "djb2.h"
 #include "env.h"
+#include "ir.h"
 #include "map.h"
 #include "list.h"
 #include "log.h"
 #include "lexer.h"
+#include "value.h"
 
 int tests_run = 0;
 
@@ -311,6 +313,45 @@ static char* test_list()
     return 0;
 }
 
+static char* test_ir()
+{
+    // (add 5 7.0)
+    char* add = malloc(4*sizeof(char));
+    strcpy(add, "add");
+    AstSexpr* ast =
+        ast_sexpr_from_list(
+            ast_list_from_compound_list(
+                ast_sexpr_from_atom(
+                    ast_atom_from_symbol(add)),
+                ast_list_from_compound_list(
+                    ast_sexpr_from_atom(
+                        ast_atom_from_int(5)),
+                    ast_list_from_compound_list(
+                        ast_sexpr_from_atom(
+                            ast_atom_from_float(7.0)),
+                        ast_list_empty()))));
+    value_print(ir_from_ast_sexpr(ast));
+    printf("\n");
+
+    // (add (quote 5) 7.0)
+    AstSexpr* ast2 =
+        ast_sexpr_from_list(
+            ast_list_from_compound_list(
+                ast_sexpr_from_atom(
+                    ast_atom_from_symbol(add)),
+                ast_list_from_compound_list(
+                    ast_sexpr_from_quote(
+                        ast_sexpr_from_atom(
+                            ast_atom_from_int(5))),
+                    ast_list_from_compound_list(
+                        ast_sexpr_from_atom(
+                            ast_atom_from_float(7.0)),
+                        ast_list_empty()))));
+    value_print(ir_from_ast_sexpr(ast2));
+    printf("\n");
+    return 0;
+}
+
 static char* test_suite()
 {
     mu_run_test(test_ast);
@@ -321,6 +362,7 @@ static char* test_suite()
     mu_run_test(test_env);
     mu_run_test(test_array);
     mu_run_test(test_list);
+    mu_run_test(test_ir);
     return 0;
 }
 
