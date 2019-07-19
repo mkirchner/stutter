@@ -15,6 +15,7 @@
 
 #include "ast.h"
 #include "env.h"
+#include "eval.h"
 #include "ir.h"
 #include "list.h"
 #include "log.h"
@@ -42,16 +43,13 @@ Value* read_(char* input) {
     return ast2;
 }
 
-Value* eval(Value* ast, Environment* env) {
-    return ast;
-}
-
-
 int main(int argc, char* argv[])
 {
     printf("Stutter version %s\n\n", __STUTTER_VERSION__);
 
     Environment* env = env_new(NULL);
+    Value* sum = value_new_symbol("sum"); // FIXME
+    env_set(env, "sum", sum);
     while(1) {
         char* input = readline("stutter> ");
         if (input == NULL) {
@@ -60,8 +58,8 @@ int main(int argc, char* argv[])
         add_history(input);
         Value* eval_result = eval(read_(input), env);
         value_print(eval_result);
-        printf("\n");
         value_delete(eval_result);
+        printf("\n");
         free(input);
     }
     env_delete(env);

@@ -59,6 +59,7 @@ Value* value_new_list()
 
 void value_delete(Value* v)
 {
+    if (!v) return;
     switch(v->type) {
     case VALUE_NIL:
     case VALUE_INT:
