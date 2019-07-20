@@ -33,9 +33,7 @@ typedef struct Value {
         List* list;
         Map* map;
 
-        void* (*f0)();
-        void* (*f1)(void*);
-        void* (*fN)(void*, ...);
+        struct Value* (*fn)(struct Value*);
 
         struct {
             struct Value* args;
@@ -51,6 +49,7 @@ typedef struct Value {
 Value* value_new_nil();
 Value* value_new_int(int int_);
 Value* value_new_float(float float_);
+Value* value_new_fn(Value* (fn)(Value*));
 Value* value_new_string(char* str);
 Value* value_new_symbol(char* str);
 Value* value_new_list();

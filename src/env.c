@@ -7,6 +7,7 @@
 
 #include "env.h"
 #include "log.h"
+#include "value.h"
 
 Environment* env_new(Environment* parent)
 {
@@ -22,12 +23,12 @@ void env_delete(Environment* env)
     free(env);
 }
 
-void env_set(Environment* env, char* symbol, void* value)
+void env_set(Environment* env, char* symbol, Value* value)
 {
-    map_put(env->kv, symbol, value, sizeof(void));
+    map_put(env->kv, symbol, value, sizeof(Value));
 }
 
-void* env_get(Environment* env, char* symbol)
+Value* env_get(Environment* env, char* symbol)
 {
     Environment* cur_env = env;
     while(cur_env) {

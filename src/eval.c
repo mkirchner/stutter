@@ -25,6 +25,11 @@ static bool _is_symbol(const Value* value)
     return value->type == VALUE_SYMBOL;
 }
 
+static bool _is_fn(const Value* value)
+{
+    return value->type == VALUE_FN;
+}
+
 static bool _is_list(const Value* value)
 {
     return value->type == VALUE_LIST;
@@ -33,9 +38,9 @@ static bool _is_list(const Value* value)
 Value* eval(Value* expr, Environment* env)
 {
     if (!expr) return NULL;
-    if (_is_self_evaluating(expr)) {
-        // atoms self-evaluate
-        LOG_DEBUG("Atom: %d\n", expr->type);
+    if (_is_self_evaluating(expr) || _is_fn(expr)) {
+        // atoms and built-ins self-evaluate
+        LOG_DEBUG("Atom/Builtin: %d\n", expr->type);
         return expr;
     } else if (_is_symbol(expr)) {
         LOG_DEBUG("Symbol: %s\n", expr->value.str);
@@ -53,14 +58,18 @@ Value* eval(Value* expr, Environment* env)
         Value* head;
         Value* evaluated_head;
         while ((head = list_head(list)) != NULL) {
+            // printf("Evaluating%s ", ":"); value_print(head); printf("\n");
             evaluated_head = eval(head, env);
+            // printf("Returns%s ", ":"); value_print(evaluated_head); printf("\n");
             if (!evaluated_head) {
                 // eval failed
+                LOG_DEBUG("Eval %s", "failed");
                 return NULL; // FIXME: mem managment
             }
             list_append(evaluated_list, evaluated_head, sizeof(Value));
             list = list_tail(list);
             // FIXME: we should delete head here
+            // value_print(evaluated_head); printf("\n");
         }
         expr->value.list = evaluated_list; // FIXME: and delete the old list here
         // ok, all elements have been evaluated, so let's apply
@@ -73,30 +82,18 @@ Value* eval(Value* expr, Environment* env)
 
 Value* apply(Value* expr, Environment* env)
 {
+    // we expect a list with (symbol arg1 arg2 ...)
     if (!expr || !_is_list(expr)) {
         if (expr) {
             LOG_CRITICAL("Not a list: %d", expr->type);
         }
         return NULL;
     }
-    // FIXME: hardcoded implementation of (sum ...)
-    LOG_DEBUG("Summing list: %d\n", expr->type);
-    float sum = 0.0;
-    Value* head;
-    List* list = list_tail(expr->value.list); // slice off the symbol
-    LOG_DEBUG("Initial list size: %ld", list_size(list));
-    while ((head = list_head(list)) != NULL) {
-        if (head->type == VALUE_FLOAT) {
-            sum += head->value.float_;
-        } else if (head->type == VALUE_INT) {
-            sum += (float) head->value.int_;
-        } else {
-            LOG_WARNING("Skipping non-number type: %d", head->type);
-        }
-        list = list_tail(list);
-    }
-    Value* ret = value_new_float(sum); // FIXME: who frees this?
-    LOG_DEBUG("apply returning: %f\n", ret->value.float_);
-    return ret;
+    // value_print(expr); printf("\n");
+    Value* fn = list_head(expr->value.list);
+    // value_print(fn); printf("\n");
+    Value* args = value_new_list();
+    args->value.list = list_tail(expr->value.list); // FIXME: mem management
+    return fn->value.fn(args);
 }
 

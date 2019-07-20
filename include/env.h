@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include "map.h"
 
+struct Value;
+
 typedef struct Environment {
     Map* kv;
     struct Environment* parent;
@@ -19,7 +21,7 @@ typedef struct Environment {
 Environment* env_new(Environment* parent);
 void env_delete(Environment* env);
 
-void env_set(Environment* env, char* symbol, void* value);
-void* env_get(Environment* env, char* symbol);
+void env_set(Environment* env, char* symbol, struct Value* value);
+struct Value* env_get(Environment* env, char* symbol);
 
 #endif /* !__ENV_H__ */

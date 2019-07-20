@@ -36,6 +36,13 @@ Value* value_new_float(float float_)
     return v;
 }
 
+Value* value_new_fn(Value* (fn)(Value*))
+{
+    Value* v = value_new(VALUE_FN);
+    v->value.fn = fn;
+    return v;
+}
+
 Value* value_new_string(char* str)
 {
     Value* v = value_new(VALUE_STRING);
@@ -109,8 +116,7 @@ void value_print(Value* v)
         printf(")");
         break;
     case VALUE_FN:
-        // not implemented yet
-        LOG_WARNING("%s", "value_print() for VALUE_FN not implemented");
+        printf("#<@%p>", (void*) v->value.fn);
         break;
     }
 

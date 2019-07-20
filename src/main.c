@@ -14,6 +14,7 @@
 #include <editline/readline.h>
 
 #include "ast.h"
+#include "core.h"
 #include "env.h"
 #include "eval.h"
 #include "ir.h"
@@ -47,9 +48,17 @@ int main(int argc, char* argv[])
 {
     printf("Stutter version %s\n\n", __STUTTER_VERSION__);
 
+    // create env
     Environment* env = env_new(NULL);
-    Value* sum = value_new_symbol("sum"); // FIXME
-    env_set(env, "sum", sum);
+    Value* sum = value_new_fn(core_sum);
+    printf("Setup: ");
+    value_print(sum);
+    printf("\n");
+    env_set(env, "sum", sum); // FIXME
+    printf("Setup test: ");
+    value_print(env_get(env, "sum"));
+    printf("\n");
+
     while(1) {
         char* input = readline("stutter> ");
         if (input == NULL) {
@@ -63,6 +72,7 @@ int main(int argc, char* argv[])
         free(input);
     }
     env_delete(env);
+    free(sum);
     return 0;
 }
 
