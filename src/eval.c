@@ -82,7 +82,7 @@ Value* eval(Value* expr, Environment* env)
 
 Value* apply(Value* expr, Environment* env)
 {
-    // we expect a list with (symbol arg1 arg2 ...)
+    // we expect a list with (fn arg1 arg2 ...)
     if (!expr || !_is_list(expr)) {
         if (expr) {
             LOG_CRITICAL("Not a list: %d", expr->type);
@@ -91,6 +91,10 @@ Value* apply(Value* expr, Environment* env)
     }
     // value_print(expr); printf("\n");
     Value* fn = list_head(expr->value.list);
+    if (fn->type != VALUE_FN) {
+        LOG_CRITICAL("Cannot apply non-function value.%s", "");
+        return NULL;
+    }
     // value_print(fn); printf("\n");
     Value* args = value_new_list();
     args->value.list = list_tail(expr->value.list); // FIXME: mem management
