@@ -13,11 +13,13 @@
 #include "ast.h"
 #include "djb2.h"
 #include "env.h"
+#include "gc.h"
 #include "ir.h"
 #include "map.h"
 #include "list.h"
 #include "log.h"
 #include "lexer.h"
+#include "primes.h"
 #include "value.h"
 
 int tests_run = 0;
@@ -352,6 +354,16 @@ static char* test_ir()
     return 0;
 }
 
+void dtor(void* ptr)
+{
+    ptr = NULL;
+}
+
+static char* test_gc()
+{
+   return NULL; 
+}
+
 static char* test_suite()
 {
     mu_run_test(test_ast);
@@ -363,6 +375,7 @@ static char* test_suite()
     mu_run_test(test_array);
     mu_run_test(test_list);
     mu_run_test(test_ir);
+    mu_run_test(test_gc);
     return 0;
 }
 

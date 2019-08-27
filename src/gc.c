@@ -341,6 +341,21 @@ void gc_mark(GarbageCollector* gc)
 
 void gc_sweep(GarbageCollector* gc)
 {
+    for (Allocation* alloc = gc->allocs->allocs[0];
+            alloc < gc->allocs->allocs[gc->allocs->capacity];
+            ++alloc) {
+        Allocation* chunk = alloc;
+        // iterate over open addressing
+        while (chunk) {
+            if (chunk->tag == GC_TAG_MARK) {
+                // unmark
+            } else {
+                // no reference to this chunk, hence delete it
+                gc_allocation_map_remove(gc->allocs, /*FIXME*/ chunk->ptr);
+            }
+            chunk = chunk->next;
+        }
+    }
 }
 
 void gc_run(GarbageCollector* gc)
