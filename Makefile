@@ -9,48 +9,37 @@ LDLIBS=-ledit
 RM=rm
 BUILD_DIR=./build
 
-BINARY=stutter
-SRCS=$(wildcard src/*.c)
-OBJS=$(SRCS:%.c=$(BUILD_DIR)/%.o)
-DEPS=$(OBJS:%.o=%.d)
+STUTTER_BINARY=stutter
+STUTTER_SRCS=$(wildcard src/*.c)
+STUTTER_OBJS=$(STUTTER_SRCS:%.c=$(BUILD_DIR)/%.o)
+STUTTER_DEPS=$(STUTTER_OBJS:%.o=%.d)
 
-TEST_BINARY=test_stutter
-TEST_SRCS=$(wildcard test/*.c)
-TEST_OBJS=$(filter-out ./build/src/main.o, $(OBJS)) $(TEST_SRCS:%.c=$(BUILD_DIR)/%.o)
-TEST_DEPS=$(TEST_OBJS:%.o=%.d)
+.PHONY: stutter
+stutter: $(BUILD_DIR)/$(STUTTER_BINARY)
 
-
-.PHONY: all
-all: $(BUILD_DIR)/$(BINARY)
-
-$(BUILD_DIR)/$(BINARY): $(OBJS)
+$(BUILD_DIR)/$(STUTTER_BINARY): $(STUTTER_OBJS)
 	mkdir -p $(@D)
 	$(CC) $(LDFLAGS) $(LDLIBS) $^ -o $@
 
--include $(DEPS)
+-include $(STUTTER_DEPS)
 
 $(BUILD_DIR)/src/%.o: src/%.c
 	mkdir -p $(@D)
 	$(CC) $(CFLAGS) -MMD -c $< -o $@
 
-$(BUILD_DIR)/test/%.o: test/%.c
-	mkdir -p $(@D)
-	$(CC) $(CFLAGS) -MMD -c $< -o $@
-
 .PHONY: test
-test: $(BUILD_DIR)/$(TEST_BINARY)
-	$(BUILD_DIR)/$(TEST_BINARY)
-
-$(BUILD_DIR)/$(TEST_BINARY): $(TEST_OBJS)
-	mkdir -p $(@D)
-	$(CC) $(LDFLAGS) $(LDLIBS) $^ -o $@
+test:
+	$(MAKE) -C $@
+	$(BUILD_DIR)/test/test_stutter
 
 .PHONY: clean
 clean:
 	$(RM) -f $(OBJS) $(DEPS)
 	$(RM) -f $(TEST_OBJS) $(TEST_DEPS)
+	$(MAKE) -C test clean
 
 distclean: clean
 	$(RM) -f $(BUILD_DIR)/$(BINARY)
 	$(RM) -f $(BUILD_DIR)/$(TEST_BINARY)
+	$(MAKE) -C test distclean
 
