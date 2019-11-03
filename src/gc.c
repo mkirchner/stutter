@@ -6,6 +6,7 @@
  */
 
 #include "gc.h"
+#include "log.h"
 
 #include <errno.h>
 #include <setjmp.h>
@@ -18,9 +19,14 @@
  * as the key.
  */
 
+#define GC_TAG_NONE 0x00
+#define GC_TAG_MARK 0x01
+
+
 typedef struct Allocation {
     void* ptr;                // mem pointer (tagged for mark&sweep)
     size_t size;              // allocated size in bytes
+    char tag;
     void (*dtor)(void*);      // destructor
     struct Allocation* next;  // separate chaining
 } Allocation;
@@ -41,6 +47,7 @@ static Allocation* gc_allocation_new(void* ptr, size_t size, void (*dtor)(void*)
     Allocation* a = (Allocation*) malloc(sizeof(Allocation));
     a->ptr = ptr;
     a->size = size;
+    a->tag = GC_TAG_NONE;
     a->dtor = dtor;
     a->next = NULL;
     return a;
@@ -57,12 +64,15 @@ static AllocationMap* gc_allocation_map_new(size_t capacity)
     am->capacity = next_prime(capacity);
     am->size = 0;
     am->allocs = (Allocation**) calloc(capacity, sizeof(Allocation*));
+    LOG_DEBUG("Created allocation map (cap=%ld, siz=%ld)", am->capacity, am->size);
     return am;
 }
 
 static void gc_allocation_map_delete(AllocationMap* am)
 {
     // Iterate over the map
+    LOG_DEBUG("Deleting allocation map (cap=%ld, siz=%ld)",
+              am->capacity, am->size);
     Allocation *alloc, *tmp;
     for (size_t i = 0; i < am->capacity; ++i) {
         if ((alloc = am->allocs[i])) {
@@ -87,6 +97,8 @@ static void gc_allocation_map_resize(AllocationMap* am, size_t new_capacity)
 {
     // Replaces the existing items array in the hash table
     // with a resized one and pushes items into the new, correct buckets
+    LOG_DEBUG("Resizing allocation map (cap=%ld, siz=%ld) -> (cap=%ld)",
+              am->capacity, am->size, new_capacity);
     Allocation** resized_allocs = calloc(new_capacity, sizeof(Allocation*));
 
     for (size_t i=0; i<am->capacity; ++i) {
@@ -110,6 +122,7 @@ static Allocation* gc_allocation_map_put(AllocationMap* am, void* ptr,
 {
     // hash
     size_t index = gc_hash(ptr) % am->capacity;
+    LOG_DEBUG("PUT request for allocation ix=%ld", index);
     // create item
     Allocation* alloc = gc_allocation_new(ptr, size, dtor);
     Allocation* cur = am->allocs[index];
@@ -127,6 +140,7 @@ static Allocation* gc_allocation_map_put(AllocationMap* am, void* ptr,
                 prev->next = alloc;
             }
             gc_allocation_delete(cur);
+            LOG_DEBUG("Successful UPDATE for allocation ix=%ld", index);
             return alloc;
         }
         prev = cur;
@@ -137,8 +151,12 @@ static Allocation* gc_allocation_map_put(AllocationMap* am, void* ptr,
     alloc->next = cur;
     am->allocs[index] = alloc;
     am->size++;
-    if (gc_allocation_map_load_factor(am) > 0.7)
+    LOG_DEBUG("Successful PUT for allocation ix=%ld", index);
+    double load_factor = gc_allocation_map_load_factor(am);
+    if (load_factor > 0.7) {
+        LOG_DEBUG("Load factor %0.3g > 0.7. Triggering resize.", load_factor);
         gc_allocation_map_resize(am, next_prime(am->capacity*2));
+    }
     return alloc;
 }
 
@@ -178,8 +196,11 @@ static void gc_allocation_map_remove(AllocationMap* am, void* ptr)
         }
         cur = cur->next;
     }
-    if (gc_allocation_map_load_factor(am) < 0.1)
+    double load_factor = gc_allocation_map_load_factor(am);
+    if (load_factor < 0.1) {
+        LOG_DEBUG("Load factor %0.3g < 0.1. Triggering resize.", load_factor);
         gc_allocation_map_resize(am, next_prime(am->capacity/2));
+    }
 }
 
 void* gc_malloc(GarbageCollector* gc, size_t size)
@@ -189,9 +210,12 @@ void* gc_malloc(GarbageCollector* gc, size_t size)
 
 void* gc_malloc_opts(GarbageCollector* gc, size_t size, void(*dtor)(void*))
 {
+    // FIXME: add call to GC here
     void* ptr = malloc(size);
     if (ptr) {
+        LOG_DEBUG("Allocated %d bytes at %p", size, ptr);
         Allocation* alloc = gc_allocation_map_put(gc->allocs, ptr, size, dtor);
+        LOG_DEBUG("Returning %d managed bytes at %p", size, alloc->ptr);
         if (alloc) {
             return alloc->ptr;
         }
@@ -257,22 +281,23 @@ void gc_free(GarbageCollector* gc, void* ptr)
     gc_allocation_map_remove(gc->allocs, ptr);
 }
 
-enum {
-    GC_TAG_MARK = 0x01,
-    GC_TAG_ROOT = 0x02,
-    GC_TAG_LEAF = 0x04
-};
-
 void gc_start(GarbageCollector* gc, void* bos)
 {
-    gc->allocs = NULL;
+    gc->allocs = gc_allocation_map_new(1024);
     gc->paused = false;
     gc->load_factor = 0.9;
     gc->sweep_factor = 0.5;
     gc->bos = bos;
+    LOG_DEBUG("Created new garbage collector (cap=%ld, siz=%ld).",
+              gc->allocs->capacity, gc->allocs->size);
 }
 
-void gc_stop(GarbageCollector* gc);
+void gc_stop(GarbageCollector* gc)
+{
+    // FIXME
+    gc_allocation_map_delete(gc->allocs);
+    return;
+}
 
 void gc_pause(GarbageCollector* gc)
 {
@@ -322,6 +347,7 @@ void gc_mark_heap(GarbageCollector* gc)
             }
             chunk = chunk->next;
         }
+    }
 }
 
 void gc_mark(GarbageCollector* gc)
@@ -349,9 +375,12 @@ void gc_sweep(GarbageCollector* gc)
         while (chunk) {
             if (chunk->tag == GC_TAG_MARK) {
                 // unmark
+                chunk->tag = GC_TAG_NONE;
             } else {
                 // no reference to this chunk, hence delete it
-                gc_allocation_map_remove(gc->allocs, /*FIXME*/ chunk->ptr);
+                free(chunk->ptr);
+                // and remove it from the bookkeeping
+                gc_allocation_map_remove(gc->allocs, chunk->ptr);
             }
             chunk = chunk->next;
         }
