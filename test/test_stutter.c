@@ -9,9 +9,16 @@
 #include <string.h>
 #include "minunit.h"
 
-#include "test_all.c"
+#include "test_array.c"
+#include "test_ast.c"
+#include "test_djb2.c"
+#include "test_env.c"
 #include "test_gc.c"
+#include "test_ir.c"
 #include "test_lexer.c"
+#include "test_list.c"
+#include "test_map.c"
+#include "test_primes.c"
 
 int tests_run = 0;
 
@@ -20,7 +27,7 @@ static char* test_suite()
     mu_run_test(test_ast);
     mu_run_test(test_lexer);
     mu_run_test(test_djb2);
-    mu_run_test(test_hashtable);
+    mu_run_test(test_map);
     mu_run_test(test_primes);
     mu_run_test(test_env);
     mu_run_test(test_array);

@@ -163,6 +163,7 @@ static Allocation* gc_allocation_map_put(AllocationMap* am, void* ptr,
 static Allocation* gc_allocation_map_get(AllocationMap* am, void* ptr)
 {
     size_t index = gc_hash(ptr) % am->capacity;
+    // LOG_DEBUG("GET request for allocation ix=%ld (ptr=%p)", index, ptr);
     Allocation* cur = am->allocs[index];
     while(cur) {
         if (cur->ptr == ptr) return cur;
@@ -196,6 +197,7 @@ static void gc_allocation_map_remove(AllocationMap* am, void* ptr)
         }
         cur = cur->next;
     }
+    // FIXME: move resizing into a gc function (which has the GC params available)
     double load_factor = gc_allocation_map_load_factor(am);
     if (load_factor < 0.1) {
         LOG_DEBUG("Load factor %0.3g < 0.1. Triggering resize.", load_factor);
@@ -213,9 +215,9 @@ void* gc_malloc_opts(GarbageCollector* gc, size_t size, void(*dtor)(void*))
     // FIXME: add call to GC here
     void* ptr = malloc(size);
     if (ptr) {
-        LOG_DEBUG("Allocated %d bytes at %p", size, ptr);
+        LOG_DEBUG("Allocated %zu bytes at %p", size, (void*) ptr);
         Allocation* alloc = gc_allocation_map_put(gc->allocs, ptr, size, dtor);
-        LOG_DEBUG("Returning %d managed bytes at %p", size, alloc->ptr);
+        LOG_DEBUG("Returning %zu managed bytes at %p", size, (void*) alloc->ptr);
         if (alloc) {
             return alloc->ptr;
         }
@@ -311,39 +313,45 @@ void gc_resume(GarbageCollector* gc)
 
 void gc_mark_ptr(GarbageCollector* gc, void* ptr)
 {
+    // FIXME: should be called mark_alloc
     Allocation* alloc = gc_allocation_map_get(gc->allocs, ptr);
     if (alloc) {
+        LOG_DEBUG("Marking allocation (ptr=%p)", ptr);
         alloc->tag = GC_TAG_MARK;  // FIXME
     }
 }
 
 void gc_mark_stack(GarbageCollector* gc)
 {
-    char dummy, *tos = &dummy, *bos = (char*) gc->bos;
+    LOG_DEBUG("Marking the stack (gc@%p) in increments of %ld", (void*) gc, sizeof(void*));
+    char dummy;
+    void **tos = (void**) &dummy;
+    void **bos = gc->bos;
     if (tos > bos) {
-        char* tmp = tos;
+        void** tmp = tos;
         tos = gc->bos;
         bos = tmp;
     }
-    for (char* p = tos; p < bos; ++p) {
-        gc_mark_ptr(gc, (void*) p);
+    for (void** p = tos; p < bos; ++p) {
+        gc_mark_ptr(gc, *p);
     }
 }
 
 void gc_mark_heap(GarbageCollector* gc)
 {
-    // go through all allocated data and see if we
-    // find a pointer that points to a known data location
-    for (Allocation* alloc = gc->allocs->allocs[0];
-            alloc < gc->allocs->allocs[gc->allocs->capacity];
-            ++alloc) {
-        Allocation* chunk = alloc;
+    LOG_DEBUG("Marking the heap (gc@%p, cap=%ld)", gc, gc->allocs->capacity);
+    // go through all allocated chunks and see if any of them contain
+    // a pointer to another chunk
+    for (size_t i = 0; i < gc->allocs->capacity; ++i) {
+        Allocation* chunk = gc->allocs->allocs[i];
         // iterate over open addressing
         while (chunk) {
-            for (char* p = (char*) chunk->ptr;
-                    p < (char*) chunk->ptr + chunk->size;
+            LOG_DEBUG("Checking contents of allocation: %p=(ptr=%p, siz=%ld, tag=%c)",
+                      chunk, chunk->ptr, chunk->size, chunk->tag);
+            for (void** p = (void**) chunk->ptr;
+                    p < (void**) chunk->ptr + chunk->size;
                     ++p) {
-                gc_mark_ptr(gc, (void*) p);
+                gc_mark_ptr(gc, *p);
             }
             chunk = chunk->next;
         }
@@ -354,6 +362,7 @@ void gc_mark(GarbageCollector* gc)
 {
     // FIXME: also scan BSS ?
 
+    LOG_DEBUG("Initiating GC mark (gc@%p)", gc);
     // scan the heap
     gc_mark_heap(gc);
 
@@ -367,16 +376,17 @@ void gc_mark(GarbageCollector* gc)
 
 void gc_sweep(GarbageCollector* gc)
 {
-    for (Allocation* alloc = gc->allocs->allocs[0];
-            alloc < gc->allocs->allocs[gc->allocs->capacity];
-            ++alloc) {
-        Allocation* chunk = alloc;
+    LOG_DEBUG("Initiating GC sweep (gc@%p)", gc);
+    for (size_t i = 0; i < gc->allocs->capacity; ++i) {
+        Allocation* chunk = gc->allocs->allocs[i];
         // iterate over open addressing
         while (chunk) {
             if (chunk->tag == GC_TAG_MARK) {
+                LOG_DEBUG("Found used allocation %p (ptr=%p)", chunk, chunk->ptr);
                 // unmark
                 chunk->tag = GC_TAG_NONE;
             } else {
+                LOG_DEBUG("Found unused allocation %p (ptr=%p)", chunk, chunk->ptr);
                 // no reference to this chunk, hence delete it
                 free(chunk->ptr);
                 // and remove it from the bookkeeping
@@ -389,6 +399,7 @@ void gc_sweep(GarbageCollector* gc)
 
 void gc_run(GarbageCollector* gc)
 {
+    LOG_DEBUG("Initiating GC run (gc@%p)", gc);
     gc_mark(gc);
     gc_sweep(gc);
 }
