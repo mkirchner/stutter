@@ -89,7 +89,8 @@ static void gc_allocation_map_delete(AllocationMap* am)
     free(am);
 }
 
-static size_t gc_hash(void *ptr) {
+static size_t gc_hash(void *ptr)
+{
     return ((uintptr_t)ptr) >> 3;
 }
 
@@ -101,7 +102,7 @@ static void gc_allocation_map_resize(AllocationMap* am, size_t new_capacity)
               am->capacity, am->size, new_capacity);
     Allocation** resized_allocs = calloc(new_capacity, sizeof(Allocation*));
 
-    for (size_t i=0; i<am->capacity; ++i) {
+    for (size_t i = 0; i < am->capacity; ++i) {
         Allocation* alloc = am->allocs[i];
         while(alloc) {
             Allocation* next_alloc = alloc->next;
@@ -155,7 +156,7 @@ static Allocation* gc_allocation_map_put(AllocationMap* am, void* ptr,
     double load_factor = gc_allocation_map_load_factor(am);
     if (load_factor > 0.7) {
         LOG_DEBUG("Load factor %0.3g > 0.7. Triggering resize.", load_factor);
-        gc_allocation_map_resize(am, next_prime(am->capacity*2));
+        gc_allocation_map_resize(am, next_prime(am->capacity * 2));
     }
     return alloc;
 }
@@ -201,7 +202,7 @@ static void gc_allocation_map_remove(AllocationMap* am, void* ptr)
     double load_factor = gc_allocation_map_load_factor(am);
     if (load_factor < 0.1) {
         LOG_DEBUG("Load factor %0.3g < 0.1. Triggering resize.", load_factor);
-        gc_allocation_map_resize(am, next_prime(am->capacity/2));
+        gc_allocation_map_resize(am, next_prime(am->capacity / 2));
     }
 }
 
@@ -231,7 +232,7 @@ void* gc_calloc(GarbageCollector* gc, size_t count, size_t size)
 }
 
 void* gc_calloc_opts(GarbageCollector* gc, size_t count, size_t size,
-        void(*dtor)(void*))
+                     void(*dtor)(void*))
 {
     void* ptr = calloc(count, size);
     if (ptr) {
@@ -339,7 +340,7 @@ void gc_mark_stack(GarbageCollector* gc)
 
 void gc_mark_heap(GarbageCollector* gc)
 {
-    LOG_DEBUG("Marking the heap (gc@%p, cap=%ld)", gc, gc->allocs->capacity);
+    LOG_DEBUG("Marking the heap (gc@%p, cap=%ld)", (void*) gc, gc->allocs->capacity);
     // go through all allocated chunks and see if any of them contain
     // a pointer to another chunk
     for (size_t i = 0; i < gc->allocs->capacity; ++i) {
@@ -347,7 +348,7 @@ void gc_mark_heap(GarbageCollector* gc)
         // iterate over open addressing
         while (chunk) {
             LOG_DEBUG("Checking contents of allocation: %p=(ptr=%p, siz=%ld, tag=%c)",
-                      chunk, chunk->ptr, chunk->size, chunk->tag);
+                      (void*) chunk, (void*) chunk->ptr, chunk->size, chunk->tag);
             for (void** p = (void**) chunk->ptr;
                     p < (void**) chunk->ptr + chunk->size;
                     ++p) {
@@ -362,7 +363,7 @@ void gc_mark(GarbageCollector* gc)
 {
     // FIXME: also scan BSS ?
 
-    LOG_DEBUG("Initiating GC mark (gc@%p)", gc);
+    LOG_DEBUG("Initiating GC mark (gc@%p)", (void*) gc);
     // scan the heap
     gc_mark_heap(gc);
 
@@ -376,17 +377,17 @@ void gc_mark(GarbageCollector* gc)
 
 void gc_sweep(GarbageCollector* gc)
 {
-    LOG_DEBUG("Initiating GC sweep (gc@%p)", gc);
+    LOG_DEBUG("Initiating GC sweep (gc@%p)", (void*) gc);
     for (size_t i = 0; i < gc->allocs->capacity; ++i) {
         Allocation* chunk = gc->allocs->allocs[i];
         // iterate over open addressing
         while (chunk) {
             if (chunk->tag == GC_TAG_MARK) {
-                LOG_DEBUG("Found used allocation %p (ptr=%p)", chunk, chunk->ptr);
+                LOG_DEBUG("Found used allocation %p (ptr=%p)", (void*) chunk, (void*) chunk->ptr);
                 // unmark
                 chunk->tag = GC_TAG_NONE;
             } else {
-                LOG_DEBUG("Found unused allocation %p (ptr=%p)", chunk, chunk->ptr);
+                LOG_DEBUG("Found unused allocation %p (ptr=%p)", (void*) chunk, (void*) chunk->ptr);
                 // no reference to this chunk, hence delete it
                 free(chunk->ptr);
                 // and remove it from the bookkeeping
@@ -399,9 +400,8 @@ void gc_sweep(GarbageCollector* gc)
 
 void gc_run(GarbageCollector* gc)
 {
-    LOG_DEBUG("Initiating GC run (gc@%p)", gc);
+    LOG_DEBUG("Initiating GC run (gc@%p)", (void*) gc);
     gc_mark(gc);
     gc_sweep(gc);
 }
-
 
