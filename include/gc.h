@@ -26,7 +26,7 @@ void gc_start(GarbageCollector* gc, void* bos);
 void gc_stop(GarbageCollector* gc);
 void gc_pause(GarbageCollector* gc);
 void gc_resume(GarbageCollector* gc);
-void gc_run(GarbageCollector* gc);
+size_t gc_run(GarbageCollector* gc);
 
 void* gc_malloc(GarbageCollector* gc, size_t size);
 void* gc_malloc_opts(GarbageCollector* gc, size_t size, void (*dtor)(void*));

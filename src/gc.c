@@ -222,6 +222,11 @@ void* gc_malloc_opts(GarbageCollector* gc, size_t size, void(*dtor)(void*))
         if (alloc) {
             return alloc->ptr;
         }
+    } else {
+        size_t freed_mem = gc_run(gc);
+        if (freed_mem > 0) {
+            ptr = malloc(size);
+        }
     }
     return ptr;
 }
@@ -239,6 +244,11 @@ void* gc_calloc_opts(GarbageCollector* gc, size_t count, size_t size,
         Allocation* alloc = gc_allocation_map_put(gc->allocs, ptr, size, dtor);
         if (alloc) {
             return alloc->ptr;
+        }
+    } else {
+        size_t freed_mem = gc_run(gc);
+        if (freed_mem > 0) {
+            ptr = calloc(count, size);
         }
     }
     return ptr;
@@ -375,9 +385,10 @@ void gc_mark(GarbageCollector* gc)
     _mark_stack(gc);
 }
 
-void gc_sweep(GarbageCollector* gc)
+size_t gc_sweep(GarbageCollector* gc)
 {
     LOG_DEBUG("Initiating GC sweep (gc@%p)", (void*) gc);
+    size_t total = 0;
     for (size_t i = 0; i < gc->allocs->capacity; ++i) {
         Allocation* chunk = gc->allocs->allocs[i];
         // iterate over open addressing
@@ -389,6 +400,7 @@ void gc_sweep(GarbageCollector* gc)
             } else {
                 LOG_DEBUG("Found unused allocation %p (ptr=%p)", (void*) chunk, (void*) chunk->ptr);
                 // no reference to this chunk, hence delete it
+                total += chunk->size;
                 free(chunk->ptr);
                 // and remove it from the bookkeeping
                 gc_allocation_map_remove(gc->allocs, chunk->ptr);
@@ -396,12 +408,13 @@ void gc_sweep(GarbageCollector* gc)
             chunk = chunk->next;
         }
     }
+    return total;
 }
 
-void gc_run(GarbageCollector* gc)
+size_t gc_run(GarbageCollector* gc)
 {
     LOG_DEBUG("Initiating GC run (gc@%p)", (void*) gc);
     gc_mark(gc);
-    gc_sweep(gc);
+    return gc_sweep(gc);
 }
 
