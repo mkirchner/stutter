@@ -28,7 +28,7 @@ static char* test_gc()
     int bos;
     printf("GC tests\n");
     GarbageCollector gc;
-    gc_start(&gc, &bos);
+    gc_start(&gc, &bos, 0.0, 0.0, 0.6);
     int *ints = gc_malloc(&gc, sizeof(int) * 5);
     ints[5] = 100;
     use_some_mem(&gc);

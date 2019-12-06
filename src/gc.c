@@ -34,6 +34,8 @@ typedef struct Allocation {
 typedef struct AllocationMap {
     size_t capacity;
     size_t size;
+    double downsize_limit;
+    double upsize_limit;
     Allocation** allocs;
 } AllocationMap;
 
@@ -58,11 +60,14 @@ static void gc_allocation_delete(Allocation* a)
     free(a);
 }
 
-static AllocationMap* gc_allocation_map_new(size_t capacity)
+static AllocationMap* gc_allocation_map_new(size_t capacity, double downsize_limit,
+        double upsize_limit)
 {
     AllocationMap* am = (AllocationMap*) malloc(sizeof(AllocationMap));
     am->capacity = next_prime(capacity);
     am->size = 0;
+    am->downsize_limit = downsize_limit;
+    am->upsize_limit = upsize_limit;
     am->allocs = (Allocation**) calloc(capacity, sizeof(Allocation*));
     LOG_DEBUG("Created allocation map (cap=%ld, siz=%ld)", am->capacity, am->size);
     return am;
@@ -154,8 +159,8 @@ static Allocation* gc_allocation_map_put(AllocationMap* am, void* ptr,
     am->size++;
     LOG_DEBUG("Successful PUT for allocation ix=%ld", index);
     double load_factor = gc_allocation_map_load_factor(am);
-    if (load_factor > 0.7) {
-        LOG_DEBUG("Load factor %0.3g > 0.7. Triggering resize.", load_factor);
+    if (load_factor > am->upsize_limit) {
+        LOG_DEBUG("Load factor %0.3g > %0.3g. Triggering resize.", load_factor, am->upsize_limit);
         gc_allocation_map_resize(am, next_prime(am->capacity * 2));
     }
     return alloc;
@@ -198,9 +203,8 @@ static void gc_allocation_map_remove(AllocationMap* am, void* ptr)
         }
         cur = cur->next;
     }
-    // FIXME: move resizing into a gc function (which has the GC params available)
     double load_factor = gc_allocation_map_load_factor(am);
-    if (load_factor < 0.1) {
+    if (load_factor < am->downsize_limit) {
         LOG_DEBUG("Load factor %0.3g < 0.1. Triggering resize.", load_factor);
         gc_allocation_map_resize(am, next_prime(am->capacity / 2));
     }
@@ -213,7 +217,6 @@ void* gc_malloc(GarbageCollector* gc, size_t size)
 
 void* gc_malloc_opts(GarbageCollector* gc, size_t size, void(*dtor)(void*))
 {
-    // FIXME: add call to GC here
     void* ptr = malloc(size);
     if (ptr) {
         LOG_DEBUG("Allocated %zu bytes at %p", size, (void*) ptr);
@@ -222,7 +225,8 @@ void* gc_malloc_opts(GarbageCollector* gc, size_t size, void(*dtor)(void*))
         if (alloc) {
             return alloc->ptr;
         }
-    } else {
+    }
+    if (!ptr || gc_allocation_map_load_factor(gc->allocs) > gc->sweep_load_limit) {
         size_t freed_mem = gc_run(gc);
         if (freed_mem > 0) {
             ptr = malloc(size);
@@ -294,15 +298,18 @@ void gc_free(GarbageCollector* gc, void* ptr)
     gc_allocation_map_remove(gc->allocs, ptr);
 }
 
-void gc_start(GarbageCollector* gc, void* bos)
+void gc_start(GarbageCollector* gc, void* bos,
+              double downsize_load_factor, double upsize_load_factor,
+              double sweep_load_factor)
 {
-    gc->allocs = gc_allocation_map_new(1024);
     gc->paused = false;
-    gc->load_factor = 0.9;
-    gc->sweep_factor = 0.5;
+    gc->downsize_load_limit = downsize_load_factor > 0.0 ? downsize_load_factor : 0.0;
+    gc->upsize_load_limit = upsize_load_factor > 0.0 ? upsize_load_factor : 0.0;
+    gc->sweep_load_limit = sweep_load_factor > 0.0 ? sweep_load_factor : 0.0;
     gc->bos = bos;
-    LOG_DEBUG("Created new garbage collector (cap=%ld, siz=%ld).",
-              gc->allocs->capacity, gc->allocs->size);
+    gc->allocs = gc_allocation_map_new(1024, gc->downsize_load_limit, gc->upsize_load_limit);
+    LOG_DEBUG("Created new garbage collector (cap=%ld, siz=%ld).", gc->allocs->capacity,
+              gc->allocs->size);
 }
 
 void gc_stop(GarbageCollector* gc)
@@ -322,13 +329,12 @@ void gc_resume(GarbageCollector* gc)
     gc->paused = false;
 }
 
-void gc_mark_ptr(GarbageCollector* gc, void* ptr)
+void gc_mark_alloc(GarbageCollector* gc, void* ptr)
 {
-    // FIXME: should be called mark_alloc
     Allocation* alloc = gc_allocation_map_get(gc->allocs, ptr);
     if (alloc) {
         LOG_DEBUG("Marking allocation (ptr=%p)", ptr);
-        alloc->tag = GC_TAG_MARK;  // FIXME
+        alloc->tag = GC_TAG_MARK;  // FIXME: do we really need this?
     }
 }
 
@@ -344,7 +350,7 @@ void gc_mark_stack(GarbageCollector* gc)
         bos = tmp;
     }
     for (void** p = tos; p < bos; ++p) {
-        gc_mark_ptr(gc, *p);
+        gc_mark_alloc(gc, *p);
     }
 }
 
@@ -362,7 +368,7 @@ void gc_mark_heap(GarbageCollector* gc)
             for (void** p = (void**) chunk->ptr;
                     p < (void**) chunk->ptr + chunk->size;
                     ++p) {
-                gc_mark_ptr(gc, *p);
+                gc_mark_alloc(gc, *p);
             }
             chunk = chunk->next;
         }

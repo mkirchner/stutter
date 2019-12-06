@@ -17,12 +17,14 @@ struct AllocationMap;
 typedef struct GarbageCollector {
     struct AllocationMap* allocs; // allocation map
     bool paused;         // switch gc on/off
-    double load_factor;  // limit for alloc map resize
-    double sweep_factor; // limit for starting a sweep
+    double downsize_load_limit;
+    double upsize_load_limit;
+    double sweep_load_limit;  // limit for starting a sweep
     void *bos;           // bottom of stack
 } GarbageCollector;
 
-void gc_start(GarbageCollector* gc, void* bos);
+void gc_start(GarbageCollector* gc, void* bos, double downsize_load_factor,
+              double upsize_load_factor, double sweep_load_factor);
 void gc_stop(GarbageCollector* gc);
 void gc_pause(GarbageCollector* gc);
 void gc_resume(GarbageCollector* gc);
