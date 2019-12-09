@@ -6,12 +6,13 @@
  */
 
 #include "env.h"
+#include "gc.h"
 #include "log.h"
 #include "value.h"
 
 Environment* env_new(Environment* parent)
 {
-    Environment* env = malloc(sizeof(Environment));
+    Environment* env = gc_malloc(&gc, sizeof(Environment));
     env->parent = parent;
     env->kv = map_new(32);
     return env;
@@ -20,7 +21,7 @@ Environment* env_new(Environment* parent)
 void env_delete(Environment* env)
 {
     map_delete(env->kv);
-    free(env);
+    gc_free(&gc, env);
 }
 
 void env_set(Environment* env, char* symbol, Value* value)

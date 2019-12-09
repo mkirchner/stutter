@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include "gc.h"
 #include "minunit.h"
 
 #include "test_array.c"
@@ -24,16 +25,29 @@ int tests_run = 0;
 
 static char* test_suite()
 {
+    int bos;
+    gc_start(&gc, &bos, 0.0, 0.0, 0.6);
+    printf("---=[ AST tests\n");
     mu_run_test(test_ast);
+    printf("---=[ Lexer tests\n");
     mu_run_test(test_lexer);
+    printf("---=[ DJB2 tests\n");
     mu_run_test(test_djb2);
+    printf("---=[ Map tests\n");
     mu_run_test(test_map);
+    printf("---=[ Primes tests\n");
     mu_run_test(test_primes);
+    printf("---=[ Environment tests\n");
     mu_run_test(test_env);
+    printf("---=[ Array tests\n");
     mu_run_test(test_array);
+    printf("---=[ List tests\n");
     mu_run_test(test_list);
+    printf("---=[ IR tests\n");
     mu_run_test(test_ir);
+    printf("---=[ GC tests\n");
     mu_run_test(test_gc);
+    gc_stop(&gc);
     return 0;
 }
 

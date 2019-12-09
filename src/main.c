@@ -17,6 +17,7 @@
 #include "core.h"
 #include "env.h"
 #include "eval.h"
+#include "gc.h"
 #include "ir.h"
 #include "list.h"
 #include "log.h"
@@ -46,8 +47,11 @@ Value* read_(char* input) {
 
 int main(int argc, char* argv[])
 {
+    int bos;
     printf("Stutter version %s\n\n", __STUTTER_VERSION__);
 
+    // set up garbage collection
+    gc_start(&gc, &bos, 0.0, 0.0, 0.6);
     // create env
     Environment* env = env_new(NULL);
     Value* sum = value_new_fn(core_sum);
@@ -72,7 +76,7 @@ int main(int argc, char* argv[])
         free(input);
     }
     env_delete(env);
-    free(sum);
+    gc_stop(&gc);
     return 0;
 }
 

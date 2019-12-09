@@ -27,12 +27,12 @@ static char* test_gc()
 {
     int bos;
     printf("GC tests\n");
-    GarbageCollector gc;
-    gc_start(&gc, &bos, 0.0, 0.0, 0.6);
-    int *ints = gc_malloc(&gc, sizeof(int) * 5);
+    GarbageCollector gc_;  // do not use the global GC for testing
+    gc_start(&gc_, &bos, 0.0, 0.0, 0.6);
+    int *ints = gc_malloc(&gc_, sizeof(int) * 5);
     ints[5] = 100;
-    use_some_mem(&gc);
-    gc_run(&gc);
-    gc_stop(&gc);
+    use_some_mem(&gc_);
+    gc_run(&gc_);
+    gc_stop(&gc_);
     return NULL;
 }

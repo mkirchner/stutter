@@ -23,6 +23,8 @@ typedef struct GarbageCollector {
     void *bos;           // bottom of stack
 } GarbageCollector;
 
+extern GarbageCollector gc;
+
 void gc_start(GarbageCollector* gc, void* bos, double downsize_load_factor,
               double upsize_load_factor, double sweep_load_factor);
 void gc_stop(GarbageCollector* gc);
@@ -36,5 +38,6 @@ void* gc_calloc(GarbageCollector* gc, size_t count, size_t size);
 void* gc_calloc_opts(GarbageCollector* gc, size_t count, size_t size, void (*dtor)(void*));
 void* gc_realloc(GarbageCollector* gc, void* ptr, size_t size);
 void gc_free(GarbageCollector* gc, void* ptr);
+char* gc_strdup (GarbageCollector* gc, const char* s);
 
 #endif /* !__GC_H__ */
