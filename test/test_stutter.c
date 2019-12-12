@@ -26,7 +26,7 @@ int tests_run = 0;
 static char* test_suite()
 {
     int bos;
-    gc_start(&gc, &bos, 0.0, 0.0, 0.6);
+    gc_start(&gc, &bos);
     printf("---=[ AST tests\n");
     mu_run_test(test_ast);
     printf("---=[ Lexer tests\n");

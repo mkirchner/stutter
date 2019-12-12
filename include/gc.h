@@ -3,6 +3,8 @@
  * Copyright (C) 2019 Marc Kirchner
  *
  * Distributed under terms of the MIT license.
+ *
+ * A simple mark and sweep garbage collector for C.
  */
 
 #ifndef __GC_H__
@@ -16,28 +18,38 @@ struct AllocationMap;
 
 typedef struct GarbageCollector {
     struct AllocationMap* allocs; // allocation map
-    bool paused;         // switch gc on/off
-    double downsize_load_limit;
-    double upsize_load_limit;
-    double sweep_load_limit;  // limit for starting a sweep
-    void *bos;           // bottom of stack
+    bool paused;                  // (temporarily) switch gc on/off
+    void *bos;                    // bottom of stack
+    size_t min_size;
 } GarbageCollector;
 
-extern GarbageCollector gc;
+extern GarbageCollector gc;  // Global garbage collector for all
+                             // single-threaded applications
 
-void gc_start(GarbageCollector* gc, void* bos, double downsize_load_factor,
-              double upsize_load_factor, double sweep_load_factor);
+/*
+ * Starting, stopping, pausing, resuming and running the GC.
+ */
+void gc_start(GarbageCollector* gc, void* bos);
+void gc_start_ext(GarbageCollector* gc, void* bos, size_t initial_size, size_t min_size,
+                  double downsize_load_factor, double upsize_load_factor, double sweep_factor);
 void gc_stop(GarbageCollector* gc);
 void gc_pause(GarbageCollector* gc);
 void gc_resume(GarbageCollector* gc);
 size_t gc_run(GarbageCollector* gc);
 
+/*
+ * Allocating and deallocating memory.
+ */
 void* gc_malloc(GarbageCollector* gc, size_t size);
-void* gc_malloc_opts(GarbageCollector* gc, size_t size, void (*dtor)(void*));
+void* gc_malloc_ext(GarbageCollector* gc, size_t size, void (*dtor)(void*));
 void* gc_calloc(GarbageCollector* gc, size_t count, size_t size);
-void* gc_calloc_opts(GarbageCollector* gc, size_t count, size_t size, void (*dtor)(void*));
+void* gc_calloc_ext(GarbageCollector* gc, size_t count, size_t size, void (*dtor)(void*));
 void* gc_realloc(GarbageCollector* gc, void* ptr, size_t size);
 void gc_free(GarbageCollector* gc, void* ptr);
+
+/*
+ * Helper functions and stdlib replacements.
+ */
 char* gc_strdup (GarbageCollector* gc, const char* s);
 
 #endif /* !__GC_H__ */

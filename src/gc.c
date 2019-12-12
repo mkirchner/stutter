@@ -1,9 +1,11 @@
 /*
  * gc.c
-* Copyright (C) 2019 Marc Kirchner
-*
-* Distributed under terms of the MIT license.
-*/
+ * Copyright (C) 2019 Marc Kirchner
+ *
+ * Distributed under terms of the MIT license.
+ *
+ * Implements a simple mark & sweep garbage collector.
+ */
 
 #include "gc.h"
 #include "log.h"
@@ -19,8 +21,8 @@
  * Set log level for this compilation unit. If set to LOGLEVEL_DEBUG,
  * the garbage collector will be very chatty.
  */
-#undef LOGLEVEL
-#define LOGLEVEL LOGLEVEL_INFO
+/* #undef LOGLEVEL */
+/* #define LOGLEVEL LOGLEVEL_INFO */
 
 /*
  * Store allocations in a hash map with the pointer address
@@ -41,9 +43,12 @@ typedef struct Allocation {
 
 typedef struct AllocationMap {
     size_t capacity;
+    size_t min_capacity;
+    double downsize_factor;
+    double upsize_factor;
+    double sweep_factor;
+    size_t sweep_limit;
     size_t size;
-    double downsize_limit;
-    double upsize_limit;
     Allocation** allocs;
 } AllocationMap;
 
@@ -70,15 +75,22 @@ static void gc_allocation_delete(Allocation* a)
     free(a);
 }
 
-static AllocationMap* gc_allocation_map_new(size_t capacity, double downsize_limit,
-        double upsize_limit)
+static AllocationMap* gc_allocation_map_new(size_t min_capacity,
+                                            size_t capacity,
+                                            double sweep_factor,
+                                            double downsize_factor,
+                                            double upsize_factor)
 {
     AllocationMap* am = (AllocationMap*) malloc(sizeof(AllocationMap));
+    am->min_capacity = next_prime(min_capacity);
     am->capacity = next_prime(capacity);
-    am->size = 0;
-    am->downsize_limit = downsize_limit;
-    am->upsize_limit = upsize_limit;
+    if (am->capacity < am->min_capacity) am->min_capacity = am->capacity;
+    am->sweep_factor = sweep_factor;
+    am->sweep_limit = sweep_factor * am->capacity;
+    am->downsize_factor = downsize_factor;
+    am->upsize_factor = upsize_factor;
     am->allocs = (Allocation**) calloc(am->capacity, sizeof(Allocation*));
+    am->size = 0;
     LOG_DEBUG("Created allocation map (cap=%ld, siz=%ld)", am->capacity, am->size);
     return am;
 }
@@ -111,6 +123,9 @@ static size_t gc_hash(void *ptr)
 
 static void gc_allocation_map_resize(AllocationMap* am, size_t new_capacity)
 {
+    if (new_capacity <= am->min_capacity) {
+        return;
+    }
     // Replaces the existing items array in the hash table
     // with a resized one and pushes items into the new, correct buckets
     LOG_DEBUG("Resizing allocation map (cap=%ld, siz=%ld) -> (cap=%ld)",
@@ -130,6 +145,7 @@ static void gc_allocation_map_resize(AllocationMap* am, size_t new_capacity)
     free(am->allocs);
     am->capacity = new_capacity;
     am->allocs = resized_allocs;
+    am->sweep_limit = am->size + am->sweep_factor * (am->capacity - am->size);
 }
 
 
@@ -159,6 +175,7 @@ static Allocation* gc_allocation_map_put(AllocationMap* am, void* ptr,
             gc_allocation_delete(cur);
             LOG_DEBUG("Successful UPDATE for allocation ix=%ld", index);
             return alloc;
+
         }
         prev = cur;
         cur = cur->next;
@@ -170,8 +187,8 @@ static Allocation* gc_allocation_map_put(AllocationMap* am, void* ptr,
     am->size++;
     LOG_DEBUG("Successful PUT for allocation ix=%ld", index);
     double load_factor = gc_allocation_map_load_factor(am);
-    if (load_factor > am->upsize_limit) {
-        LOG_DEBUG("Load factor %0.3g > %0.3g. Triggering resize.", load_factor, am->upsize_limit);
+    if (load_factor > am->upsize_factor) {
+        LOG_DEBUG("Load factor %0.3g > %0.3g. Triggering upsize.", load_factor, am->upsize_factor);
         gc_allocation_map_resize(am, next_prime(am->capacity * 2));
     }
     return alloc;
@@ -214,63 +231,85 @@ static void gc_allocation_map_remove(AllocationMap* am, void* ptr)
         cur = cur->next;
     }
     double load_factor = gc_allocation_map_load_factor(am);
-    if (load_factor < am->downsize_limit) {
-        LOG_DEBUG("Load factor %0.3g < %0.3g. Triggering resize.", load_factor, am->downsize_limit);
+    if (load_factor < am->downsize_factor) {
+        LOG_DEBUG("Load factor %0.3g < %0.3g. Triggering downsize.", load_factor, am->downsize_factor);
         gc_allocation_map_resize(am, next_prime(am->capacity / 2));
     }
 }
 
-void* gc_malloc(GarbageCollector* gc, size_t size)
+
+static void* gc_mcalloc(size_t count, size_t size)
 {
-    return gc_malloc_opts(gc, size, NULL);
+    if (!count) return malloc(size);
+    return calloc(count, size);
 }
 
-void* gc_malloc_opts(GarbageCollector* gc, size_t size, void(*dtor)(void*))
+
+static void* gc_allocate(GarbageCollector* gc, size_t count, size_t size, void(*dtor)(void*))
 {
-    void* ptr = malloc(size);
+    /* Allocation logic that generalizes over malloc/calloc. */
+
+    /* Attempt to allocate memory */
+    void* ptr = gc_mcalloc(count, size);
+    /* If allocation fails, attempt to free some memory and try again. */
+    if (!ptr && (errno == EAGAIN || errno == ENOMEM)) {
+        gc_run(gc);
+        ptr = gc_mcalloc(count, size);
+    }
+    /* Start managing the memory we received from the system */
     if (ptr) {
         LOG_DEBUG("Allocated %zu bytes at %p", size, (void*) ptr);
         Allocation* alloc = gc_allocation_map_put(gc->allocs, ptr, size, dtor);
-        LOG_DEBUG("Returning %zu managed bytes at %p", size, (void*) alloc->ptr);
+        /* Deal with metadata allocation failure */
         if (alloc) {
-            return alloc->ptr;
-        }
-    }
-    if (!ptr || gc_allocation_map_load_factor(gc->allocs) > gc->sweep_load_limit) {
-        size_t freed_mem = gc_run(gc);
-        if (freed_mem > 0) {
-            ptr = malloc(size);
+            LOG_DEBUG("Managing %zu bytes at %p", size, (void*) alloc->ptr);
+            if (gc->allocs->size > gc->allocs->sweep_limit) {
+                size_t freed_mem = gc_run(gc);
+                LOG_DEBUG("Garbage collection cleaned up %lu bytes.", freed_mem);
+            }
+            ptr = alloc->ptr;
+        } else {
+            /* We failed to allocate the metadata, give it another try or at least
+             * attempt to fail cleanly. */
+            gc_run(gc);
+            alloc = gc_allocation_map_put(gc->allocs, ptr, size, dtor);
+            if (alloc) {
+                ptr = alloc->ptr;
+            } else {
+                free(ptr);
+                ptr = NULL;
+            }
         }
     }
     return ptr;
 }
+void* gc_malloc(GarbageCollector* gc, size_t size)
+{
+    return gc_malloc_ext(gc, size, NULL);
+}
+
+
+void* gc_malloc_ext(GarbageCollector* gc, size_t size, void(*dtor)(void*))
+{
+    return gc_allocate(gc, 0, size, dtor);
+}
+
 
 void* gc_calloc(GarbageCollector* gc, size_t count, size_t size)
 {
-    return gc_calloc_opts(gc, count, size, NULL);
+    return gc_calloc_ext(gc, count, size, NULL);
 }
 
-void* gc_calloc_opts(GarbageCollector* gc, size_t count, size_t size,
-                     void(*dtor)(void*))
+
+void* gc_calloc_ext(GarbageCollector* gc, size_t count, size_t size,
+                    void(*dtor)(void*))
 {
-    void* ptr = calloc(count, size);
-    if (ptr) {
-        Allocation* alloc = gc_allocation_map_put(gc->allocs, ptr, size, dtor);
-        if (alloc) {
-            return alloc->ptr;
-        }
-    } else {
-        size_t freed_mem = gc_run(gc);
-        if (freed_mem > 0) {
-            ptr = calloc(count, size);
-        }
-    }
-    return ptr;
+    return gc_allocate(gc, count, size, dtor);
 }
+
 
 void* gc_realloc(GarbageCollector* gc, void* p, size_t size)
 {
-    // FIXME: this assumes that the gc_allocation_map_* calls cannot fail
     Allocation* alloc = gc_allocation_map_get(gc->allocs, p);
     if (p && !alloc) {
         // the user passed an unknown pointer
@@ -312,23 +351,34 @@ void gc_free(GarbageCollector* gc, void* ptr)
     }
 }
 
-void gc_start(GarbageCollector* gc, void* bos,
-              double downsize_load_factor, double upsize_load_factor,
-              double sweep_load_factor)
+void gc_start(GarbageCollector* gc, void* bos)
 {
+    gc_start_ext(gc, bos, 1024, 1024, 0.2, 0.8, 0.5);
+}
+
+void gc_start_ext(GarbageCollector* gc,
+                  void* bos,
+                  size_t initial_capacity,
+                  size_t min_capacity,
+                  double downsize_load_factor,
+                  double upsize_load_factor,
+                  double sweep_factor)
+{
+    double downsize_limit = downsize_load_factor > 0.0 ? downsize_load_factor : 0.2;
+    double upsize_limit = upsize_load_factor > 0.0 ? upsize_load_factor : 0.8;
+    sweep_factor = sweep_factor > 0.0 ? sweep_factor : 0.5;
     gc->paused = false;
-    gc->downsize_load_limit = downsize_load_factor > 0.0 ? downsize_load_factor : 0.2;
-    gc->upsize_load_limit = upsize_load_factor > 0.0 ? upsize_load_factor : 0.8;
-    gc->sweep_load_limit = sweep_load_factor > 0.0 ? sweep_load_factor : 0.7;
     gc->bos = bos;
-    gc->allocs = gc_allocation_map_new(1024, gc->downsize_load_limit, gc->upsize_load_limit);
+    initial_capacity = initial_capacity < min_capacity ? min_capacity : initial_capacity;
+    gc->allocs = gc_allocation_map_new(min_capacity, initial_capacity,
+                                       sweep_factor, downsize_limit, upsize_limit);
     LOG_DEBUG("Created new garbage collector (cap=%ld, siz=%ld).", gc->allocs->capacity,
               gc->allocs->size);
 }
 
 void gc_stop(GarbageCollector* gc)
 {
-    // FIXME
+    gc_run(gc);
     gc_allocation_map_delete(gc->allocs);
     return;
 }
@@ -371,11 +421,11 @@ void gc_mark_stack(GarbageCollector* gc)
 void gc_mark_heap(GarbageCollector* gc)
 {
     LOG_DEBUG("Marking the heap (gc@%p, cap=%ld)", (void*) gc, gc->allocs->capacity);
-    // go through all allocated chunks and see if any of them contain
-    // a pointer to another chunk
+    /* Go through all allocated chunks and see if any of them contain */
+    /* a pointer to another chunk */
     for (size_t i = 0; i < gc->allocs->capacity; ++i) {
         Allocation* chunk = gc->allocs->allocs[i];
-        // iterate over open addressing
+        /* Iterate over open addressing */
         while (chunk) {
             LOG_DEBUG("i=%ld, chunk=%p", i, (void*) chunk);
             LOG_DEBUG("Checking contents of allocation: %p=(ptr=%p, siz=%ld, tag=%c)",
@@ -392,13 +442,11 @@ void gc_mark_heap(GarbageCollector* gc)
 
 void gc_mark(GarbageCollector* gc)
 {
-    // FIXME: also scan BSS ?
-
+    /* Note: We only look at the stack and the heap, and ignore BSS. */
     LOG_DEBUG("Initiating GC mark (gc@%p)", (void*) gc);
-    // scan the heap
+    /* Scan the heap */
     gc_mark_heap(gc);
-
-    // dump registers onto stack and scan the stack
+    /* Dump registers onto stack and scan the stack */
     void (*volatile _mark_stack)(GarbageCollector*) = gc_mark_stack;
     jmp_buf ctx;
     memset(&ctx, 0, sizeof(jmp_buf));
@@ -412,18 +460,18 @@ size_t gc_sweep(GarbageCollector* gc)
     size_t total = 0;
     for (size_t i = 0; i < gc->allocs->capacity; ++i) {
         Allocation* chunk = gc->allocs->allocs[i];
-        // iterate over open addressing
+        /* Iterate over open addressing */
         while (chunk) {
             if (chunk->tag == GC_TAG_MARK) {
                 LOG_DEBUG("Found used allocation %p (ptr=%p)", (void*) chunk, (void*) chunk->ptr);
-                // unmark
+                /* unmark */
                 chunk->tag = GC_TAG_NONE;
             } else {
                 LOG_DEBUG("Found unused allocation %p (ptr=%p)", (void*) chunk, (void*) chunk->ptr);
-                // no reference to this chunk, hence delete it
+                /* no reference to this chunk, hence delete it */
                 total += chunk->size;
                 free(chunk->ptr);
-                // and remove it from the bookkeeping
+                /* and remove it from the bookkeeping */
                 gc_allocation_map_remove(gc->allocs, chunk->ptr);
             }
             chunk = chunk->next;
