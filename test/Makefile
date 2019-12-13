@@ -1,6 +1,6 @@
 CC=clang
-CFLAGS=-g -Wall -Wextra -pedantic -I../include
-LDFLAGS=-g -L../build/src
+CFLAGS=-g -Wall -Wextra -pedantic -I../include -fprofile-arcs -ftest-coverage
+LDFLAGS=-g -L../build/src --coverage
 LDLIBS=-ledit
 RM=rm
 BUILD_DIR=../build/test
@@ -12,6 +12,8 @@ $(BUILD_DIR)/%.o: %.c
 	mkdir -p $(@D)
 	$(CC) $(CFLAGS) -MMD -c $< -o $@
 
+# note: ../src/gc.c is directly included in test_gc.c in order to gain
+#       access to static functions
 SRCS=test_stutter.c \
     ../src/array.c \
     ../src/ast.c \
@@ -19,7 +21,6 @@ SRCS=test_stutter.c \
     ../src/djb2.c \
     ../src/env.c \
     ../src/eval.c \
-    ../src/gc.c \
     ../src/ir.c \
     ../src/lexer.c \
     ../src/list.c \

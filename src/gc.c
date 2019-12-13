@@ -34,7 +34,7 @@
 
 
 typedef struct Allocation {
-    void* ptr;                // mem pointer (tagged for mark&sweep)
+    void* ptr;                // mem pointer
     size_t size;              // allocated size in bytes
     char tag;
     void (*dtor)(void*);      // destructor
@@ -54,11 +54,6 @@ typedef struct AllocationMap {
 
 GarbageCollector gc; // global GC object
 
-static double gc_allocation_map_load_factor(AllocationMap* am)
-{
-    return (double) am->size / (double) am->capacity;
-}
-
 static Allocation* gc_allocation_new(void* ptr, size_t size, void (*dtor)(void*))
 {
     Allocation* a = (Allocation*) malloc(sizeof(Allocation));
@@ -75,6 +70,11 @@ static void gc_allocation_delete(Allocation* a)
     free(a);
 }
 
+static double gc_allocation_map_load_factor(AllocationMap* am)
+{
+    return (double) am->size / (double) am->capacity;
+}
+
 static AllocationMap* gc_allocation_map_new(size_t min_capacity,
                                             size_t capacity,
                                             double sweep_factor,
@@ -84,9 +84,9 @@ static AllocationMap* gc_allocation_map_new(size_t min_capacity,
     AllocationMap* am = (AllocationMap*) malloc(sizeof(AllocationMap));
     am->min_capacity = next_prime(min_capacity);
     am->capacity = next_prime(capacity);
-    if (am->capacity < am->min_capacity) am->min_capacity = am->capacity;
+    if (am->capacity < am->min_capacity) am->capacity = am->min_capacity;
     am->sweep_factor = sweep_factor;
-    am->sweep_limit = sweep_factor * am->capacity;
+    am->sweep_limit = (int) (sweep_factor * am->capacity);
     am->downsize_factor = downsize_factor;
     am->upsize_factor = upsize_factor;
     am->allocs = (Allocation**) calloc(am->capacity, sizeof(Allocation*));
@@ -149,18 +149,17 @@ static void gc_allocation_map_resize(AllocationMap* am, size_t new_capacity)
 }
 
 
-static Allocation* gc_allocation_map_put(AllocationMap* am, void* ptr,
-        size_t size, void (*dtor)(void*))
+static Allocation* gc_allocation_map_put(AllocationMap* am,
+                                         void* ptr,
+                                         size_t size,
+                                         void (*dtor)(void*))
 {
-    // hash
-    fflush(stdout);
     size_t index = gc_hash(ptr) % am->capacity;
     LOG_DEBUG("PUT request for allocation ix=%ld", index);
-    // create item
     Allocation* alloc = gc_allocation_new(ptr, size, dtor);
     Allocation* cur = am->allocs[index];
-    // update if exists
     Allocation* prev = NULL;
+    /* Upsert if ptr is already known (e.g. dtor update). */
     while(cur != NULL) {
         if (cur->ptr == ptr) {
             // found it
@@ -173,19 +172,20 @@ static Allocation* gc_allocation_map_put(AllocationMap* am, void* ptr,
                 prev->next = alloc;
             }
             gc_allocation_delete(cur);
-            LOG_DEBUG("Successful UPDATE for allocation ix=%ld", index);
+            LOG_DEBUG("AllocationMap Upsert at ix=%ld", index);
             return alloc;
 
         }
         prev = cur;
         cur = cur->next;
     }
-    // insert (at front of list)
+    /* Insert at the front of the separate chaining list */
     cur = am->allocs[index];
     alloc->next = cur;
     am->allocs[index] = alloc;
     am->size++;
-    LOG_DEBUG("Successful PUT for allocation ix=%ld", index);
+    LOG_DEBUG("AllocationMap insert at ix=%ld", index);
+    /* Test if we need to increase the size of the allocation map */
     double load_factor = gc_allocation_map_load_factor(am);
     if (load_factor > am->upsize_factor) {
         LOG_DEBUG("Load factor %0.3g > %0.3g. Triggering upsize.", load_factor, am->upsize_factor);
@@ -193,6 +193,7 @@ static Allocation* gc_allocation_map_put(AllocationMap* am, void* ptr,
     }
     return alloc;
 }
+
 
 static Allocation* gc_allocation_map_get(AllocationMap* am, void* ptr)
 {
@@ -205,6 +206,7 @@ static Allocation* gc_allocation_map_get(AllocationMap* am, void* ptr)
     }
     return NULL;
 }
+
 
 static void gc_allocation_map_remove(AllocationMap* am, void* ptr)
 {
@@ -398,7 +400,7 @@ void gc_mark_alloc(GarbageCollector* gc, void* ptr)
     Allocation* alloc = gc_allocation_map_get(gc->allocs, ptr);
     if (alloc) {
         LOG_DEBUG("Marking allocation (ptr=%p)", ptr);
-        alloc->tag = GC_TAG_MARK;  // FIXME: do we really need this?
+        alloc->tag = GC_TAG_MARK;
     }
 }
 
@@ -425,7 +427,7 @@ void gc_mark_heap(GarbageCollector* gc)
     /* a pointer to another chunk */
     for (size_t i = 0; i < gc->allocs->capacity; ++i) {
         Allocation* chunk = gc->allocs->allocs[i];
-        /* Iterate over open addressing */
+        /* Iterate over separate chaining */
         while (chunk) {
             LOG_DEBUG("i=%ld, chunk=%p", i, (void*) chunk);
             LOG_DEBUG("Checking contents of allocation: %p=(ptr=%p, siz=%ld, tag=%c)",
@@ -460,7 +462,7 @@ size_t gc_sweep(GarbageCollector* gc)
     size_t total = 0;
     for (size_t i = 0; i < gc->allocs->capacity; ++i) {
         Allocation* chunk = gc->allocs->allocs[i];
-        /* Iterate over open addressing */
+        /* Iterate over separate chaining */
         while (chunk) {
             if (chunk->tag == GC_TAG_MARK) {
                 LOG_DEBUG("Found used allocation %p (ptr=%p)", (void*) chunk, (void*) chunk->ptr);
@@ -470,6 +472,9 @@ size_t gc_sweep(GarbageCollector* gc)
                 LOG_DEBUG("Found unused allocation %p (ptr=%p)", (void*) chunk, (void*) chunk->ptr);
                 /* no reference to this chunk, hence delete it */
                 total += chunk->size;
+                if (chunk->dtor) {
+                    chunk->dtor(chunk->ptr);
+                }
                 free(chunk->ptr);
                 /* and remove it from the bookkeeping */
                 gc_allocation_map_remove(gc->allocs, chunk->ptr);
