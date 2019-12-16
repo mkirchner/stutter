@@ -6,6 +6,7 @@
  */
 
 #include "list.h"
+#include "gc.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -20,7 +21,7 @@ typedef struct ListItem {
 List* list_new()
 {
     // doubly-linked list
-    List* list = (List*) malloc(sizeof(List));
+    List* list = (List*) gc_malloc(&gc, sizeof(List));
     list->begin = list->end = NULL;
     list->size = 0;
     return list;
@@ -32,19 +33,19 @@ void list_delete(List* l)
         ListItem* i = l->begin;
         ListItem* j;
         while(i != l->end) {
-            free(i->p); // free the payload
+            gc_free(&gc, i->p); // free the payload
             j = i->next; // save the ptr to next
-            free(i); // free current
+            gc_free(&gc, i); // free current
             i = j; // move on
         }
     }
-    free(l);
+    gc_free(&gc, l);
 }
 
 static ListItem* list_new_item(void* value, size_t size)
 {
-    ListItem* item = (ListItem*) malloc(sizeof(ListItem));
-    item->p = (char *) malloc(size);
+    ListItem* item = (ListItem*) gc_malloc(&gc, sizeof(ListItem));
+    item->p = (char *) gc_malloc(&gc, size);
     memcpy(item->p, value, size);
     return item;
 }
@@ -90,7 +91,7 @@ void* list_head(List* l)
 
 static ListItem* list_copy_item(ListItem* item)
 {
-    ListItem* copy = (ListItem*) malloc(sizeof(ListItem));
+    ListItem* copy = (ListItem*) gc_malloc(&gc, sizeof(ListItem));
     memcpy(copy, item, sizeof(ListItem));
     return copy;
 }
@@ -98,7 +99,7 @@ static ListItem* list_copy_item(ListItem* item)
 List* list_tail(List* l)
 {
     // flat copy
-    List* tail = (List*) malloc(sizeof(List));
+    List* tail = (List*) gc_malloc(&gc, sizeof(List));
     if (l->size > 1) {
         tail->begin = l->begin->next;
         tail->end = l->end;

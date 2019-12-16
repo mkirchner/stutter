@@ -8,10 +8,12 @@
 #include "value.h"
 #include <string.h>
 #include "log.h"
+#include "gc.h"
+
 
 static Value* value_new(ValueType type)
 {
-    Value* v = (Value*) malloc(sizeof(Value));
+    Value* v = (Value*) gc_malloc(&gc, sizeof(Value));
     v->type = type;
     return v;
 }
@@ -46,14 +48,14 @@ Value* value_new_fn(Value* (fn)(Value*))
 Value* value_new_string(char* str)
 {
     Value* v = value_new(VALUE_STRING);
-    v->value.str = strdup(str);
+    v->value.str = gc_strdup(&gc, str);
     return v;
 }
 
 Value* value_new_symbol(char* str)
 {
     Value* v = value_new(VALUE_SYMBOL);
-    v->value.str = strdup(str);
+    v->value.str = gc_strdup(&gc, str);
     return v;
 }
 
@@ -74,7 +76,7 @@ void value_delete(Value* v)
         break;
     case VALUE_STRING:
     case VALUE_SYMBOL:
-        free(v->value.str);
+        gc_free(&gc, v->value.str);
         break;
     case VALUE_LIST:
         list_delete(v->value.list);
@@ -84,7 +86,7 @@ void value_delete(Value* v)
         LOG_WARNING("%s", "value_delete() for VALUE_FN not implemented");
         break;
     }
-    free(v);
+    gc_free(&gc, v);
 }
 
 void value_print(Value* v)

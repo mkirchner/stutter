@@ -34,12 +34,11 @@ test:
 
 .PHONY: clean
 clean:
-	$(RM) -f $(OBJS) $(DEPS)
-	$(RM) -f $(TEST_OBJS) $(TEST_DEPS)
+	$(RM) -f $(STUTTER_OBJS) $(STUTTER_DEPS)
 	$(MAKE) -C test clean
 
 distclean: clean
-	$(RM) -f $(BUILD_DIR)/$(BINARY)
-	$(RM) -f $(BUILD_DIR)/$(TEST_BINARY)
+	$(RM) -f $(BUILD_DIR)/$(STUTTER_BINARY)
+	$(RM) -f $(BUILD_DIR)/test/*gcd*
 	$(MAKE) -C test distclean
 

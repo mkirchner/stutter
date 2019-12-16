@@ -8,6 +8,7 @@
 #include "minunit.h"
 
 #include <string.h>
+#include "gc.h"
 #include "map.h"
 #include "log.h"
 
