@@ -25,7 +25,6 @@ int tests_run = 0;
 
 static char* test_suite()
 {
-    /*
     int bos;
     gc_start(&gc, &bos);
     printf("---=[ AST tests\n");
@@ -47,13 +46,12 @@ static char* test_suite()
     printf("---=[ IR tests\n");
     mu_run_test(test_ir);
     gc_stop(&gc);
-    */
     printf("---=[ GC tests\n");
     mu_run_test(test_gc_allocation_new_delete);
     mu_run_test(test_gc_allocation_map_new_delete);
     mu_run_test(test_gc_allocation_map_basic_get);
     mu_run_test(test_gc_allocation_map_put_get_remove);
-    mu_run_test(test_gc);
+    mu_run_test(test_gc_mark_stack);
     mu_run_test(test_gc_basic_alloc_free);
     return 0;
 }

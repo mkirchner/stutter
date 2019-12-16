@@ -29,8 +29,9 @@
  * as the key.
  */
 
-#define GC_TAG_NONE 0x00
-#define GC_TAG_MARK 0x01
+#define GC_TAG_NONE 0x0
+#define GC_TAG_ROOT 0x1
+#define GC_TAG_MARK 0x2
 
 
 typedef struct Allocation {
@@ -253,6 +254,7 @@ static void* gc_allocate(GarbageCollector* gc, size_t count, size_t size, void(*
 
     /* Attempt to allocate memory */
     void* ptr = gc_mcalloc(count, size);
+    size_t alloc_size = count ? count * size : size;
     /* If allocation fails, attempt to free some memory and try again. */
     if (!ptr && (errno == EAGAIN || errno == ENOMEM)) {
         gc_run(gc);
@@ -260,11 +262,11 @@ static void* gc_allocate(GarbageCollector* gc, size_t count, size_t size, void(*
     }
     /* Start managing the memory we received from the system */
     if (ptr) {
-        LOG_DEBUG("Allocated %zu bytes at %p", size, (void*) ptr);
-        Allocation* alloc = gc_allocation_map_put(gc->allocs, ptr, size, dtor);
+        LOG_DEBUG("Allocated %zu bytes at %p", alloc_size, (void*) ptr);
+        Allocation* alloc = gc_allocation_map_put(gc->allocs, ptr, alloc_size, dtor);
         /* Deal with metadata allocation failure */
         if (alloc) {
-            LOG_DEBUG("Managing %zu bytes at %p", size, (void*) alloc->ptr);
+            LOG_DEBUG("Managing %zu bytes at %p", alloc_size, (void*) alloc->ptr);
             if (gc->allocs->size > gc->allocs->sweep_limit) {
                 size_t freed_mem = gc_run(gc);
                 LOG_DEBUG("Garbage collection cleaned up %lu bytes.", freed_mem);
@@ -274,7 +276,7 @@ static void* gc_allocate(GarbageCollector* gc, size_t count, size_t size, void(*
             /* We failed to allocate the metadata, give it another try or at least
              * attempt to fail cleanly. */
             gc_run(gc);
-            alloc = gc_allocation_map_put(gc->allocs, ptr, size, dtor);
+            alloc = gc_allocation_map_put(gc->allocs, ptr, alloc_size, dtor);
             if (alloc) {
                 ptr = alloc->ptr;
             } else {
@@ -398,44 +400,48 @@ void gc_resume(GarbageCollector* gc)
 void gc_mark_alloc(GarbageCollector* gc, void* ptr)
 {
     Allocation* alloc = gc_allocation_map_get(gc->allocs, ptr);
-    if (alloc) {
+    /* Mark if alloc exists and is not tagged already, otherwise skip */
+    if (alloc && !(alloc->tag & GC_TAG_MARK)) {
         LOG_DEBUG("Marking allocation (ptr=%p)", ptr);
-        alloc->tag = GC_TAG_MARK;
+        alloc->tag |= GC_TAG_MARK;
+        /* Iterate over allocation contents and mark them as well */
+        LOG_DEBUG("Checking allocation (ptr=%p, size=%lu) contents", ptr, alloc->size);
+        for (char* p = (char*) alloc->ptr;
+                p < (char*) alloc->ptr + alloc->size;
+                ++p) {
+            LOG_DEBUG("Checking allocation (ptr=%p) @%lu with value %p",
+                       ptr, p-((char*) alloc->ptr), *(void**)p);
+            gc_mark_alloc(gc, *(void**)p);
+        }
     }
 }
 
 void gc_mark_stack(GarbageCollector* gc)
 {
-    LOG_DEBUG("Marking the stack (gc@%p) in increments of %ld", (void*) gc, sizeof(void*));
+    LOG_DEBUG("Marking the stack (gc@%p) in increments of %ld", (void*) gc, sizeof(char));
     char dummy;
-    void **tos = (void**) &dummy;
-    void **bos = gc->bos;
+    void *tos = (void*) &dummy;
+    void *bos = gc->bos;
     if (tos > bos) {
-        void** tmp = tos;
+        void* tmp = tos;
         tos = gc->bos;
         bos = tmp;
     }
-    for (void** p = tos; p < bos; ++p) {
-        gc_mark_alloc(gc, *p);
+    for (char* p = (char*) tos; p < (char*) bos; ++p) {
+        // LOG_DEBUG("Checking stack location %p with value %p", (void*) p, *(void**)p);
+        gc_mark_alloc(gc, *(void**)p);
     }
 }
 
-void gc_mark_heap(GarbageCollector* gc)
+void gc_mark_roots(GarbageCollector* gc)
 {
-    LOG_DEBUG("Marking the heap (gc@%p, cap=%ld)", (void*) gc, gc->allocs->capacity);
-    /* Go through all allocated chunks and see if any of them contain */
-    /* a pointer to another chunk */
+    LOG_DEBUG("Marking roots%s", "");
     for (size_t i = 0; i < gc->allocs->capacity; ++i) {
         Allocation* chunk = gc->allocs->allocs[i];
-        /* Iterate over separate chaining */
         while (chunk) {
-            LOG_DEBUG("i=%ld, chunk=%p", i, (void*) chunk);
-            LOG_DEBUG("Checking contents of allocation: %p=(ptr=%p, siz=%ld, tag=%c)",
-                      (void*) chunk, (void*) chunk->ptr, chunk->size, chunk->tag);
-            for (void** p = (void**) chunk->ptr;
-                    p < (void**) chunk->ptr + chunk->size;
-                    ++p) {
-                gc_mark_alloc(gc, *p);
+            if (chunk->tag & GC_TAG_ROOT) {
+                LOG_DEBUG("Marking root @ %p", chunk->ptr);
+                gc_mark_alloc(gc, chunk->ptr);
             }
             chunk = chunk->next;
         }
@@ -446,8 +452,8 @@ void gc_mark(GarbageCollector* gc)
 {
     /* Note: We only look at the stack and the heap, and ignore BSS. */
     LOG_DEBUG("Initiating GC mark (gc@%p)", (void*) gc);
-    /* Scan the heap */
-    gc_mark_heap(gc);
+    /* Scan the heap for roots */
+    gc_mark_roots(gc);
     /* Dump registers onto stack and scan the stack */
     void (*volatile _mark_stack)(GarbageCollector*) = gc_mark_stack;
     jmp_buf ctx;
@@ -464,13 +470,14 @@ size_t gc_sweep(GarbageCollector* gc)
         Allocation* chunk = gc->allocs->allocs[i];
         /* Iterate over separate chaining */
         while (chunk) {
-            if (chunk->tag == GC_TAG_MARK) {
+            if (chunk->tag & GC_TAG_MARK) {
                 LOG_DEBUG("Found used allocation %p (ptr=%p)", (void*) chunk, (void*) chunk->ptr);
                 /* unmark */
-                chunk->tag = GC_TAG_NONE;
+                chunk->tag &= ~GC_TAG_MARK;
             } else {
                 LOG_DEBUG("Found unused allocation %p (ptr=%p)", (void*) chunk, (void*) chunk->ptr);
                 /* no reference to this chunk, hence delete it */
+                //total += 1;
                 total += chunk->size;
                 if (chunk->dtor) {
                     chunk->dtor(chunk->ptr);

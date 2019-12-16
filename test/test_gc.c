@@ -158,63 +158,115 @@ static char* test_gc_allocation_map_put_get_remove()
     return NULL;
 }
 
+static char* test_gc_mark_stack()
+{
+
+    GarbageCollector gc_;
+    int bos;
+    gc_start_ext(&gc_, &bos, 32, 32, 0.0, 1.1, 1.1);
+    gc_pause(&gc_);
+
+    /* Part 1: Create an object on the heap, reference from the stack,
+     * and validate that it gets marked. */
+    int** five_ptr = gc_malloc(&gc_, 2*sizeof(int*));
+    gc_mark_stack(&gc_);
+    Allocation* a = gc_allocation_map_get(gc_.allocs, five_ptr);
+    mu_assert(a->tag & GC_TAG_MARK, "Heap allocation referenced from stack should be tagged");
+
+    /* manually reset the tags */
+    a->tag = GC_TAG_NONE;
+
+    /* Part 2: Add dependent allocations and check if these allocations
+     * get marked properly*/
+    five_ptr[0] = gc_malloc(&gc_, sizeof(int));
+    *five_ptr[0] = 5;
+    five_ptr[1] = gc_malloc(&gc_, sizeof(int));
+    *five_ptr[1] = 5;
+    gc_mark_stack(&gc_);
+    a = gc_allocation_map_get(gc_.allocs, five_ptr);
+    mu_assert(a->tag & GC_TAG_MARK, "Referenced heap allocation should be tagged");
+    for (size_t i=0; i<2; ++i) {
+        a = gc_allocation_map_get(gc_.allocs, five_ptr[i]);
+        mu_assert(a->tag & GC_TAG_MARK, "Dependent heap allocs should be tagged");
+    }
+
+    /* Clean up the tags manually */
+    a = gc_allocation_map_get(gc_.allocs, five_ptr);
+    a->tag = GC_TAG_NONE;
+    for (size_t i=0; i<2; ++i) {
+        a = gc_allocation_map_get(gc_.allocs, five_ptr[i]);
+        a->tag = GC_TAG_NONE;
+    }
+
+    /* Part3: Now delete the pointer to five_ptr[1] which should
+     * leave the allocation for five_ptr[1] unmarked. */
+    Allocation* unmarked_alloc = gc_allocation_map_get(gc_.allocs, five_ptr[1]);
+    five_ptr[1] = NULL;
+    gc_mark_stack(&gc_);
+    a = gc_allocation_map_get(gc_.allocs, five_ptr);
+    mu_assert(a->tag & GC_TAG_MARK, "Referenced heap allocation should be tagged");
+    a = gc_allocation_map_get(gc_.allocs, five_ptr[0]);
+    mu_assert(a->tag & GC_TAG_MARK, "Referenced alloc should be tagged");
+    mu_assert(unmarked_alloc->tag == GC_TAG_NONE, "Unreferenced alloc should not be tagged");
+    gc_stop(&gc_);
+    return NULL;
+}
+
+
 static char* test_gc_basic_alloc_free()
 {
     /* Create an array of pointers to an int. Then delete the pointer to
-     * the containing array and check if all the contained are garbage
+     * the containing array and check if all the contained allocs are garbage
      * collected.
      */
     GarbageCollector gc_;
     int bos;
-    gc_start_ext(&gc_, &bos, 32, 32, 0.2, 0.8, 0.5);
+    gc_start_ext(&gc_, &bos, 32, 32, 0.0, 1.1, 1.1);
+
     int** ints = gc_calloc(&gc_, 16, sizeof(int*));
+    Allocation* a = gc_allocation_map_get(gc_.allocs, ints);
+    mu_assert(a->size == 16*sizeof(int*), "Wrong allocation size");
+
     for (size_t i=0; i<16; ++i) {
         ints[i] = gc_malloc(&gc_, sizeof(int));
         *ints[i] = 42;
     }
-    for (size_t i=1; i<16; ++i) {
-        printf("dist: %lu\n", ints[i]-ints[i-1]);
-    }
     mu_assert(gc_.allocs->size == 17, "Wrong allocation map size");
-    /* size_t n = gc_run(&gc_); */
-    /* printf("Collected %lu bytes.", n); */
-    //mu_assert(n == 0, "Wrong number of collected allocations");
-    /* Manually delete the outer array */
-    gc_free(&gc_, ints);
-    mu_assert(gc_.allocs->size == 16, "Wrong allocation map size");
-    /* Now kick off garbage collection */
-    size_t n = gc_run(&gc_);
-    printf("Collected %lu bytes, sizeof(int)=%lu, sizeof(*int)=%lu.", n, sizeof(int), sizeof(int*));
-    mu_assert(n == 16 * sizeof(int), "Wrong number of collected allocations");
-    return NULL;
-}
 
-static char* test_gc()
-{
-    int bos;
-    GarbageCollector gc_;
-    gc_start_ext(&gc_, &bos, 4, 4, 0.2, 0.8, 0.5);
-    int *ints = gc_malloc(&gc_, sizeof(int) * 5);
-    ints[5] = 100;
-    use_some_mem(&gc_);
-    gc_run(&gc_);
-
-    int** many_ints = gc_malloc(&gc_, 32 * sizeof(int*));
-    use_some_serious_mem(&gc_, many_ints);
-    size_t n = gc_run(&gc_);
-    LOG_DEBUG("Collected %lu bytes", n);
-    for (size_t i=0; i<32; ++i) {
-        gc_free(&gc_, many_ints[i]);
+    /* Test that all managed allocations get tagged if the root is present */
+    gc_mark(&gc_);
+    for (size_t i=0; i<gc_.allocs->capacity; ++i) {
+        Allocation* chunk = gc_.allocs->allocs[i];
+        // LOG_INFO("chunk: %p", (void*) chunk);
+        while (chunk) {
+            // LOG_INFO("Allocation @ %p has tags %u", chunk, chunk->tag);
+            mu_assert(chunk->tag & GC_TAG_MARK, "Referenced allocs should be marked");
+            // reset for next test
+            chunk->tag = GC_TAG_NONE;
+            chunk = chunk->next;
+        }
     }
-    LOG_DEBUG("Retrying%s", "");
 
-    many_ints = gc_malloc(&gc_, 32 * sizeof(int*));
-    use_some_serious_mem(&gc_, many_ints);
-    many_ints = NULL;
-    n = gc_run(&gc_);
-    LOG_DEBUG("Collected %lu bytes", n);
+    /* Now drop the root allocation */
+    ints = NULL;
+    gc_mark(&gc_);
 
-    gc_stop(&gc_);
+    /* Check that none of the allocations get tagged */
+    size_t total = 0;
+    for (size_t i=0; i<gc_.allocs->capacity; ++i) {
+        Allocation* chunk = gc_.allocs->allocs[i];
+        LOG_INFO("chunk: %p", (void*) chunk);
+        while (chunk) {
+            // LOG_INFO("Allocation @ %p has tags %u", chunk, chunk->tag);
+            mu_assert(!(chunk->tag & GC_TAG_MARK), "Unreferenced allocs should not be marked");
+            total += chunk->size;
+            chunk = chunk->next;
+        }
+    }
+    mu_assert(total == 16 * sizeof(int) + 16 * sizeof(int*),
+              "Expected number of managed bytes is off");
 
+    size_t n = gc_sweep(&gc_);
+    mu_assert(n == total, "Wrong number of collected bytes");
     return NULL;
 }
