@@ -22,20 +22,6 @@ void dtor(void* ptr)
     ptr = (void*) sentinel;
 }
 
-void use_some_mem(GarbageCollector* gc)
-{
-    int *ints = gc_malloc(gc, sizeof(int) * 3);
-    ints[3] = 100;
-}
-
-void use_some_serious_mem(GarbageCollector* gc, int** ints)
-{
-    // request the memory, then immediately drop it
-    for (size_t i=0; i<32; ++i) {
-        ints[i] = gc_malloc(gc, sizeof(int));
-    }
-}
-
 
 static char* test_gc_allocation_new_delete()
 {
@@ -160,7 +146,6 @@ static char* test_gc_allocation_map_put_get_remove()
 
 static char* test_gc_mark_stack()
 {
-
     GarbageCollector gc_;
     int bos;
     gc_start_ext(&gc_, &bos, 32, 32, 0.0, 1.1, 1.1);
