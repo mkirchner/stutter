@@ -10,7 +10,6 @@
 #include "gc.h"
 #include "log.h"
 
-#include <assert.h>
 #include <errno.h>
 #include <setjmp.h>
 #include <stdlib.h>
@@ -21,17 +20,23 @@
  * Set log level for this compilation unit. If set to LOGLEVEL_DEBUG,
  * the garbage collector will be very chatty.
  */
-/* #undef LOGLEVEL */
-/* #define LOGLEVEL LOGLEVEL_INFO */
+#undef LOGLEVEL
+#define LOGLEVEL LOGLEVEL_INFO
+
+/*
+ * Allocations can temporarily be tagged as "marked" an part of the
+ * mark-and-sweep implementation or can be tagged as "roots" which are
+ * not automatically garbage collected. The latter allows the implementation
+ * of global variables.
+ */
+#define GC_TAG_NONE 0x0
+#define GC_TAG_ROOT 0x1
+#define GC_TAG_MARK 0x2
 
 /*
  * Store allocations in a hash map with the pointer address
  * as the key.
  */
-
-#define GC_TAG_NONE 0x0
-#define GC_TAG_ROOT 0x1
-#define GC_TAG_MARK 0x2
 
 
 typedef struct Allocation {
@@ -77,10 +82,10 @@ static double gc_allocation_map_load_factor(AllocationMap* am)
 }
 
 static AllocationMap* gc_allocation_map_new(size_t min_capacity,
-                                            size_t capacity,
-                                            double sweep_factor,
-                                            double downsize_factor,
-                                            double upsize_factor)
+        size_t capacity,
+        double sweep_factor,
+        double downsize_factor,
+        double upsize_factor)
 {
     AllocationMap* am = (AllocationMap*) malloc(sizeof(AllocationMap));
     am->min_capacity = next_prime(min_capacity);
@@ -151,9 +156,9 @@ static void gc_allocation_map_resize(AllocationMap* am, size_t new_capacity)
 
 
 static Allocation* gc_allocation_map_put(AllocationMap* am,
-                                         void* ptr,
-                                         size_t size,
-                                         void (*dtor)(void*))
+        void* ptr,
+        size_t size,
+        void (*dtor)(void*))
 {
     size_t index = gc_hash(ptr) % am->capacity;
     LOG_DEBUG("PUT request for allocation ix=%ld", index);
@@ -410,7 +415,7 @@ void gc_mark_alloc(GarbageCollector* gc, void* ptr)
                 p < (char*) alloc->ptr + alloc->size;
                 ++p) {
             LOG_DEBUG("Checking allocation (ptr=%p) @%lu with value %p",
-                       ptr, p-((char*) alloc->ptr), *(void**)p);
+                      ptr, p-((char*) alloc->ptr), *(void**)p);
             gc_mark_alloc(gc, *(void**)p);
         }
     }
