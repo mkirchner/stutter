@@ -44,4 +44,5 @@ clean:
 
 distclean: clean
 	$(RM) -f $(BUILD_DIR)/test_stutter
+	$(RM) -f $(BUILD_DIR)/test_stutter
 

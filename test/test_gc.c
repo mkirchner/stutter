@@ -222,7 +222,6 @@ static char* test_gc_basic_alloc_free()
     gc_mark(&gc_);
     for (size_t i=0; i<gc_.allocs->capacity; ++i) {
         Allocation* chunk = gc_.allocs->allocs[i];
-        // LOG_INFO("chunk: %p", (void*) chunk);
         while (chunk) {
             // LOG_INFO("Allocation @ %p has tags %u", chunk, chunk->tag);
             mu_assert(chunk->tag & GC_TAG_MARK, "Referenced allocs should be marked");
@@ -240,7 +239,6 @@ static char* test_gc_basic_alloc_free()
     size_t total = 0;
     for (size_t i=0; i<gc_.allocs->capacity; ++i) {
         Allocation* chunk = gc_.allocs->allocs[i];
-        LOG_INFO("chunk: %p", (void*) chunk);
         while (chunk) {
             // LOG_INFO("Allocation @ %p has tags %u", chunk, chunk->tag);
             mu_assert(!(chunk->tag & GC_TAG_MARK), "Unreferenced allocs should not be marked");

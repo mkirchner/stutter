@@ -39,5 +39,6 @@ clean:
 
 distclean: clean
 	$(RM) -f $(BUILD_DIR)/$(STUTTER_BINARY)
+	$(RM) -f $(BUILD_DIR)/test/*gcd*
 	$(MAKE) -C test distclean
 
