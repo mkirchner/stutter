@@ -3,8 +3,8 @@
 #
 
 CC=clang
-CFLAGS=-g -Wall -Wextra -pedantic -I./include
-LDFLAGS=-g -L./build/src
+CFLAGS=-g -Wall -Wextra -pedantic -Iinclude -fprofile-arcs -ftest-coverage
+LDFLAGS=-g -Lbuild/src --coverage
 LDLIBS=-ledit
 RM=rm
 BUILD_DIR=./build

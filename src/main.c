@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
     printf("Stutter version %s\n\n", __STUTTER_VERSION__);
 
     // set up garbage collection
-    gc_start(&gc, &bos, 0.0, 0.0, 0.6);
+    gc_start(&gc, &bos);
     // create env
     Environment* env = env_new(NULL);
     Value* sum = value_new_fn(core_sum);
