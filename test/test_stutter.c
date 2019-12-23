@@ -14,7 +14,6 @@
 #include "test_ast.c"
 #include "test_djb2.c"
 #include "test_env.c"
-#include "test_gc.c"
 #include "test_ir.c"
 #include "test_lexer.c"
 #include "test_list.c"
@@ -46,13 +45,6 @@ static char* test_suite()
     printf("---=[ IR tests\n");
     mu_run_test(test_ir);
     gc_stop(&gc);
-    printf("---=[ GC tests\n");
-    mu_run_test(test_gc_allocation_new_delete);
-    mu_run_test(test_gc_allocation_map_new_delete);
-    mu_run_test(test_gc_allocation_map_basic_get);
-    mu_run_test(test_gc_allocation_map_put_get_remove);
-    mu_run_test(test_gc_mark_stack);
-    mu_run_test(test_gc_basic_alloc_free);
     return 0;
 }
 
