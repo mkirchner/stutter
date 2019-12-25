@@ -1,0 +1,4 @@
+[submodule "lib/gc"]
+	path = lib/gc
+	url = git@github.com:mkirchner/gc.git
+	branch = master
