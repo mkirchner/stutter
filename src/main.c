@@ -54,14 +54,16 @@ int main(int argc, char* argv[])
     gc_start(&gc, &bos);
     // create env
     Environment* env = env_new(NULL);
-    Value* sum = value_new_fn(core_sum);
-    printf("Setup: ");
-    value_print(sum);
-    printf("\n");
-    env_set(env, "sum", sum); // FIXME
-    printf("Setup test: ");
-    value_print(env_get(env, "sum"));
-    printf("\n");
+    Value* fn_sum = value_new_fn(core_sum);
+    Value* fn_list = value_new_fn(core_list);
+    // printf("Setup: ");
+    // value_print(fn_sum);
+    // printf("\n");
+    env_set(env, "sum", fn_sum); // FIXME
+    env_set(env, "list", fn_list); // FIXME
+    //printf("Setup test: ");
+    //value_print(env_get(env, "sum"));
+    // printf("\n");
 
     while(1) {
         char* input = readline("stutter> ");

@@ -64,14 +64,12 @@ Value* eval(Value* expr, Environment* env)
             if (!evaluated_head) {
                 // eval failed
                 LOG_DEBUG("Eval %s", "failed");
-                return NULL; // FIXME: mem managment
+                return NULL;
             }
             list_append(evaluated_list, evaluated_head, sizeof(Value));
             list = list_tail(list);
-            // FIXME: we should delete head here
-            // value_print(evaluated_head); printf("\n");
         }
-        expr->value.list = evaluated_list; // FIXME: and delete the old list here
+        expr->value.list = evaluated_list;
         // ok, all elements have been evaluated, so let's apply
         return apply(expr, env);
     } else {
@@ -97,7 +95,7 @@ Value* apply(Value* expr, Environment* env)
     }
     // value_print(fn); printf("\n");
     Value* args = value_new_list();
-    args->value.list = list_tail(expr->value.list); // FIXME: mem management
+    args->value.list = list_tail(expr->value.list);
     return fn->value.fn(args);
 }
 

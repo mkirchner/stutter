@@ -10,6 +10,19 @@
 #include "log.h"
 #include "stdbool.h"
 
+Value* core_list(Value* args)
+{
+    List* list = args->value.list;
+    LOG_DEBUG("Initial list size: %ld", list_size(list));
+    Value* ret = value_new_list();
+    Value* head;
+    while ((head = list_head(list)) != NULL) {
+        list_append(ret->value.list, head, sizeof(Value));
+        list = list_tail(list);
+    }
+    return ret;
+}
+
 Value* core_sum(Value* args)
 {
     if (!args) { // FIXME:  || !_is_list(args)) {
