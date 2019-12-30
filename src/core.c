@@ -10,6 +10,13 @@
 #include "log.h"
 #include "stdbool.h"
 
+Value* core_list(Value* args)
+{
+    List* list = args->value.list;
+    LOG_DEBUG("Initial list size: %ld", list_size(list));
+    return value_new_list(args->value.list);
+}
+
 Value* core_sum(Value* args)
 {
     if (!args) { // FIXME:  || !_is_list(args)) {

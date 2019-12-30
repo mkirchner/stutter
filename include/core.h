@@ -12,5 +12,6 @@
 #include "env.h"
 
 Value* core_sum(Value* args);
+Value* core_list(Value* args);
 
 #endif /* !CORE_H */
