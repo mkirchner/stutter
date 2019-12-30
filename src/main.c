@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
     gc_start(&gc, &bos);
     // create env
     Environment* env = env_new(NULL);
-    Value* sum = value_new_fn(core_sum);
+    Value* sum = value_new_builtin_fn(core_sum);
     printf("Setup: ");
     value_print(sum);
     printf("\n");
@@ -69,9 +69,9 @@ int main(int argc, char* argv[])
             break;
         }
         add_history(input);
-        Value* eval_result = eval(read_(input), env);
+        Value* expr = read_(input);
+        Value* eval_result = eval(expr, env);
         value_print(eval_result);
-        value_delete(eval_result);
         printf("\n");
         free(input);
     }

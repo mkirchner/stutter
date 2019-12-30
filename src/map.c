@@ -110,9 +110,9 @@ void map_put(Map* ht, char* key, void* value, size_t siz)
 void* map_get(Map* ht, char* key)
 {
     unsigned long index = map_index(ht, key);
-    LOG_DEBUG("index: %lu", index);
+    // LOG_DEBUG("index: %lu", index);
     MapItem* cur = ht->items[index];
-    LOG_DEBUG("ptr: %p", (void *)cur);
+    // LOG_DEBUG("ptr: %p", (void *)cur);
     while(cur != NULL) {
         if (strcmp(cur->key, key) == 0) {
             return cur->value;
