@@ -13,87 +13,98 @@
 
 
 typedef struct ListItem {
-    char* p;
+    void* p;
     struct ListItem* prev;
     struct ListItem* next;
 } ListItem;
 
 List* list_new()
 {
-    // doubly-linked list
+    // doubly-linked list, managed memory
     List* list = (List*) gc_malloc(&gc, sizeof(List));
     list->begin = list->end = NULL;
     list->size = 0;
     return list;
 }
 
-void list_delete(List* l)
+static ListItem* list_item_new(void* value)
 {
-    if (l) {
-        ListItem* i = l->begin;
-        ListItem* j;
-        while(i != l->end) {
-            gc_free(&gc, i->p); // free the payload
-            j = i->next; // save the ptr to next
-            gc_free(&gc, i); // free current
-            i = j; // move on
-        }
-    }
-    gc_free(&gc, l);
-}
-
-static ListItem* list_new_item(void* value, size_t size)
-{
-    ListItem* item = (ListItem*) gc_malloc(&gc, sizeof(ListItem));
-    item->p = (char *) gc_malloc(&gc, size);
-    memcpy(item->p, value, size);
+    ListItem* item = (ListItem*) gc_calloc(&gc, 1, sizeof(ListItem));
+    item->p = value;
     return item;
 }
 
-void list_append(List* l, void* value, size_t size)
+static ListItem* list_item_copy(const ListItem* li)
 {
-    ListItem* item = list_new_item(value, size);
-    if (l->size > 0) {
-        l->end->next = item;
-        item->prev = l->end;
-        l->end = item;
-        item->next = NULL;
-        l->size++;
-    } else {
-        l->begin = l->end = item;
-        item->prev = NULL;
-        item->next = NULL;
-        l->size = 1;
-    }
+    ListItem* copy = (ListItem*) gc_calloc(&gc, 1, sizeof(ListItem));
+    memcpy(copy, li, sizeof(ListItem));
+    return copy;
 }
 
-void list_prepend(List* l, void* value, size_t size)
+List* list_copy(List* l)
 {
-    ListItem* item = list_new_item(value, size);
-    if (l->size > 0) {
-        item->next = l->begin;
-        l->begin->prev = item;
-        l->begin = item;
-        item->prev = NULL;
-        l->size++;
+    List* new_l = gc_calloc(&gc, 1, sizeof(List));
+    void* head = NULL;
+    ListItem* prev = NULL;
+    while ((head = list_head(l)) != NULL) {
+        ListItem* new_li = list_item_new(head);
+        new_li->prev = prev;
+        if (!prev) {
+            new_l->begin = new_li;
+            new_l->begin->prev = NULL;
+        } else {
+            new_li->prev->next = new_li;
+        }
+        new_l->size++;
+        l = list_tail(l);
+        prev = new_li;
+    }
+    new_l->end = prev;
+    if (new_l->end) new_l->end->next = NULL;
+    return new_l;
+}
+
+List* list_append(List* l, void* value)
+{
+    List* nl = list_copy(l);
+    ListItem* item = list_item_new(value);
+    if (nl->size > 0) {
+        nl->end->next = item;
+        item->prev = nl->end;
+        nl->end = item;
+        item->next = NULL;
+        nl->size++;
     } else {
-        l->begin = l->end = item;
+        nl->begin = nl->end = item;
         item->prev = NULL;
         item->next = NULL;
-        l->size = 1;
+        nl->size = 1;
     }
+    return nl;
+}
+
+List* list_prepend(List* l, void* value)
+{
+    List* nl = list_copy(l);
+    ListItem* item = list_item_new(value);
+    if (nl->size > 0) {
+        item->next = nl->begin;
+        nl->begin->prev = item;
+        nl->begin = item;
+        item->prev = NULL;
+        nl->size++;
+    } else {
+        nl->begin = nl->end = item;
+        item->prev = NULL;
+        item->next = NULL;
+        nl->size = 1;
+    }
+    return nl;
 }
 
 void* list_head(List* l)
 {
     return l->begin ? (void*) l->begin->p : NULL;
-}
-
-static ListItem* list_copy_item(ListItem* item)
-{
-    ListItem* copy = (ListItem*) gc_malloc(&gc, sizeof(ListItem));
-    memcpy(copy, item, sizeof(ListItem));
-    return copy;
 }
 
 List* list_tail(List* l)

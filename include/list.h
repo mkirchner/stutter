@@ -19,11 +19,11 @@ typedef struct List {
 } List;
 
 List* list_new();
-void list_delete(List* l);
+List* list_copy(List* l);
 void* list_head(List* l);
 List* list_tail(List* l);
-void list_append(List* l, void* value, size_t size);
-void list_prepend(List* l, void* value, size_t size);
+List* list_append(List* l, void* value);
+List* list_prepend(List* l, void* value);
 size_t list_size(List* l);
 
 #endif /* !__LIST_H__ */

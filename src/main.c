@@ -24,6 +24,14 @@
 #include "reader.h"
 #include "value.h"
 
+Environment* global_env()
+{
+    Environment* env = env_new(NULL);
+    env_set(env, "sum", value_new_builtin_fn(core_sum));
+    env_set(env, "list", value_new_builtin_fn(core_list));
+    return env;
+}
+
 Value* read_(char* input) {
     // Get a handle on the input
     size_t n = strlen(input);
@@ -37,7 +45,6 @@ Value* read_(char* input) {
     Reader* reader = reader_new(stream);
     AstSexpr* ast = reader_read(reader);
     reader_delete(reader);
-    // ast_print(ast);
 
     // Condense the AST
     Value* ast2 = ir_from_ast(ast);
@@ -47,37 +54,25 @@ Value* read_(char* input) {
 
 int main(int argc, char* argv[])
 {
-    int bos;
-    printf("Stutter version %s\n\n", __STUTTER_VERSION__);
+    fprintf(stderr, "Stutter version %s\n\n", __STUTTER_VERSION__);
 
     // set up garbage collection
-    gc_start(&gc, &bos);
+    gc_start(&gc, &argc);
     // create env
-    Environment* env = env_new(NULL);
-    Value* fn_sum = value_new_fn(core_sum);
-    Value* fn_list = value_new_fn(core_list);
-    // printf("Setup: ");
-    // value_print(fn_sum);
-    // printf("\n");
-    env_set(env, "sum", fn_sum); // FIXME
-    env_set(env, "list", fn_list); // FIXME
-    //printf("Setup test: ");
-    //value_print(env_get(env, "sum"));
-    // printf("\n");
+    Environment* env = global_env();
 
-    while(1) {
+    while(true) {
         char* input = readline("stutter> ");
         if (input == NULL) {
             break;
         }
         add_history(input);
-        Value* eval_result = eval(read_(input), env);
+        Value* expr = read_(input);
+        Value* eval_result = eval(expr, env);
         value_print(eval_result);
-        value_delete(eval_result);
-        printf("\n");
+        fprintf(stdout, "\n");
         free(input);
     }
-    env_delete(env);
     gc_stop(&gc);
     return 0;
 }

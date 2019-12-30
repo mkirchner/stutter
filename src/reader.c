@@ -12,6 +12,9 @@
 #include <string.h>
 #include "log.h"
 
+#undef LOGLEVEL
+#define LOGLEVEL LOGLEVEL_INFO
+
 Reader* reader_new(FILE* stream)
 {
     Lexer* lexer = lexer_new(stream);

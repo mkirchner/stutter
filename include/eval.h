@@ -12,6 +12,5 @@
 #include <value.h>
 
 Value* eval(Value* expr, Environment* env);
-Value* apply(Value* list, Environment* env); // ??
 
 #endif /* !EVAL_H */
