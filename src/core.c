@@ -22,7 +22,6 @@ Value* core_sum(Value* args)
     bool all_int = true;
     Value* head;
     List* list = args->value.list;
-    LOG_DEBUG("Initial list size: %ld", list_size(list));
     while ((head = list_head(list)) != NULL) {
         if (head->type == VALUE_FLOAT) {
             sum += head->value.float_;
@@ -37,10 +36,8 @@ Value* core_sum(Value* args)
     Value* ret;
     if (all_int) {
         ret = value_new_int((int) sum);
-        LOG_DEBUG("apply returning: %d\n", ret->value.int_);
     } else {
-        ret = value_new_float(sum); // FIXME: who frees this?
-        LOG_DEBUG("apply returning: %f\n", ret->value.float_);
+        ret = value_new_float(sum);
     }
     return ret;
 }

@@ -38,13 +38,12 @@ Value* ir_from_ast_atom(AstAtom* atom)
 
 Value* ir_from_ast_list(AstList* ast_list)
 {
-    Value* value = value_new_list();
     if (ast_list->type == LIST_EMPTY) {
-        return value;
+        return value_new_list(NULL);
     }
     Value* sexpr = ir_from_ast_sexpr(ast_list->ast.compound.sexpr);
     Value* list = ir_from_ast_list(ast_list->ast.compound.list);
-    list_prepend(list->value.list, sexpr, sizeof(Value));
+    list->value.list = list_prepend(list->value.list, sexpr);
     return list;
 }
 
@@ -62,11 +61,11 @@ Value* ir_from_ast_sexpr(AstSexpr* ast)
         result =  ir_from_ast_list(ast->ast.list);
         break;
     case SEXPR_QUOTE:
-        result = value_new_list();
+        result = value_new_list(NULL);
         sexpr = ir_from_ast_sexpr(ast->ast.quoted);
         quote = value_new_string("quote");
-        list_append(result->value.list, quote, sizeof(Value));
-        list_append(result->value.list, sexpr, sizeof(Value));
+        result->value.list = list_append(result->value.list, quote);
+        result->value.list = list_append(result->value.list, sexpr);
         break;
     }
     return result;

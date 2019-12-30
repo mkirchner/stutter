@@ -23,5 +23,6 @@ void env_delete(Environment* env);
 
 void env_set(Environment* env, char* symbol, struct Value* value);
 struct Value* env_get(Environment* env, char* symbol);
+bool env_contains(Environment* env, char* symbol);
 
 #endif /* !__ENV_H__ */

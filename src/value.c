@@ -38,10 +38,20 @@ Value* value_new_float(float float_)
     return v;
 }
 
-Value* value_new_fn(Value* (fn)(Value*))
+Value* value_new_builtin_fn(Value* (fn)(Value*))
+{
+    Value* v = value_new(VALUE_BUILTIN_FN);
+    v->value.builtin_fn = fn;
+    return v;
+}
+
+Value* value_new_fn(Value* args, Value* body, Environment* env)
 {
     Value* v = value_new(VALUE_FN);
-    v->value.fn = fn;
+    v->value.fn = gc_calloc(&gc, 1, sizeof(CompositeFunction));
+    v->value.fn->args = args;
+    v->value.fn->body = body;
+    v->value.fn->env = env;
     return v;
 }
 
@@ -59,34 +69,15 @@ Value* value_new_symbol(char* str)
     return v;
 }
 
-Value* value_new_list()
+Value* value_new_list(List* l)
 {
     Value* v = value_new(VALUE_LIST);
-    v->value.list = list_new();
-    return v;
-}
-
-void value_delete(Value* v)
-{
-    if (!v) return;
-    switch(v->type) {
-    case VALUE_NIL:
-    case VALUE_INT:
-    case VALUE_FLOAT:
-        break;
-    case VALUE_STRING:
-    case VALUE_SYMBOL:
-        gc_free(&gc, v->value.str);
-        break;
-    case VALUE_LIST:
-        list_delete(v->value.list);
-        break;
-    case VALUE_FN:
-        // not implemented yet
-        LOG_WARNING("%s", "value_delete() for VALUE_FN not implemented");
-        break;
+    if (l) {
+        v->value.list = list_copy(l);
+    } else {
+        v->value.list = list_new();
     }
-    gc_free(&gc, v);
+    return v;
 }
 
 void value_print(Value* v)
@@ -94,31 +85,31 @@ void value_print(Value* v)
     if (!v) return;
     switch(v->type) {
     case VALUE_NIL:
-        printf("NIL");
+        fprintf(stderr, "NIL");
         break;
     case VALUE_INT:
-        printf("%d", v->value.int_);
+        fprintf(stderr, "%d", v->value.int_);
         break;
     case VALUE_FLOAT:
-        printf("%f", v->value.float_);
+        fprintf(stderr, "%f", v->value.float_);
         break;
     case VALUE_STRING:
     case VALUE_SYMBOL:
-        printf("%s", v->value.str);
+        fprintf(stderr, "%s", v->value.str);
         break;
     case VALUE_LIST:
-        printf("( ");
+        fprintf(stderr, "( ");
         Value* head;
         List* tail = v->value.list;
         while((head = list_head(tail)) != NULL) {
             value_print(head);
-            printf(" ");
+            fprintf(stderr, " ");
             tail = list_tail(tail);
         }
-        printf(")");
+        fprintf(stderr, ")");
         break;
     case VALUE_FN:
-        printf("#<@%p>", (void*) v->value.fn);
+        fprintf(stderr, "#<@%p>", (void*) v->value.fn);
         break;
     }
 

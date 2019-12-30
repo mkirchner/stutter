@@ -41,3 +41,8 @@ Value* env_get(Environment* env, char* symbol)
     }
     return NULL;
 }
+
+bool env_contains(Environment* env, char* symbol)
+{
+    return env_get(env, symbol) != NULL;
+}
