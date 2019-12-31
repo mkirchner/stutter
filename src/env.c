@@ -24,9 +24,9 @@ void env_delete(Environment* env)
     gc_free(&gc, env);
 }
 
-void env_set(Environment* env, char* symbol, Value* value)
+void env_set(Environment* env, char* symbol, const Value* value)
 {
-    map_put(env->kv, symbol, value, sizeof(Value));
+    map_put(env->kv, symbol, (void*) value, sizeof(Value));
 }
 
 Value* env_get(Environment* env, char* symbol)

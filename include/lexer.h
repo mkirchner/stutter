@@ -38,7 +38,8 @@ typedef enum {
     LEXER_STATE_NUMBER,
     LEXER_STATE_FLOAT,
     LEXER_STATE_SYMBOL,
-    LEXER_STATE_STRING
+    LEXER_STATE_STRING,
+    LEXER_STATE_MINUS
 } LexerState;
 
 typedef struct {

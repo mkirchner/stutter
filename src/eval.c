@@ -97,6 +97,8 @@ static bool is_true(const Value* v)
     switch(v->type) {
     case VALUE_NIL:
         return false;
+    case VALUE_BOOL:
+        return v->value.bool_ == true;
     case VALUE_INT:
         return v->value.int_ != 0;
     case VALUE_FLOAT:
