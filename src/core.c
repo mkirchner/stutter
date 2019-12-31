@@ -30,11 +30,25 @@ static bool is_nil(const Value* v)
     return v == CORE_NIL;
 }
 
-Value* core_list(Value* args)
+Value* core_list(const Value* args)
 {
     List* list = args->value.list;
     LOG_DEBUG("Initial list size: %ld", list_size(list));
     return value_new_list(args->value.list);
+}
+
+Value* core_is_list(const Value* args)
+{
+    return (args && args->type == VALUE_LIST) ? CORE_TRUE : CORE_FALSE;
+}
+
+Value* core_is_empty(const Value* args)
+{
+    if (args && args->type == VALUE_LIST) {
+        return list_size(args->value.list) == 0 ? CORE_TRUE : CORE_FALSE;
+    }
+    LOG_CRITICAL("Do not know how to determine emptyness of given type");
+    return NULL;
 }
 
 static float acc_plus(float acc, float x)
@@ -58,7 +72,7 @@ static float acc_div(float acc, float x)
 }
 
 
-static Value* core_acc(Value* args, float (*accumulate)(float, float))
+static Value* core_acc(const Value* args, float (*accumulate)(float, float))
 {
     if (!args || list_size(args->value.list) == 0) {
         if (args) {
@@ -76,7 +90,7 @@ static Value* core_acc(Value* args, float (*accumulate)(float, float))
     } else if (head->type == VALUE_INT) {
         acc = (float) head->value.int_;
     } else {
-        LOG_CRITICAL("plus builtin requires numeric arguments, got %d", head->type);
+        LOG_CRITICAL("Require numeric arguments, got %d", head->type);
     }
     list = list_tail(list);
     while ((head = list_head(list)) != NULL) {
@@ -86,7 +100,7 @@ static Value* core_acc(Value* args, float (*accumulate)(float, float))
         } else if (head->type == VALUE_INT) {
             acc = accumulate(acc, (float) head->value.int_);
         } else {
-            LOG_CRITICAL("plus builtin requires numeric arguments, got %d", head->type);
+            LOG_CRITICAL("Require numeric arguments, got %d", head->type);
         }
         list = list_tail(list);
     }
@@ -99,54 +113,52 @@ static Value* core_acc(Value* args, float (*accumulate)(float, float))
     return ret;
 }
 
-Value* core_plus(Value* args)
+Value* core_plus(const Value* args)
 {
     return core_acc(args, acc_plus);
 }
 
-Value* core_minus(Value* args)
+Value* core_minus(const Value* args)
 {
     return core_acc(args, acc_minus);
 }
 
-Value* core_mul(Value* args)
+Value* core_mul(const Value* args)
 {
     return core_acc(args, acc_mul);
 }
 
-Value* core_div(Value* args)
+Value* core_div(const Value* args)
 {
     return core_acc(args, acc_div);
 }
 
-static bool is_equal(Value* a, Value* b) {
-    // FIXME: be very clear about identity vs. equality
+static Value* cmp_eq(const Value* a, const Value* b) {
     if (a->type == b->type) {
         switch(a->type) {
         case VALUE_NIL:
             /* NIL equals NIL */
-            return true;
+            return CORE_TRUE;
         case VALUE_BOOL:
-            return BOOL(a) == BOOL(b) ? true : false;
+            return BOOL(a) == BOOL(b) ? CORE_TRUE : CORE_FALSE;
         case VALUE_INT:
-            return INT(a) == INT(b) ? true : false;
+            return INT(a) == INT(b) ? CORE_TRUE : CORE_FALSE;
         case VALUE_FLOAT:
-            return FLOAT(a) == FLOAT(b) ? true : false;
+            return FLOAT(a) == FLOAT(b) ? CORE_TRUE : CORE_FALSE;
         case VALUE_STRING:
         case VALUE_SYMBOL:
-            return strcmp(STRING(a), STRING(b)) == 0;
+            return strcmp(STRING(a), STRING(b)) == 0 ? CORE_TRUE : CORE_FALSE;
         case VALUE_BUILTIN_FN:
-            /* built-in fns are equal if they point to the same address */
-            return BUILTIN_FN(a) == BUILTIN_FN(b) ? true : false;
+            /* For built-in functions we currently use identity == equality */
+            return BUILTIN_FN(a) == BUILTIN_FN(b) ? CORE_TRUE : CORE_FALSE;
         case VALUE_FN:
-            /* fns are equal if they point to the same composite fn object */
-            /* FIXME: this is identity... */
-            return FN(a) == FN(b) ? true : false;
+            /* For composite  functions we currently use identity == equality */
+            return FN(a) == FN(b) ? CORE_TRUE : CORE_FALSE;
         case VALUE_LIST:
             if (list_size(LIST(a)) == list_size(LIST(b))) {
                 /* empty lists can be equal */
                 if (list_size(LIST(a)) == 0) {
-                    return true;
+                    return CORE_TRUE;
                 }
                 /* else compare contents */
                 List* list_a = LIST(a);
@@ -154,19 +166,147 @@ static bool is_equal(Value* a, Value* b) {
                 Value* head_a;
                 Value* head_b;
                 while ((head_a = list_head(list_a)) && (head_b = list_head(list_b))) {
-                    if (!is_equal(head_a, head_b)) return false;
+                    Value* cmp_result = cmp_eq(head_a, head_b);
+                    if (!(cmp_result == CORE_TRUE)) {
+                        return cmp_result;  /* NULL or CORE_FALSE */
+                    }
                     list_a = list_tail(list_a);
                     list_b = list_tail(list_b);
                 }
-                return true;
+                return CORE_TRUE;
             }
-            return false;
+            return CORE_FALSE;
         }
     }
-    return false;
+    LOG_CRITICAL("Comparing incompatible types");
+    return NULL;
 }
 
-Value* core_eq(Value* args)
+static Value* cmp_lt(const Value* a, const Value* b) {
+    if (a->type == b->type) {
+        switch(a->type) {
+        case VALUE_NIL:
+            LOG_CRITICAL("Cannot order NIL values");
+            return NULL;
+        case VALUE_BOOL:
+            LOG_CRITICAL("Cannot order boolean values");
+            return NULL;
+        case VALUE_INT:
+            return INT(a) < INT(b) ? CORE_TRUE : CORE_FALSE;
+        case VALUE_FLOAT:
+            return FLOAT(a) < FLOAT(b) ? CORE_TRUE : CORE_FALSE;
+        case VALUE_STRING:
+        case VALUE_SYMBOL:
+            return strcmp(STRING(a), STRING(b)) < 0 ? CORE_TRUE: CORE_FALSE;
+        case VALUE_BUILTIN_FN:
+            LOG_CRITICAL("Cannot compare functions");
+            return NULL;
+        case VALUE_FN:
+            LOG_CRITICAL("Cannot compare functions");
+            return NULL;
+        case VALUE_LIST:
+            LOG_CRITICAL("Cannot order lists");
+            return NULL;
+        }
+    }
+    LOG_CRITICAL("Comparing incompatible types");
+    return NULL;
+}
+
+static Value* cmp_leq(const Value* a, const Value* b) {
+    if (a->type == b->type) {
+        switch(a->type) {
+        case VALUE_NIL:
+            LOG_CRITICAL("Cannot less-equal compare NIL");
+            return NULL;
+        case VALUE_BOOL:
+            LOG_CRITICAL("Cannot less-equal compare booleans");
+            return NULL;
+        case VALUE_INT:
+            return INT(a) <= INT(b) ? CORE_TRUE : CORE_FALSE;
+        case VALUE_FLOAT:
+            return FLOAT(a) <= FLOAT(b) ? CORE_TRUE : CORE_FALSE;
+        case VALUE_STRING:
+        case VALUE_SYMBOL:
+            return strcmp(STRING(a), STRING(b)) <= 0 ? CORE_TRUE: CORE_FALSE;
+        case VALUE_BUILTIN_FN:
+            LOG_CRITICAL("Cannot less-equal compare functions");
+            return NULL;
+        case VALUE_FN:
+            LOG_CRITICAL("Cannot less-equal compare functions");
+            return NULL;
+        case VALUE_LIST:
+            LOG_CRITICAL("Cannot order lists");
+            return NULL;
+        }
+    }
+    LOG_CRITICAL("Comparing incompatible types");
+    return NULL;
+}
+
+static Value* cmp_gt(const Value* a, const Value* b) {
+    if (a->type == b->type) {
+        switch(a->type) {
+        case VALUE_NIL:
+            LOG_CRITICAL("Cannot order NIL values");
+            return NULL;
+        case VALUE_BOOL:
+            LOG_CRITICAL("Cannot order boolean values");
+            return NULL;
+        case VALUE_INT:
+            return INT(a) > INT(b) ? CORE_TRUE : CORE_FALSE;
+        case VALUE_FLOAT:
+            return FLOAT(a) > FLOAT(b) ? CORE_TRUE : CORE_FALSE;
+        case VALUE_STRING:
+        case VALUE_SYMBOL:
+            return strcmp(STRING(a), STRING(b)) > 0 ? CORE_TRUE: CORE_FALSE;
+        case VALUE_BUILTIN_FN:
+            LOG_CRITICAL("Cannot compare functions");
+            return NULL;
+        case VALUE_FN:
+            LOG_CRITICAL("Cannot compare functions");
+            return NULL;
+        case VALUE_LIST:
+            LOG_CRITICAL("Cannot order lists");
+            return NULL;
+        }
+    }
+    LOG_CRITICAL("Comparing incompatible types");
+    return NULL;
+}
+
+static Value* cmp_geq(const Value* a, const Value* b) {
+    if (a->type == b->type) {
+        switch(a->type) {
+        case VALUE_NIL:
+            LOG_CRITICAL("Cannot order NIL values");
+            return NULL;
+        case VALUE_BOOL:
+            LOG_CRITICAL("Cannot order boolean values");
+            return NULL;
+        case VALUE_INT:
+            return INT(a) >= INT(b) ? CORE_TRUE : CORE_FALSE;
+        case VALUE_FLOAT:
+            return FLOAT(a) >= FLOAT(b) ? CORE_TRUE : CORE_FALSE;
+        case VALUE_STRING:
+        case VALUE_SYMBOL:
+            return strcmp(STRING(a), STRING(b)) >= 0 ? CORE_TRUE: CORE_FALSE;
+        case VALUE_BUILTIN_FN:
+            LOG_CRITICAL("Cannot compare functions");
+            return NULL;
+        case VALUE_FN:
+            LOG_CRITICAL("Cannot compare functions");
+            return NULL;
+        case VALUE_LIST:
+            LOG_CRITICAL("Cannot order lists");
+            return NULL;
+        }
+    }
+    LOG_CRITICAL("Comparing incompatible types");
+    return NULL;
+}
+
+static Value* compare(const Value* args, Value* (*comparison_fn)(const Value*, const Value*))
 {
     // (= a b c)
     if (!args) {
@@ -181,8 +321,11 @@ Value* core_eq(Value* args)
     Value* head;
     Value* prev = NULL;
     while ((head = list_head(list)) != NULL) {
-        if (prev && !is_equal(prev, head)) {
-            return CORE_FALSE;
+        if (prev) {
+            Value* cmp_result = comparison_fn(prev, head);
+            if (!(cmp_result == CORE_TRUE)) {
+                return cmp_result;  /* NULL or CORE_FALSE */
+            }
         }
         prev = head;
         list = list_tail(list);
@@ -190,8 +333,33 @@ Value* core_eq(Value* args)
     return CORE_TRUE;
 }
 
+Value* core_eq(const Value* args)
+{
+    return compare(args, cmp_eq);
+}
 
-Value* core_prn(Value* args)
+Value* core_lt(const Value* args)
+{
+    return compare(args, cmp_lt);
+}
+
+Value* core_leq(const Value* args)
+{
+    return compare(args, cmp_leq);
+}
+
+Value* core_gt(const Value* args)
+{
+    return compare(args, cmp_gt);
+}
+
+Value* core_geq(const Value* args)
+{
+    return compare(args, cmp_geq);
+}
+
+
+Value* core_prn(const Value* args)
 {
     value_print(args);
     return CORE_NIL;

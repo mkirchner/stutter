@@ -50,7 +50,6 @@ Environment* global_env()
     Value* eq = value_new_builtin_fn(core_eq);
     env_set(env, "=", eq);
     env_set(env, "eq", eq);
-    /*
     Value* lt = value_new_builtin_fn(core_lt);
     env_set(env, "<", lt);
     env_set(env, "lt", lt);
@@ -63,9 +62,10 @@ Environment* global_env()
     Value* geq = value_new_builtin_fn(core_geq);
     env_set(env, ">=", geq);
     env_set(env, "geq", geq);
-    */
 
     env_set(env, "list", value_new_builtin_fn(core_list));
+    env_set(env, "list?", value_new_builtin_fn(core_is_list));
+    env_set(env, "empty?", value_new_builtin_fn(core_is_empty));
     return env;
 }
 

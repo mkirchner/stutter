@@ -45,7 +45,7 @@ Value* value_new_float(float float_)
     return v;
 }
 
-Value* value_new_builtin_fn(Value* (fn)(Value*))
+Value* value_new_builtin_fn(Value* (fn)(const Value*))
 {
     Value* v = value_new(VALUE_BUILTIN_FN);
     v->value.builtin_fn = fn;
@@ -87,7 +87,7 @@ Value* value_new_list(List* l)
     return v;
 }
 
-void value_print(Value* v)
+void value_print(const Value* v)
 {
     if (!v) return;
     switch(v->type) {

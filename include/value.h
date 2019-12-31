@@ -51,7 +51,7 @@ typedef struct Value {
         Array* vector;
         List* list;
         Map* map;
-        struct Value* (*builtin_fn)(struct Value*);
+        struct Value* (*builtin_fn)(const struct Value*);
         CompositeFunction* fn;
     } value;
 } Value;
@@ -63,13 +63,13 @@ Value* value_new_nil();
 Value* value_new_bool(const bool bool_);
 Value* value_new_int(int int_);
 Value* value_new_float(float float_);
-Value* value_new_builtin_fn(Value* (fn)(Value*));
+Value* value_new_builtin_fn(Value* (fn)(const Value*));
 Value* value_new_fn(Value* args, Value* body, Environment* env);
 Value* value_new_string(char* str);
 Value* value_new_symbol(char* str);
 Value* value_new_list(List* l);
 void value_delete(Value* v);
-void value_print(Value* v);
+void value_print(const Value* v);
 
 
 #endif /* !VALUE_H */
