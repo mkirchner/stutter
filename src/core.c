@@ -364,3 +364,83 @@ Value* core_prn(const Value* args)
     value_print(args);
     return CORE_NIL;
 }
+
+static char* str_append(char* str, size_t n_str, char* partial, size_t n_partial)
+{
+    str = realloc(str, n_str + n_partial + 1);
+    strncat(str, partial, n_partial);
+    return str;
+}
+
+static char* _core_str(char* str, const Value* v)
+{
+    char* partial;
+    switch(v->type) {
+    case VALUE_NIL:
+        str = str_append(str, strlen(str), "nil", strlen(partial));
+        break;
+    case VALUE_BOOL:
+        partial = BOOL(v) ? "true" : "false";
+        str = str_append(str, strlen(str), partial, strlen(partial));
+        break;
+    case VALUE_INT:
+        asprintf(&partial, "%d", INT(v));
+        str = str_append(str, strlen(str), partial, strlen(partial));
+        free(partial);
+        break;
+    case VALUE_FLOAT:
+        asprintf(&partial, "%f", FLOAT(v));
+        str = str_append(str, strlen(str), partial, strlen(partial));
+        free(partial);
+        break;
+    case VALUE_STRING:
+    case VALUE_SYMBOL:
+        asprintf(&partial, "%s", STRING(v));
+        str = str_append(str, strlen(str), partial, strlen(partial));
+        free(partial);
+        break;
+    case VALUE_LIST:
+        str = str_append(str, strlen(str), "(", 1);
+        Value* head2;
+        List* tail2 = v->value.list;
+        while((head2 = list_head(tail2)) != NULL) {
+            str = _core_str(str, head2);
+            tail2 = list_tail(tail2);
+            if (list_head(tail2)) {
+                str = str_append(str, strlen(str), " ", 1);
+            }
+        }
+        str = str_append(str, strlen(str), ")", 1);
+        break;
+    case VALUE_FN:
+        str = str_append(str, strlen(str), "(lambda ", 8);
+        str = _core_str(str, FN(v)->args);
+        str = _core_str(str, FN(v)->body);
+        str = str_append(str, strlen(str), ")", 1);
+        break;
+    case VALUE_BUILTIN_FN:
+        asprintf(&partial, "#<builtin_fn@%p>", (void*) v->value.builtin_fn);
+        str = str_append(str, strlen(str), partial, strlen(partial));
+        free(partial);
+        break;
+    }
+    return str;
+}
+
+Value* core_str(const Value* args)
+{
+    if (!args)
+        return value_new_string("");
+
+    char* str = calloc(1, sizeof(char));
+    List* list = LIST(args);
+    Value* head;
+    while ((head = list_head(list)) != NULL) {
+        str = _core_str(str, head);
+        list = list_tail(list);
+    }
+    Value* ret = value_new_string(str);
+    free(str);
+    return ret;
+}
+

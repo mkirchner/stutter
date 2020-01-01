@@ -28,5 +28,6 @@ Value* core_minus(const Value* args);
 Value* core_mul(const Value* args);
 Value* core_plus(const Value* args);
 Value* core_prn(const Value* args);
+Value* core_str(const Value* args);
 
 #endif /* !CORE_H */

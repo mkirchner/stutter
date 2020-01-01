@@ -32,6 +32,7 @@ Environment* global_env()
     env_set(env, "true", CORE_TRUE);
     env_set(env, "false", CORE_FALSE);
 
+    // FIXME
     env_set(env, "prn", value_new_builtin_fn(core_prn));
 
     Value* plus = value_new_builtin_fn(core_plus);
@@ -66,6 +67,8 @@ Environment* global_env()
     env_set(env, "list", value_new_builtin_fn(core_list));
     env_set(env, "list?", value_new_builtin_fn(core_is_list));
     env_set(env, "empty?", value_new_builtin_fn(core_is_empty));
+
+    env_set(env, "str", value_new_builtin_fn(core_str));
     return env;
 }
 
