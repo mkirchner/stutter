@@ -67,6 +67,7 @@ Environment* global_env()
     env_set(env, "list", value_new_builtin_fn(core_list));
     env_set(env, "list?", value_new_builtin_fn(core_is_list));
     env_set(env, "empty?", value_new_builtin_fn(core_is_empty));
+    env_set(env, "count", value_new_builtin_fn(core_count));
 
     env_set(env, "str", value_new_builtin_fn(core_str));
     return env;

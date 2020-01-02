@@ -15,6 +15,7 @@ extern  Value* CORE_TRUE;
 extern  Value* CORE_FALSE;
 extern  Value* CORE_NIL;
 
+Value* core_count(const Value* args);
 Value* core_div(const Value* args);
 Value* core_eq(const Value* args);
 Value* core_geq(const Value* args);

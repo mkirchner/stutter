@@ -444,3 +444,12 @@ Value* core_str(const Value* args)
     return ret;
 }
 
+Value* core_count(const Value* args)
+{
+    Value* list = list_head(LIST(args));
+    if (list->type != VALUE_LIST) {
+        LOG_CRITICAL("count requires a list argument");
+        return NULL;
+    }
+    return value_new_int(list_size(LIST(list)));
+}
