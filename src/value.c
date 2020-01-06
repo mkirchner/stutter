@@ -24,6 +24,13 @@ Value* value_new_nil()
     return v;
 }
 
+Value* value_new_bool(bool bool_)
+{
+    Value* v = value_new(VALUE_BOOL);
+    v->value.bool_ = bool_;
+    return v;
+}
+
 Value* value_new_int(int int_)
 {
     Value* v = value_new(VALUE_INT);
@@ -38,7 +45,7 @@ Value* value_new_float(float float_)
     return v;
 }
 
-Value* value_new_builtin_fn(Value* (fn)(Value*))
+Value* value_new_builtin_fn(Value* (fn)(const Value*))
 {
     Value* v = value_new(VALUE_BUILTIN_FN);
     v->value.builtin_fn = fn;
@@ -80,12 +87,15 @@ Value* value_new_list(List* l)
     return v;
 }
 
-void value_print(Value* v)
+void value_print(const Value* v)
 {
     if (!v) return;
     switch(v->type) {
     case VALUE_NIL:
         fprintf(stderr, "NIL");
+        break;
+    case VALUE_BOOL:
+        fprintf(stderr, "%s", v->value.bool_ ? "true" : "false");
         break;
     case VALUE_INT:
         fprintf(stderr, "%d", v->value.int_);
@@ -109,7 +119,12 @@ void value_print(Value* v)
         fprintf(stderr, ")");
         break;
     case VALUE_FN:
-        fprintf(stderr, "#<@%p>", (void*) v->value.fn);
+        fprintf(stderr, "lambda: ");
+        value_print(FN(v)->args);
+        value_print(FN(v)->body);
+        break;
+    case VALUE_BUILTIN_FN:
+        fprintf(stderr, "#<@%p>", (void*) v->value.builtin_fn);
         break;
     }
 

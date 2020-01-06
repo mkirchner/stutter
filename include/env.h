@@ -21,7 +21,7 @@ typedef struct Environment {
 Environment* env_new(Environment* parent);
 void env_delete(Environment* env);
 
-void env_set(Environment* env, char* symbol, struct Value* value);
+void env_set(Environment* env, char* symbol, const struct Value* value);
 struct Value* env_get(Environment* env, char* symbol);
 bool env_contains(Environment* env, char* symbol);
 

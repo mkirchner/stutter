@@ -106,7 +106,7 @@ LexerToken* lexer_get_token(Lexer* l)
                 /* don't put c in the buffer */
                 l->state = LEXER_STATE_STRING;
                 break;
-            /* start a number */
+            /* start  number */
             case '0' ... '9':
                 buf[bufpos++] = c;
                 l->state = LEXER_STATE_NUMBER;
@@ -114,6 +114,12 @@ LexerToken* lexer_get_token(Lexer* l)
             /* start a symbol */
             case 'a' ... 'z':
             case 'A' ... 'Z':
+            case '+':
+            case '/':
+            case '*':
+            case '<':
+            case '=':
+            case '>':
                 buf[bufpos++] = c;
                 l->state = LEXER_STATE_SYMBOL;
                 break;

@@ -76,9 +76,9 @@ static bool is_if(const Value* value)
     return is_list_that_starts_with(value, "if", 2);
 }
 
-static bool is_cond(const Value* value)
+static bool is_do(const Value* value)
 {
-    return is_list_that_starts_with(value, "cond", 4);
+    return is_list_that_starts_with(value, "do", 2);
 }
 
 static bool is_list(const Value* value)
@@ -97,6 +97,8 @@ static bool is_true(const Value* v)
     switch(v->type) {
     case VALUE_NIL:
         return false;
+    case VALUE_BOOL:
+        return v->value.bool_ == true;
     case VALUE_INT:
         return v->value.int_ != 0;
     case VALUE_FLOAT:
@@ -108,6 +110,8 @@ static bool is_true(const Value* v)
         return list_size(v->value.list) > 0;
     case VALUE_FN:
         return v->value.fn != NULL;
+    case VALUE_BUILTIN_FN:
+        return v->value.builtin_fn != NULL;
     }
 }
 
@@ -194,10 +198,16 @@ static Value* declare_fn(Value* expr, Environment* env)
     return NULL;
 }
 
-static Value* eval_cond(Value* expr, Environment* env)
+static Value* eval_do(Value* expr, Environment* env)
 {
-    LOG_CRITICAL("Not implemented!");
-    return NULL;
+    Value* head;
+    Value* ret = NULL;
+    List* list = LIST(expr);
+    while((head = list_head(list)) != NULL) {
+        ret = eval(head, env);
+        list = list_tail(list);
+    }
+    return ret;
 }
 
 static Value* operator(Value* expr)
@@ -266,9 +276,9 @@ Value* eval(Value* expr, Environment* env)
     } else if (is_if(expr)) {
         LOG_DEBUG("is_if");
         return eval_if(expr, env);
-    } else if (is_cond(expr)) {
-        LOG_DEBUG("is_cond");
-        return eval_cond(expr, env);
+    } else if (is_do(expr)) {
+        LOG_DEBUG("is_do");
+        return eval_do(expr, env);
     } else if (is_lambda(expr)) {
         LOG_DEBUG("is_lambda");
         return declare_fn(expr, env);

@@ -27,8 +27,49 @@
 Environment* global_env()
 {
     Environment* env = env_new(NULL);
-    env_set(env, "sum", value_new_builtin_fn(core_sum));
+
+    env_set(env, "nil", CORE_NIL);
+    env_set(env, "true", CORE_TRUE);
+    env_set(env, "false", CORE_FALSE);
+
+    // FIXME
+    env_set(env, "prn", value_new_builtin_fn(core_prn));
+
+    Value* plus = value_new_builtin_fn(core_plus);
+    env_set(env, "+", plus);
+    env_set(env, "plus", plus);
+    Value* minus = value_new_builtin_fn(core_minus);
+    // FIXME: no "-", need to extend lexer w/ negative numbers and unary minus
+    env_set(env, "minus", minus);
+    Value* mul = value_new_builtin_fn(core_mul);
+    env_set(env, "*", mul);
+    env_set(env, "mul", mul);
+    Value* div = value_new_builtin_fn(core_div);
+    env_set(env, "/", div);
+    env_set(env, "div", div);
+
+    Value* eq = value_new_builtin_fn(core_eq);
+    env_set(env, "=", eq);
+    env_set(env, "eq", eq);
+    Value* lt = value_new_builtin_fn(core_lt);
+    env_set(env, "<", lt);
+    env_set(env, "lt", lt);
+    Value* leq = value_new_builtin_fn(core_leq);
+    env_set(env, "<=", leq);
+    env_set(env, "leq", leq);
+    Value* gt = value_new_builtin_fn(core_gt);
+    env_set(env, ">", gt);
+    env_set(env, "gt", gt);
+    Value* geq = value_new_builtin_fn(core_geq);
+    env_set(env, ">=", geq);
+    env_set(env, "geq", geq);
+
     env_set(env, "list", value_new_builtin_fn(core_list));
+    env_set(env, "list?", value_new_builtin_fn(core_is_list));
+    env_set(env, "empty?", value_new_builtin_fn(core_is_empty));
+    env_set(env, "count", value_new_builtin_fn(core_count));
+
+    env_set(env, "str", value_new_builtin_fn(core_str));
     return env;
 }
 
