@@ -68,6 +68,7 @@ Value* value_new_fn(Value* args, Value* body, Environment* env);
 Value* value_new_string(char* str);
 Value* value_new_symbol(char* str);
 Value* value_new_list(List* l);
+Value* value_make_list(Value* v);
 void value_delete(Value* v);
 void value_print(const Value* v);
 

@@ -33,7 +33,7 @@ static bool is_nil(const Value* v)
 Value* core_list(const Value* args)
 {
     List* list = args->value.list;
-    LOG_DEBUG("Initial list size: %ld", list_size(list));
+    // LOG_DEBUG("Initial list size: %ld", list_size(list));
     return value_new_list(args->value.list);
 }
 
@@ -359,12 +359,6 @@ Value* core_geq(const Value* args)
 }
 
 
-Value* core_prn(const Value* args)
-{
-    value_print(args);
-    return CORE_NIL;
-}
-
 static char* str_append(char* str, size_t n_str, char* partial, size_t n_partial)
 {
     str = realloc(str, n_str + n_partial + 1);
@@ -372,12 +366,12 @@ static char* str_append(char* str, size_t n_str, char* partial, size_t n_partial
     return str;
 }
 
-static char* _core_str(char* str, const Value* v)
+static char* core_str_inner(char* str, const Value* v)
 {
     char* partial;
     switch(v->type) {
     case VALUE_NIL:
-        str = str_append(str, strlen(str), "nil", strlen(partial));
+        str = str_append(str, strlen(str), "nil", 3);
         break;
     case VALUE_BOOL:
         partial = BOOL(v) ? "true" : "false";
@@ -404,7 +398,7 @@ static char* _core_str(char* str, const Value* v)
         Value* head2;
         List* tail2 = v->value.list;
         while((head2 = list_head(tail2)) != NULL) {
-            str = _core_str(str, head2);
+            str = core_str_inner(str, head2);
             tail2 = list_tail(tail2);
             if (list_head(tail2)) {
                 str = str_append(str, strlen(str), " ", 1);
@@ -414,8 +408,8 @@ static char* _core_str(char* str, const Value* v)
         break;
     case VALUE_FN:
         str = str_append(str, strlen(str), "(lambda ", 8);
-        str = _core_str(str, FN(v)->args);
-        str = _core_str(str, FN(v)->body);
+        str = core_str_inner(str, FN(v)->args);
+        str = core_str_inner(str, FN(v)->body);
         str = str_append(str, strlen(str), ")", 1);
         break;
     case VALUE_BUILTIN_FN:
@@ -427,7 +421,7 @@ static char* _core_str(char* str, const Value* v)
     return str;
 }
 
-Value* core_str(const Value* args)
+Value* core_str_outer(const Value* args, bool printable)
 {
     if (!args)
         return value_new_string("");
@@ -436,13 +430,45 @@ Value* core_str(const Value* args)
     List* list = LIST(args);
     Value* head;
     while ((head = list_head(list)) != NULL) {
-        str = _core_str(str, head);
+        str = core_str_inner(str, head);
         list = list_tail(list);
+        if (printable) {
+            str = str_append(str, strlen(str), " ", 1);
+        }
     }
     Value* ret = value_new_string(str);
     free(str);
     return ret;
 }
+
+Value* core_str(const Value* args)
+{
+    return core_str_outer(args, false);
+}
+
+Value* core_pr(const Value* args)
+{
+    Value* str = core_str_outer(args, true);
+    fprintf(stdout, "%s", str->value.str);
+    return CORE_NIL;
+}
+
+
+Value* core_pr_str(const Value* args)
+{
+    return core_str_outer(args, true);
+}
+
+
+Value* core_prn(const Value* args)
+{
+    Value* str = core_str_outer(args, true);
+    fprintf(stdout, "%s", str->value.str);
+    fprintf(stdout, "\n");
+    fflush(stdout);
+    return CORE_NIL;
+}
+
 
 Value* core_count(const Value* args)
 {

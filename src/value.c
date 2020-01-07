@@ -87,6 +87,13 @@ Value* value_new_list(List* l)
     return v;
 }
 
+Value* value_make_list(Value* v)
+{
+    Value* r = value_new_list(NULL);
+    LIST(r) = list_append(LIST(r), v);
+    return r;
+}
+
 void value_print(const Value* v)
 {
     if (!v) return;

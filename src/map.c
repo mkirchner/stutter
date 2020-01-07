@@ -17,7 +17,7 @@
 
 static double load_factor(Map* ht)
 {
-    LOG_DEBUG("Load factor: %.2f", (double) ht->size / (double) ht->capacity);
+    // LOG_DEBUG("Load factor: %.2f", (double) ht->size / (double) ht->capacity);
     return (double) ht->size / (double) ht->capacity;
 }
 
@@ -75,7 +75,7 @@ void map_put(Map* ht, char* key, void* value, size_t siz)
 {
     // hash
     unsigned long index = map_index(ht, key);
-    LOG_DEBUG("index: %lu", index);
+    // LOG_DEBUG("index: %lu", index);
     // create item
     MapItem* item = map_item_new(key, value, siz);
     MapItem* cur = ht->items[index];
@@ -132,7 +132,7 @@ void map_remove(Map* ht, char* key)
     while(cur != NULL) {
         // Separate chaining w/ linked lists
         if (strcmp(cur->key, key) == 0) {
-            LOG_DEBUG("Removing map item at index %lu, pos %lu.", index, cur - ht->items[index]);
+            // LOG_DEBUG("Removing map item at index %lu, pos %lu.", index, cur - ht->items[index]);
             // found it
             if (!prev) {
                 // first item in list
@@ -147,7 +147,7 @@ void map_remove(Map* ht, char* key)
             ht->size--;
         } else {
             // move on
-            LOG_DEBUG("Skipping map item at index %lu, pos %lu.", index, cur - ht->items[index]);
+            // LOG_DEBUG("Skipping map item at index %lu, pos %lu.", index, cur - ht->items[index]);
             prev = cur;
             cur = cur->next;
         }
@@ -160,7 +160,7 @@ void map_resize(Map* ht, size_t new_capacity)
 {
     // Replaces the existing items array in the hash table
     // with a resized one and pushes items into the new, correct buckets
-    LOG_DEBUG("Resizing to %lu", new_capacity);
+    // LOG_DEBUG("Resizing to %lu", new_capacity);
     MapItem** resized_items = gc_calloc(&gc, new_capacity, sizeof(MapItem*));
 
     for (size_t i=0; i<ht->capacity; ++i) {

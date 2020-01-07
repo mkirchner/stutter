@@ -1,9 +1,10 @@
 #
 # stutter Makefile
 #
+GIT_VERSION := "$(shell git describe --abbrev=8 --dirty --always --tags)"
 
 CC=clang
-CFLAGS=-g -Wall -Wextra -pedantic -Iinclude -Ilib/gc/src
+CFLAGS=-g -Wall -Wextra -pedantic -Iinclude -Ilib/gc/src -D__STUTTER_VERSION__=\"$(GIT_VERSION)\"
 LDFLAGS=-g -Lbuild/src -Lbuild/lib/gc/src
 LDLIBS=-ledit
 RM=rm

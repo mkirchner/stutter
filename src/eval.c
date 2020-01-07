@@ -122,7 +122,7 @@ static bool has_cardinality(const Value* expr, const size_t cardinality)
 
 static Value* lookup_variable_value(Value* expr, Environment* env)
 {
-    LOG_DEBUG("Symbol: %s\n", expr->value.str);
+    // LOG_DEBUG("Symbol: %s\n", expr->value.str);
     Value* sym = NULL;
     if ((sym = env_get(env, expr->value.str)) == NULL) {
         LOG_CRITICAL("Unknown symbol: %s", expr->value.str);
@@ -259,28 +259,28 @@ Value* eval(Value* expr, Environment* env)
         return NULL;
     }
     if (is_self_evaluating(expr)) {
-        LOG_DEBUG("is_self_evaluating");
+        // LOG_DEBUG("is_self_evaluating");
         return expr;
     } else if (is_variable(expr)) {
-        LOG_DEBUG("is_variable");
+        // LOG_DEBUG("is_variable");
         return lookup_variable_value(expr, env);
     } else if (is_quoted(expr)) {
-        LOG_DEBUG("is_quoted");
+        // LOG_DEBUG("is_quoted");
         return unquote(expr);
     } else if (is_assignment(expr)) {
-        LOG_DEBUG("is_assignment");
+        // LOG_DEBUG("is_assignment");
         return eval_assignment(expr, env);
     } else if (is_definition(expr)) {
-        LOG_DEBUG("is_definition");
+        // LOG_DEBUG("is_definition");
         return eval_definition(expr, env);
     } else if (is_if(expr)) {
-        LOG_DEBUG("is_if");
+        // LOG_DEBUG("is_if");
         return eval_if(expr, env);
     } else if (is_do(expr)) {
-        LOG_DEBUG("is_do");
+        // LOG_DEBUG("is_do");
         return eval_do(expr, env);
     } else if (is_lambda(expr)) {
-        LOG_DEBUG("is_lambda");
+        // LOG_DEBUG("is_lambda");
         return declare_fn(expr, env);
     } else if (is_application(expr)) {
         return apply(eval(operator(expr), env), eval_all(operands(expr), env));

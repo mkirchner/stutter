@@ -5,7 +5,7 @@
  * Distributed under terms of the MIT license.
  */
 
-#define __STUTTER_VERSION__ "0.0.1-alpha"
+// #define __STUTTER_VERSION__ "0.0.1-alpha"
 
 #include <errno.h>
 #include <stdio.h>
@@ -33,6 +33,8 @@ Environment* global_env()
     env_set(env, "false", CORE_FALSE);
 
     // FIXME
+    env_set(env, "pr", value_new_builtin_fn(core_pr));
+    env_set(env, "pr-str", value_new_builtin_fn(core_pr_str));
     env_set(env, "prn", value_new_builtin_fn(core_prn));
 
     Value* plus = value_new_builtin_fn(core_plus);
@@ -95,7 +97,8 @@ Value* read_(char* input) {
 
 int main(int argc, char* argv[])
 {
-    fprintf(stderr, "Stutter version %s\n\n", __STUTTER_VERSION__);
+    fprintf(stderr, "Stutter %s (clang %d.%d.%d on darwin)\n", __STUTTER_VERSION__,
+            __clang_major__, __clang_minor__, __clang_patchlevel__);
 
     // set up garbage collection
     gc_start(&gc, &argc);
@@ -110,8 +113,8 @@ int main(int argc, char* argv[])
         add_history(input);
         Value* expr = read_(input);
         Value* eval_result = eval(expr, env);
-        value_print(eval_result);
-        fprintf(stdout, "\n");
+        core_prn(value_make_list(eval_result));
+        // fprintf(stdout, "\n");
         free(input);
     }
     gc_stop(&gc);
