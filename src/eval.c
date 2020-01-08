@@ -60,9 +60,13 @@ static bool is_assignment(const Value* value)
 static bool is_definition(const Value* value)
 {
     // (define var value)
-    // skipping (define (var p1 p2 ... pn) body) for now
-    // since we can do that w/ (define var (lambda (p1 ... pn) body))
     return is_list_that_starts_with(value, "define", 6);
+}
+
+static bool is_let(const Value* value)
+{
+    // (let (n1 v1 n2 v2 ...) body)
+    return is_list_that_starts_with(value, "let*", 4);
 }
 
 static bool is_lambda(const Value* value)
@@ -165,6 +169,31 @@ static Value* eval_definition(Value* expr, Environment* env)
         Value* value = list_head(list_tail(list_tail(expr->value.list)));  // pos 3
         value = eval(value, env);
         env_set(env, name->value.str, value);
+    }
+    return NULL;
+}
+
+static Value* eval_let(Value* expr, Environment* env)
+{
+    // (let (n1 v1 n2 v2 ...) (body))
+    if (has_cardinality(expr, 3)) {
+        Environment* inner = env_new(env);
+        Value* assignments = list_head(list_tail(expr->value.list));  // pos 2
+        if (assignments->type != VALUE_LIST || list_size(LIST(assignments)) % 2 != 0) {
+            LOG_CRITICAL("Invalid assignment list in let");
+            return NULL;
+        }
+        List* list = LIST(assignments);
+        Value* name = list_head(list);
+        Value* value = list_head(list_tail(list));
+        while (name) {
+            env_set(inner, name->value.str, eval(value, inner));
+            list = list_tail(list_tail(list)); // +2
+            name = list_head(list);
+            value = name ? list_head(list_tail(list)) : NULL;
+        }
+        Value* body = list_head(list_tail(list_tail(expr->value.list)));  // pos 3
+        return eval(body, inner);
     }
     return NULL;
 }
@@ -273,6 +302,8 @@ Value* eval(Value* expr, Environment* env)
     } else if (is_definition(expr)) {
         // LOG_DEBUG("is_definition");
         return eval_definition(expr, env);
+    } else if (is_let(expr)) {
+        return eval_let(expr, env);
     } else if (is_if(expr)) {
         // LOG_DEBUG("is_if");
         return eval_if(expr, env);
