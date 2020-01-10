@@ -32,7 +32,8 @@ static Value* apply_builtin_fn(Value* fn, Value* args)
     return NULL;
 }
 
-static Value* apply_compound_fn(Value* fn, Value* args)
+static Value* apply_compound_fn(Value* fn, Value* args,
+        Value** tco_expr, Environment** tco_env)
 {
     if (fn && fn->type == VALUE_FN && fn->value.fn) {
         // args are fully evaluated, so bind them to the names in the fn def on
@@ -57,18 +58,22 @@ static Value* apply_compound_fn(Value* fn, Value* args)
             arg_value = list_head(arg_values);
         }
         // eval
-        return eval(fn->value.fn->body, env);
+        *tco_expr = fn->value.fn->body;
+        *tco_env = env;
+        return NULL;
     }
     LOG_CRITICAL("Could not apply compound fn");
     return NULL;
 }
 
-Value* apply(Value* fn, Value* args)
+Value* apply(Value* fn, Value* args, Value** tco_expr, Environment** tco_env)
 {
+    *tco_expr = NULL;
+    *tco_env = NULL;
     if (is_builtin_fn(fn)) {
         return apply_builtin_fn(fn, args);
     } else if (is_compound_fn(fn)) {
-        return apply_compound_fn(fn, args);
+        return apply_compound_fn(fn, args, tco_expr, tco_env);
     } else {
         LOG_CRITICAL("Unknown function type in apply: %u.", fn->type);
     }
