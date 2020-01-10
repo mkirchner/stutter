@@ -8,6 +8,7 @@
 #ifndef __LIST_H__
 #define __LIST_H__
 
+#include <stdbool.h>
 #include <stddef.h>
 
 struct ListItem;
@@ -25,5 +26,6 @@ List* list_tail(List* l);
 List* list_append(List* l, void* value);
 List* list_prepend(List* l, void* value);
 size_t list_size(List* l);
+bool list_is_empty(List* l);
 
 #endif /* !__LIST_H__ */

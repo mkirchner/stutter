@@ -173,7 +173,7 @@ static Value* eval_definition(Value* expr, Environment* env)
     return NULL;
 }
 
-static Value* eval_let(Value* expr, Environment* env)
+static Value* eval_let(Value* expr, Environment* env, Value** tco_expr, Environment** tco_env)
 {
     // (let (n1 v1 n2 v2 ...) (body))
     if (has_cardinality(expr, 3)) {
@@ -192,24 +192,24 @@ static Value* eval_let(Value* expr, Environment* env)
             name = list_head(list);
             value = name ? list_head(list_tail(list)) : NULL;
         }
-        Value* body = list_head(list_tail(list_tail(expr->value.list)));  // pos 3
-        return eval(body, inner);
+        // TCO
+        *tco_expr = list_head(list_tail(list_tail(expr->value.list)));  // pos 3
+        *tco_env = inner;
     }
     return NULL;
 }
 
-static Value* eval_if(Value* expr, Environment* env)
+static Value* eval_if(Value* expr, Environment* env, Value** tco_expr, Environment** tco_env)
 {
     // (if predicate consequent alternative)
     if (has_cardinality(expr, 4)) {
         Value* predicate = eval(list_head(list_tail(expr->value.list)), env);
         if (is_true(predicate)) {
-            Value* consequent = eval(list_head(list_tail(list_tail(expr->value.list))), env);
-            return consequent;
+            *tco_expr = list_head(list_tail(list_tail(expr->value.list)));
         } else {
-            Value* alternative = eval(list_head(list_tail(list_tail(list_tail(expr->value.list)))), env);
-            return alternative;
+            *tco_expr = list_head(list_tail(list_tail(list_tail(expr->value.list))));
         }
+        *tco_env = env;
     }
     return NULL;
 }
@@ -227,16 +227,21 @@ static Value* declare_fn(Value* expr, Environment* env)
     return NULL;
 }
 
-static Value* eval_do(Value* expr, Environment* env)
+static Value* eval_do(Value* expr, Environment* env, Value** tco_expr, Environment** tco_env)
 {
+    // (do sexpr sexpr ...)
     Value* head;
-    Value* ret = NULL;
-    List* list = LIST(expr);
+    List* list = list_tail(LIST(expr));
     while((head = list_head(list)) != NULL) {
-        ret = eval(head, env);
         list = list_tail(list);
+        if (list_size(list) == 0) {
+            *tco_expr = head;
+            *tco_env = env;
+            return NULL;
+        }
+        eval(head, env);
     }
-    return ret;
+    return NULL;
 }
 
 static Value* operator(Value* expr)
@@ -281,40 +286,71 @@ static Value* eval_all(Value* expr, Environment* env)
     return expr;
 }
 
+
 Value* eval(Value* expr, Environment* env)
 {
+    Value* tco_expr = NULL;
+    Value* ret = NULL;
+    Environment* tco_env = NULL;
+tco:
     if (!expr) {
         LOG_CRITICAL("Passed NULL ptr to eval");
         return NULL;
     }
     if (is_self_evaluating(expr)) {
-        // LOG_DEBUG("is_self_evaluating");
         return expr;
     } else if (is_variable(expr)) {
-        // LOG_DEBUG("is_variable");
-        return lookup_variable_value(expr, env);
+        ret = lookup_variable_value(expr, env);
+        return ret;
     } else if (is_quoted(expr)) {
-        // LOG_DEBUG("is_quoted");
         return unquote(expr);
     } else if (is_assignment(expr)) {
-        // LOG_DEBUG("is_assignment");
         return eval_assignment(expr, env);
     } else if (is_definition(expr)) {
-        // LOG_DEBUG("is_definition");
         return eval_definition(expr, env);
     } else if (is_let(expr)) {
-        return eval_let(expr, env);
+        tco_expr = NULL;
+        tco_env = NULL;
+        Value* result = eval_let(expr, env, &tco_expr, &tco_env);
+        if (tco_expr && tco_env) {
+            expr = tco_expr;
+            env = tco_env;
+            goto tco;
+        }
+        return result;
     } else if (is_if(expr)) {
-        // LOG_DEBUG("is_if");
-        return eval_if(expr, env);
+        tco_expr = NULL;
+        tco_env = NULL;
+        Value* result = eval_if(expr, env, &tco_expr, &tco_env);
+        if (tco_expr && tco_env) {
+            expr = tco_expr;
+            env = tco_env;
+            goto tco;
+        }
+        return result;
     } else if (is_do(expr)) {
-        // LOG_DEBUG("is_do");
-        return eval_do(expr, env);
+        tco_expr = NULL;
+        tco_env = NULL;
+        Value* result = eval_do(expr, env, &tco_expr, &tco_env);
+        if (tco_expr && tco_env) {
+            expr = tco_expr;
+            env = tco_env;
+            goto tco;
+        }
+        return result;
     } else if (is_lambda(expr)) {
-        // LOG_DEBUG("is_lambda");
         return declare_fn(expr, env);
     } else if (is_application(expr)) {
-        return apply(eval(operator(expr), env), eval_all(operands(expr), env));
+        tco_expr = NULL;
+        tco_env = NULL;
+        ret = apply(eval(operator(expr), env), eval_all(operands(expr), env),
+                    &tco_expr, &tco_env);
+        if (tco_expr && tco_env) {
+            expr = tco_expr;
+            env = tco_env;
+            goto tco;
+        }
+        return ret;
     } else {
         LOG_CRITICAL("Unknown expression: %d", expr->type);
     }

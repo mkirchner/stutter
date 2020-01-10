@@ -127,3 +127,8 @@ size_t list_size(List* l)
 {
     return l->size;
 }
+
+bool list_is_empty(List* l)
+{
+    return list_size(l) == 0;
+}
