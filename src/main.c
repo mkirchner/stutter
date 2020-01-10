@@ -88,6 +88,7 @@ Value* read_(char* input) {
     Reader* reader = reader_new(stream);
     AstSexpr* ast = reader_read(reader);
     reader_delete(reader);
+    fclose(stream);
 
     // Condense the AST
     Value* ast2 = ir_from_ast(ast);
