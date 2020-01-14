@@ -12,12 +12,6 @@
 #include <string.h>
 
 
-typedef struct ListItem {
-    void* p;
-    struct ListItem* prev;
-    struct ListItem* next;
-} ListItem;
-
 List* list_new()
 {
     // doubly-linked list, managed memory
