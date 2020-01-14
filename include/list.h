@@ -11,7 +11,12 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-struct ListItem;
+typedef struct ListItem {
+    void* p;
+    struct ListItem* prev;
+    struct ListItem* next;
+} ListItem;
+
 
 typedef struct List {
     struct ListItem* begin;

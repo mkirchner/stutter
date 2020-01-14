@@ -7,6 +7,7 @@
 
 #include "core.h"
 
+#include <errno.h>
 #include <stdbool.h>
 #include <string.h>
 #include "log.h"
@@ -30,10 +31,9 @@ static bool is_nil(const Value* v)
     return v == CORE_NIL;
 }
 
+
 Value* core_list(const Value* args)
 {
-    List* list = args->value.list;
-    // LOG_DEBUG("Initial list size: %ld", list_size(list));
     return value_new_list(args->value.list);
 }
 
@@ -478,4 +478,79 @@ Value* core_count(const Value* args)
         return NULL;
     }
     return value_new_int(list_size(LIST(list)));
+}
+
+Value* core_slurp(const Value* args)
+{
+    // This is not for binary streams since we're using ftell.
+    // (It's portable, though)
+    if (args->type == VALUE_LIST && list_size(LIST(args)) == 1) {
+        Value* v = list_head(LIST(args));
+        Value* retval = NULL;
+        FILE* f = NULL;
+        if (!(f = fopen(v->value.str, "r"))) {
+            LOG_CRITICAL("Failed to open file %s: %s", v->value.str, strerror(errno));
+            goto out;
+        }
+        int ret;
+        if ((ret = fseek(f, 0L, SEEK_END)) != 0) {
+            LOG_CRITICAL("Failed to determine file size for %s: %s",
+                         v->value.str, strerror(errno));
+            goto out_file;
+        }
+        long fsize;
+        if ((fsize = ftell(f)) < 0) {
+            LOG_CRITICAL("Failed to determine file size for %s: %s",
+                         v->value.str, strerror(errno));
+            goto out_file;
+        }
+        char* buf = malloc(fsize + 1);
+        if ((ret = fseek(f, 0L, SEEK_SET)) != 0) {
+            LOG_CRITICAL("Failed to read file %s", v->value.str);
+            goto out_buf;
+        }
+        size_t n_read;
+        if ((n_read = fread(buf, 1, fsize, f)) < (size_t) fsize)   {
+            LOG_CRITICAL("Failed to read file %s", v->value.str);
+            goto out_buf;
+        }
+        buf[fsize] = '\0';
+        retval = value_new_string(buf); // FIXME: fx value constructors to avoid copy
+out_buf:
+        free(buf);
+out_file:
+        fclose(f);
+out:
+        return retval;
+    }
+    LOG_CRITICAL("Wrong argument type or wrong number of arguments for slurp");
+    return NULL;
+}
+
+
+#define REQUIRE_TYPE(args, t) do  { if (args->type != t) { LOG_CRITICAL("Type mismatch"); return NULL; } } while (0)
+#define REQUIRE_CARDINALITY(args, n) do { if (list_size(args->value.list) != n) { LOG_CRITICAL("Wrong number of arguments"); return NULL; } } while (0)
+
+Value* core_cons(const Value* args)
+{
+    REQUIRE_TYPE(args, VALUE_LIST);
+    REQUIRE_CARDINALITY(args, 2);
+    Value* first = list_head(LIST(args));
+    Value* second = list_head(list_tail(LIST(args)));
+    REQUIRE_TYPE(second, VALUE_LIST);
+    return value_new_list(list_prepend(LIST(second), first));
+}
+
+Value* core_concat(const Value* args)
+{
+    REQUIRE_TYPE(args, VALUE_LIST);
+    List* concat = list_new();
+    for (const ListItem* i = LIST(args)->begin; i != NULL; i = i->next) {
+        Value* v = (Value*) i->p;
+        REQUIRE_TYPE(v, VALUE_LIST);
+        for (const ListItem* j = LIST(v)->begin; j != NULL; j = j->next) {
+            concat = list_append(concat, j->p);
+        }
+    }
+    return value_new_list(concat);
 }

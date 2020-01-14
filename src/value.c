@@ -62,14 +62,14 @@ Value* value_new_fn(Value* args, Value* body, Environment* env)
     return v;
 }
 
-Value* value_new_string(char* str)
+Value* value_new_string(const char* str)
 {
     Value* v = value_new(VALUE_STRING);
     v->value.str = gc_strdup(&gc, str);
     return v;
 }
 
-Value* value_new_symbol(char* str)
+Value* value_new_symbol(const char* str)
 {
     Value* v = value_new(VALUE_SYMBOL);
     v->value.str = gc_strdup(&gc, str);

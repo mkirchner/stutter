@@ -11,10 +11,19 @@
 #include "value.h"
 #include "env.h"
 
+typedef struct {
+    char* name;
+    Value* (*fn)(const Value* args);
+} CoreFn;
+
+extern CoreFn core_fns[];
+
 extern  Value* CORE_TRUE;
 extern  Value* CORE_FALSE;
 extern  Value* CORE_NIL;
 
+Value* core_concat(const Value* args);
+Value* core_cons(const Value* args);
 Value* core_count(const Value* args);
 Value* core_div(const Value* args);
 Value* core_eq(const Value* args);
@@ -31,6 +40,7 @@ Value* core_plus(const Value* args);
 Value* core_pr(const Value* args);
 Value* core_pr_str(const Value* args);
 Value* core_prn(const Value* args);
+Value* core_slurp(const Value* args);
 Value* core_str(const Value* args);
 
 #endif /* !CORE_H */
