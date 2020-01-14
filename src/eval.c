@@ -12,6 +12,7 @@
 #include "apply.h"
 #include "list.h"
 #include "log.h"
+#include "core.h"
 
 
 static bool is_self_evaluating(const Value* value)
@@ -49,6 +50,11 @@ static bool is_list_that_starts_with(const Value* value, const char* what, size_
 static bool is_quoted(const Value* value)
 {
     return is_list_that_starts_with(value, "quote", 5);
+}
+
+static bool is_quasiquoted(const Value* value)
+{
+    return is_list_that_starts_with(value, "quasiquote", 10);
 }
 
 static bool is_assignment(const Value* value)
@@ -135,13 +141,13 @@ static Value* lookup_variable_value(Value* expr, Environment* env)
     return sym;
 }
 
-static Value* unquote(Value* expr)
+static Value* eval_quote(Value* expr)
 {
     // (quote expr)
     if (has_cardinality(expr, 2)) {
         return list_head(list_tail(expr->value.list));
     }
-    LOG_CRITICAL("Invalid parameter to built-in unquote");
+    LOG_CRITICAL("Invalid parameter to built-in quote");
     return NULL;
 }
 
@@ -244,6 +250,79 @@ static Value* eval_do(Value* expr, Environment* env, Value** tco_expr, Environme
     return NULL;
 }
 
+static Value* _quasiquote(Value* arg)
+{
+    /*
+     * The idea here is to recursively rewrite the syntax tree (the IR form).
+     * Note that quasiquote, unquote and splice-unquote forms all take an expression
+     * as their single argument (expressions are represented as atoms or lists in
+     * IR). In addition, `splice-unquote` is only valid in a sequence context
+     * and we expect its argument to return a sequence after evaluation.
+     *
+     * Hence,
+     *
+     * 1. If arg is not a list, we return `(quote arg)`
+     * 2. If arg is a list and the list starts with the `unquote` symbol, we
+     *    return `arg`
+     * 3. If arg is a list and it's first item arg[0] is a list that starts with
+     *    the `splice-unquote` symbol in arg[0][0], we return
+     *    `(concat arg[0][1] (quasiquote (tail arg)))`
+     * 4. If the arg is an ordinary list, we cons the quasiquoted first item with
+     *    the quasiquotation of the rest: `(cons (quasiquote arg[0]) (quasiquote (tail arg)))`
+     *
+     * Step 3 basically replaces the `cons` with a `concat` in the right places.
+     */
+
+    /* If the argument is not a list then act like quote */
+    if (!(is_list(arg) && list_size(LIST(arg)) > 0)) {
+        Value* ret = value_make_list(value_new_symbol("quote"));
+        LIST(ret) = list_append(LIST(ret), arg);
+        return ret;
+    }
+    /* arg is a list, let's peek at the first item */
+    Value* arg0 = list_head(LIST(arg));
+    if (arg0->type == VALUE_SYMBOL && strncmp(arg0->value.str, "unquote", 7) == 0) {
+        if (list_size(LIST(arg)) != 2) {
+            LOG_CRITICAL("unquote takes a single parameter");
+            return NULL;
+        }
+        Value* arg1 = list_head(list_tail(LIST(arg)));
+        return arg1;
+    } else if (arg0->type == VALUE_LIST) {
+        /* arg is a list that starts with a list. Let's see if it starts with splice-unquote */
+        Value* arg00 = list_head(LIST(arg0));
+        if (arg00->type == VALUE_SYMBOL && strncmp(arg00->value.str, "splice-unquote", 14) == 0) {
+            if (list_size(LIST(arg0)) != 2) {
+                LOG_CRITICAL("splice-unquote takes a single parameter");
+                return NULL;
+            }
+            Value* arg01 = list_head(list_tail(LIST(arg0)));
+            Value* ast = value_make_list(value_new_symbol("concat"));
+            LIST(ast) = list_append(LIST(ast), arg01);
+            LIST(ast) = list_append(LIST(ast), _quasiquote(value_new_list(list_tail(LIST(arg)))));
+            return ast;
+        }
+    }
+    Value* ast = value_make_list(value_new_symbol("cons"));
+    LIST(ast) = list_append(LIST(ast), _quasiquote(arg0));
+    LIST(ast) = list_append(LIST(ast), _quasiquote(value_new_list(list_tail(LIST(arg)))));
+    return ast;
+}
+
+static Value* eval_quasiquote(Value* expr, Environment* env,
+                              Value** tco_expr, Environment** tco_env)
+{
+    /* (quasiquote expr) */
+    if (!(is_list(expr) && list_size(LIST(expr)) == 2)) {
+        LOG_CRITICAL("quasiquote requires a single list as parameter");
+        return NULL;
+    }
+    Value* args = list_head(list_tail(LIST(expr)));
+    *tco_expr = _quasiquote(args);
+    *tco_env = env;
+    return NULL;
+}
+
 static Value* operator(Value* expr)
 {
     Value* op = NULL;
@@ -303,7 +382,17 @@ tco:
         ret = lookup_variable_value(expr, env);
         return ret;
     } else if (is_quoted(expr)) {
-        return unquote(expr);
+        return eval_quote(expr);
+    } else if (is_quasiquoted(expr)) {
+        tco_expr = NULL;
+        tco_env = NULL;
+        Value* result = eval_quasiquote(expr, env, &tco_expr, &tco_env);
+        if (tco_expr && tco_env) {
+            expr = tco_expr;
+            env = tco_env;
+            goto tco;
+        }
+        return result;
     } else if (is_assignment(expr)) {
         return eval_assignment(expr, env);
     } else if (is_definition(expr)) {
