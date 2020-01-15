@@ -10,7 +10,7 @@
 #include <string.h>
 #include "minunit.h"
 
-#include "array.h"
+#include "../src/array.c"
 
 static char* test_array()
 {
@@ -106,3 +106,23 @@ static char* test_array()
     return 0;
 }
 
+int tests_run = 0;
+
+static char* test_suite()
+{
+    mu_run_test(test_array);
+    return 0;
+}
+
+int main()
+{
+    printf("---=[ Array tests\n");
+    char *result = test_suite();
+    if (result != 0) {
+        printf("%s\n", result);
+    } else {
+        printf("ALL TESTS PASSED\n");
+    }
+    printf("Tests run: %d\n", tests_run);
+    return result != 0;
+}

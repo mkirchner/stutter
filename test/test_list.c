@@ -151,7 +151,7 @@ static char* test_suite()
 
 int main()
 {
-    LOG_INFO("---=[ List tests\n");
+    printf("---=[ List tests\n");
     char *result = test_suite();
     if (result != 0) {
         printf("%s\n", result);

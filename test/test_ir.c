@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "minunit.h"
-#include "ir.h"
+#include "../src/ir.c"
 
 static char* test_ir()
 {
@@ -47,4 +47,25 @@ static char* test_ir()
     value_print(ir_from_ast_sexpr(ast2));
     printf("\n");
     return 0;
+}
+
+int tests_run = 0;
+
+static char* test_suite()
+{
+    mu_run_test(test_ir);
+    return 0;
+}
+
+int main()
+{
+    printf("---=[ IR tests\n");
+    char *result = test_suite();
+    if (result != 0) {
+        printf("%s\n", result);
+    } else {
+        printf("ALL TESTS PASSED\n");
+    }
+    printf("Tests run: %d\n", tests_run);
+    return result != 0;
 }

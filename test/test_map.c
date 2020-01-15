@@ -9,8 +9,9 @@
 
 #include <string.h>
 #include "gc.h"
-#include "map.h"
 #include "log.h"
+
+#include "../src/map.c"
 
 
 static char* test_map()
@@ -39,3 +40,26 @@ static char* test_map()
     return 0;
 }
 
+int tests_run = 0;
+
+static char* test_suite()
+{
+    void* bos = NULL;
+    gc_start(&gc, &bos);
+    mu_run_test(test_map);
+    gc_stop(&gc);
+    return 0;
+}
+
+int main()
+{
+    printf("---=[ map tests\n");
+    char *result = test_suite();
+    if (result != 0) {
+        printf("%s\n", result);
+    } else {
+        printf("ALL TESTS PASSED\n");
+    }
+    printf("Tests run: %d\n", tests_run);
+    return result != 0;
+}

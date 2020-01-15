@@ -18,12 +18,6 @@ Environment* env_new(Environment* parent)
     return env;
 }
 
-void env_delete(Environment* env)
-{
-    map_delete(env->kv);
-    gc_free(&gc, env);
-}
-
 void env_set(Environment* env, char* symbol, const Value* value)
 {
     map_put(env->kv, symbol, (void*) value, sizeof(Value));
@@ -33,9 +27,11 @@ Value* env_get(Environment* env, char* symbol)
 {
     Environment* cur_env = env;
     while(cur_env) {
-        void* value = map_get(cur_env->kv, symbol);
-        if (value) {
-            return value;
+        if (cur_env->kv) {
+            void* value = map_get(cur_env->kv, symbol);
+            if (value) {
+                return value;
+            }
         }
         cur_env = cur_env->parent;
     }
