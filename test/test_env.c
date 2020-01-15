@@ -6,8 +6,9 @@
  */
 
 #include "minunit.h"
-#include "env.h"
 #include "value.h"
+
+#include "../src/env.c"
 
 static char* test_env()
 {
@@ -36,9 +37,26 @@ static char* test_env()
     mu_assert(ret0->type = VALUE_INT, "Value type must not change");
     mu_assert(42 == ret0->value.int_, "Value must not change");
 
-    env_delete(env2);
-    env_delete(env1);
-    env_delete(env0);
-
     return 0;
+}
+
+int tests_run = 0;
+
+static char* test_suite()
+{
+    mu_run_test(test_env);
+    return 0;
+}
+
+int main()
+{
+    printf("---=[ Environment tests\n");
+    char *result = test_suite();
+    if (result != 0) {
+        printf("%s\n", result);
+    } else {
+        printf("ALL TESTS PASSED\n");
+    }
+    printf("Tests run: %d\n", tests_run);
+    return result != 0;
 }

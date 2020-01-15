@@ -9,7 +9,7 @@
 #include <string.h>
 #include "minunit.h"
 
-#include "ast.h"
+#include "../src/ast.c"
 
 static char* test_ast()
 {
@@ -49,3 +49,23 @@ static char* test_ast()
     return 0;
 }
 
+int tests_run = 0;
+
+static char* test_suite()
+{
+    mu_run_test(test_ast);
+    return 0;
+}
+
+int main()
+{
+    printf("---=[ AST tests\n");
+    char *result = test_suite();
+    if (result != 0) {
+        printf("%s\n", result);
+    } else {
+        printf("ALL TESTS PASSED\n");
+    }
+    printf("Tests run: %d\n", tests_run);
+    return result != 0;
+}

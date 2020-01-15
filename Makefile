@@ -35,7 +35,6 @@ $(BUILD_DIR)/lib/gc/src/%.o: lib/gc/src/%.c
 .PHONY: test
 test:
 	$(MAKE) -C $@
-	$(BUILD_DIR)/test/test_stutter
 
 .PHONY: clean
 clean:

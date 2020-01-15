@@ -6,7 +6,7 @@
  */
 
 #include "minunit.h"
-#include "primes.h"
+#include "../src/primes.c"
 
 static char* test_primes()
 {
@@ -21,5 +21,27 @@ static char* test_primes()
     mu_assert(is_prime(611953), "Prime test failure for 611953");
     mu_assert(is_prime(479001599), "Prime test failure for 479001599");
     return 0;
+}
+
+int tests_run = 0;
+
+static char* test_suite()
+{
+    int bos;
+    mu_run_test(test_primes);
+    return 0;
+}
+
+int main()
+{
+    printf("---=[ Prime number tests\n");
+    char *result = test_suite();
+    if (result != 0) {
+        printf("%s\n", result);
+    } else {
+        printf("ALL TESTS PASSED\n");
+    }
+    printf("Tests run: %d\n", tests_run);
+    return result != 0;
 }
 
