@@ -26,6 +26,11 @@ endef
 all: $(TARGETS)
 	$(foreach T,$(TARGETS),$(call execute-command,$(BUILD_DIR)/test/$(T)))
 
+.PHONY: clean
+clean:
+	rm -f $(BUILD_DIR)/test/*
+	rm -f $(BUILD_DIR)/lib/gc/src/*.o
+
 test_setup:
 	mkdir -p $(BUILD_DIR)/test
 	mkdir -p $(BUILD_DIR)/lib/gc/src
