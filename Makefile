@@ -23,11 +23,11 @@ $(BUILD_DIR)/$(STUTTER_BINARY): $(STUTTER_OBJS)
 
 $(BUILD_DIR)/src/%.o: src/%.c
 	mkdir -p $(@D)
-	$(CC) $(CFLAGS) -MMD -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/lib/gc/src/%.o: lib/gc/src/%.c
 	mkdir -p $(@D)
-	$(CC) $(CFLAGS) -MMD -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 .PHONY: test
 test:
