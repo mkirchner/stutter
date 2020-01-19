@@ -59,6 +59,11 @@ static List *list_mutable_copy(const List *l)
     return new_l;
 }
 
+const List *list_dup(const List *l)
+{
+    return list_mutable_copy(l);
+}
+
 const List *list_conj(const List *l, void *value)
 {
     List *nl = list_mutable_copy(l);
