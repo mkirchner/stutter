@@ -31,7 +31,8 @@ typedef enum {
     VALUE_SYMBOL,
     VALUE_LIST,
     VALUE_BUILTIN_FN,
-    VALUE_FN
+    VALUE_FN,
+    VALUE_MACRO_FN
 } ValueType;
 
 
@@ -65,6 +66,7 @@ Value* value_new_int(int int_);
 Value* value_new_float(float float_);
 Value* value_new_builtin_fn(Value* (fn)(const Value*));
 Value* value_new_fn(Value* args, Value* body, Environment* env);
+Value* value_new_macro(Value* args, Value* body, Environment* env);
 Value* value_new_string(const char* str);
 Value* value_new_symbol(const char* str);
 Value* value_new_list(List* l);

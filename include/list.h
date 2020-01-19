@@ -27,6 +27,7 @@ typedef struct List {
 List* list_new();
 List* list_copy(List* l);
 void* list_head(List* l);
+void* list_nth(const List* l, const size_t n);
 List* list_tail(List* l);
 List* list_append(List* l, void* value);
 List* list_prepend(List* l, void* value);

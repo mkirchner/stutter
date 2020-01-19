@@ -15,93 +15,127 @@
 #include "core.h"
 
 
-static bool is_self_evaluating(const Value* value)
+static bool is_self_evaluating(const Value *value)
 {
     return value->type == VALUE_FLOAT
-        || value->type == VALUE_INT
-        || value->type == VALUE_STRING
-        || value->type == VALUE_NIL
-        || value->type == VALUE_FN;
+           || value->type == VALUE_INT
+           || value->type == VALUE_STRING
+           || value->type == VALUE_NIL
+           || value->type == VALUE_FN;
 }
 
-static bool is_symbol(const Value* value)
+static bool is_symbol(const Value *value)
 {
     return value->type == VALUE_SYMBOL;
 }
 
-static bool is_variable(const Value* value)
+static bool is_variable(const Value *value)
 {
     return is_symbol(value);
 }
 
-static bool is_list_that_starts_with(const Value* value, const char* what, size_t len)
+static bool is_list_that_starts_with(const Value *value, const char *what, size_t len)
 {
     if (value && value->type == VALUE_LIST) {
-        Value* symbol;
+        Value *symbol;
         if ((symbol = list_head(value->value.list)) &&
-             symbol->type == VALUE_SYMBOL &&
-             strncmp(symbol->value.str, what, len) == 0) {
-                return true;
+                symbol->type == VALUE_SYMBOL &&
+                strncmp(symbol->value.str, what, len) == 0) {
+            return true;
         }
     }
     return false;
 }
 
-static bool is_quoted(const Value* value)
+static bool is_quoted(const Value *value)
 {
     return is_list_that_starts_with(value, "quote", 5);
 }
 
-static bool is_quasiquoted(const Value* value)
+static bool is_quasiquoted(const Value *value)
 {
     return is_list_that_starts_with(value, "quasiquote", 10);
 }
 
-static bool is_assignment(const Value* value)
+static bool is_assignment(const Value *value)
 {
     // (set! var value)
     return is_list_that_starts_with(value, "set!", 4);
 }
 
-static bool is_definition(const Value* value)
+static bool is_definition(const Value *value)
 {
     // (define var value)
-    return is_list_that_starts_with(value, "define", 6);
+    return is_list_that_starts_with(value, "def", 3);
 }
 
-static bool is_let(const Value* value)
+static bool is_macro_definition(const Value *value)
+{
+    // (define var value)
+    return is_list_that_starts_with(value, "defmacro", 8);
+}
+
+static bool is_let(const Value *value)
 {
     // (let (n1 v1 n2 v2 ...) body)
-    return is_list_that_starts_with(value, "let*", 4);
+    return is_list_that_starts_with(value, "let", 4);
 }
 
-static bool is_lambda(const Value* value)
+static bool is_lambda(const Value *value)
 {
     // (lambda (p1 ... pn) body)
     return is_list_that_starts_with(value, "lambda", 6);
 }
 
-static bool is_if(const Value* value)
+static bool is_if(const Value *value)
 {
     return is_list_that_starts_with(value, "if", 2);
 }
 
-static bool is_do(const Value* value)
+static bool is_do(const Value *value)
 {
     return is_list_that_starts_with(value, "do", 2);
 }
 
-static bool is_list(const Value* value)
+static bool is_list(const Value *value)
 {
     return value->type == VALUE_LIST;
 }
 
-static bool is_application(const Value* value)
+static bool is_macro(const Value *value)
+{
+    return value->type == VALUE_MACRO_FN;
+}
+
+static Value *get_macro_fn(const Value *form, Environment *env)
+{
+    /*
+     * Takes a list, extracts the first element, checks if it is
+     * a symbol and if that symbol resolves into a macro function.
+     */
+    if (is_list(form)) {
+        Value *first = list_head(LIST(form));
+        if (first && is_symbol(first)) {
+            Value *fn = env_get(env, first->value.str);
+            if (fn && is_macro(fn))
+                return fn;
+        }
+    }
+    return NULL;
+}
+
+static bool is_macro_expansion(const Value *value)
+{
+    return is_list_that_starts_with(value, "macroexpand", 11);
+}
+
+
+static bool is_application(const Value *value)
 {
     return is_list(value);
 }
 
-static bool is_true(const Value* v)
+static bool is_true(const Value *v)
 {
     if (!v) return false;
     switch(v->type) {
@@ -120,20 +154,22 @@ static bool is_true(const Value* v)
         return list_size(v->value.list) > 0;
     case VALUE_FN:
         return v->value.fn != NULL;
+    case VALUE_MACRO_FN:
+        return v->value.fn != NULL;
     case VALUE_BUILTIN_FN:
         return v->value.builtin_fn != NULL;
     }
 }
 
-static bool has_cardinality(const Value* expr, const size_t cardinality)
+static bool has_cardinality(const Value *expr, const size_t cardinality)
 {
     return expr && expr->type == VALUE_LIST && list_size(expr->value.list) == cardinality;
 }
 
-static Value* lookup_variable_value(Value* expr, Environment* env)
+static Value *lookup_variable_value(Value *expr, Environment *env)
 {
     // LOG_DEBUG("Symbol: %s\n", expr->value.str);
-    Value* sym = NULL;
+    Value *sym = NULL;
     if ((sym = env_get(env, expr->value.str)) == NULL) {
         LOG_CRITICAL("Unknown symbol: %s", expr->value.str);
         // FIXME: how to fail? Value type ERROR?
@@ -141,7 +177,7 @@ static Value* lookup_variable_value(Value* expr, Environment* env)
     return sym;
 }
 
-static Value* eval_quote(Value* expr)
+static Value *eval_quote(Value *expr)
 {
     // (quote expr)
     if (has_cardinality(expr, 2)) {
@@ -151,13 +187,13 @@ static Value* eval_quote(Value* expr)
     return NULL;
 }
 
-static Value* eval_assignment(Value* expr, Environment* env)
+static Value *eval_assignment(Value *expr, Environment *env)
 {
     // (set! var value)
     if (has_cardinality(expr, 3)) {
-        Value* name = list_head(list_tail(expr->value.list));  // pos 2
+        Value *name = list_head(list_tail(expr->value.list));  // pos 2
         if (env_contains(env, name->value.str)) {
-            Value* value = list_head(list_tail(list_tail(expr->value.list)));  // pos 3
+            Value *value = list_head(list_tail(list_tail(expr->value.list)));  // pos 3
             value = eval(value, env);
             env_set(env, name->value.str, value);
             return value;
@@ -167,31 +203,47 @@ static Value* eval_assignment(Value* expr, Environment* env)
     }
     return NULL;
 }
-static Value* eval_definition(Value* expr, Environment* env)
+
+static Value *eval_definition(Value *expr, Environment *env)
 {
     // (def name value)
     if (has_cardinality(expr, 3)) {
-        Value* name = list_head(list_tail(expr->value.list));  // pos 2
-        Value* value = list_head(list_tail(list_tail(expr->value.list)));  // pos 3
+        Value *name = list_head(list_tail(expr->value.list));  // pos 2
+        Value *value = list_head(list_tail(list_tail(expr->value.list)));  // pos 3
         value = eval(value, env);
         env_set(env, name->value.str, value);
     }
     return NULL;
 }
 
-static Value* eval_let(Value* expr, Environment* env, Value** tco_expr, Environment** tco_env)
+static Value *eval_macro_definition(Value *expr, Environment *env)
+{
+    // (defmacro name parameters expr)
+    if (has_cardinality(expr, 4)) {
+        Value *name = list_nth(LIST(expr), 1);
+        Value *args = list_nth(LIST(expr), 2);
+        Value *body = list_nth(LIST(expr), 3);
+        Value *macro = value_new_macro(args, body, env);
+        env_set(env, name->value.str, macro);
+        return macro;
+    }
+    LOG_CRITICAL("Invalid macro declaration");
+    return NULL;
+}
+
+static Value *eval_let(Value *expr, Environment *env, Value **tco_expr, Environment **tco_env)
 {
     // (let (n1 v1 n2 v2 ...) (body))
     if (has_cardinality(expr, 3)) {
-        Environment* inner = env_new(env);
-        Value* assignments = list_head(list_tail(expr->value.list));  // pos 2
+        Environment *inner = env_new(env);
+        Value *assignments = list_head(list_tail(expr->value.list));  // pos 2
         if (assignments->type != VALUE_LIST || list_size(LIST(assignments)) % 2 != 0) {
             LOG_CRITICAL("Invalid assignment list in let");
             return NULL;
         }
-        List* list = LIST(assignments);
-        Value* name = list_head(list);
-        Value* value = list_head(list_tail(list));
+        List *list = LIST(assignments);
+        Value *name = list_head(list);
+        Value *value = list_head(list_tail(list));
         while (name) {
             env_set(inner, name->value.str, eval(value, inner));
             list = list_tail(list_tail(list)); // +2
@@ -205,11 +257,11 @@ static Value* eval_let(Value* expr, Environment* env, Value** tco_expr, Environm
     return NULL;
 }
 
-static Value* eval_if(Value* expr, Environment* env, Value** tco_expr, Environment** tco_env)
+static Value *eval_if(Value *expr, Environment *env, Value **tco_expr, Environment **tco_env)
 {
     // (if predicate consequent alternative)
     if (has_cardinality(expr, 4)) {
-        Value* predicate = eval(list_head(list_tail(expr->value.list)), env);
+        Value *predicate = eval(list_head(list_tail(expr->value.list)), env);
         if (is_true(predicate)) {
             *tco_expr = list_head(list_tail(list_tail(expr->value.list)));
         } else {
@@ -220,24 +272,24 @@ static Value* eval_if(Value* expr, Environment* env, Value** tco_expr, Environme
     return NULL;
 }
 
-static Value* declare_fn(Value* expr, Environment* env)
+static Value *declare_fn(Value *expr, Environment *env)
 {
     // (lambda (p1 p2 ..) (expr))
     if (has_cardinality(expr, 3)) {
-        Value* args = list_head(list_tail(expr->value.list));
-        Value* body = list_head(list_tail(list_tail(expr->value.list)));
-        Value* fn = value_new_fn(args, body, env);
+        Value *args = list_head(list_tail(expr->value.list));
+        Value *body = list_head(list_tail(list_tail(expr->value.list)));
+        Value *fn = value_new_fn(args, body, env);
         return fn;
     }
     LOG_CRITICAL("Invalid lambda declaration");
     return NULL;
 }
 
-static Value* eval_do(Value* expr, Environment* env, Value** tco_expr, Environment** tco_env)
+static Value *eval_do(Value *expr, Environment *env, Value **tco_expr, Environment **tco_env)
 {
     // (do sexpr sexpr ...)
-    Value* head;
-    List* list = list_tail(LIST(expr));
+    Value *head;
+    List *list = list_tail(LIST(expr));
     while((head = list_head(list)) != NULL) {
         list = list_tail(list);
         if (list_size(list) == 0) {
@@ -250,7 +302,7 @@ static Value* eval_do(Value* expr, Environment* env, Value** tco_expr, Environme
     return NULL;
 }
 
-static Value* _quasiquote(Value* arg)
+static Value *_quasiquote(Value *arg)
 {
     /*
      * The idea here is to recursively rewrite the syntax tree (the IR form).
@@ -275,57 +327,57 @@ static Value* _quasiquote(Value* arg)
 
     /* If the argument is not a list then act like quote */
     if (!(is_list(arg) && list_size(LIST(arg)) > 0)) {
-        Value* ret = value_make_list(value_new_symbol("quote"));
+        Value *ret = value_make_list(value_new_symbol("quote"));
         LIST(ret) = list_append(LIST(ret), arg);
         return ret;
     }
     /* arg is a list, let's peek at the first item */
-    Value* arg0 = list_head(LIST(arg));
+    Value *arg0 = list_head(LIST(arg));
     if (arg0->type == VALUE_SYMBOL && strncmp(arg0->value.str, "unquote", 7) == 0) {
         if (list_size(LIST(arg)) != 2) {
             LOG_CRITICAL("unquote takes a single parameter");
             return NULL;
         }
-        Value* arg1 = list_head(list_tail(LIST(arg)));
+        Value *arg1 = list_head(list_tail(LIST(arg)));
         return arg1;
     } else if (arg0->type == VALUE_LIST) {
         /* arg is a list that starts with a list. Let's see if it starts with splice-unquote */
-        Value* arg00 = list_head(LIST(arg0));
+        Value *arg00 = list_head(LIST(arg0));
         if (arg00->type == VALUE_SYMBOL && strncmp(arg00->value.str, "splice-unquote", 14) == 0) {
             if (list_size(LIST(arg0)) != 2) {
                 LOG_CRITICAL("splice-unquote takes a single parameter");
                 return NULL;
             }
-            Value* arg01 = list_head(list_tail(LIST(arg0)));
-            Value* ast = value_make_list(value_new_symbol("concat"));
+            Value *arg01 = list_head(list_tail(LIST(arg0)));
+            Value *ast = value_make_list(value_new_symbol("concat"));
             LIST(ast) = list_append(LIST(ast), arg01);
             LIST(ast) = list_append(LIST(ast), _quasiquote(value_new_list(list_tail(LIST(arg)))));
             return ast;
         }
     }
-    Value* ast = value_make_list(value_new_symbol("cons"));
+    Value *ast = value_make_list(value_new_symbol("cons"));
     LIST(ast) = list_append(LIST(ast), _quasiquote(arg0));
     LIST(ast) = list_append(LIST(ast), _quasiquote(value_new_list(list_tail(LIST(arg)))));
     return ast;
 }
 
-static Value* eval_quasiquote(Value* expr, Environment* env,
-                              Value** tco_expr, Environment** tco_env)
+static Value *eval_quasiquote(Value *expr, Environment *env,
+                              Value **tco_expr, Environment **tco_env)
 {
     /* (quasiquote expr) */
     if (!(is_list(expr) && list_size(LIST(expr)) == 2)) {
         LOG_CRITICAL("quasiquote requires a single list as parameter");
         return NULL;
     }
-    Value* args = list_head(list_tail(LIST(expr)));
+    Value *args = list_head(list_tail(LIST(expr)));
     *tco_expr = _quasiquote(args);
     *tco_env = env;
     return NULL;
 }
 
-static Value* operator(Value* expr)
+static Value *operator(Value *expr)
 {
-    Value* op = NULL;
+    Value *op = NULL;
     if (expr && expr->type == VALUE_LIST) {
         op = list_head(expr->value.list);
         if (!op) {
@@ -335,22 +387,47 @@ static Value* operator(Value* expr)
     return op;
 }
 
-static Value* operands(Value* expr)
+static Value *operands(Value *expr)
 {
-    Value* ops = NULL;
+    Value *ops = NULL;
     if (expr && expr->type == VALUE_LIST) {
         ops = value_new_list(list_tail(expr->value.list));
     }
     return ops;
 }
 
-static Value* eval_all(Value* expr, Environment* env)
+static Value *macroexpand(Value *form, Environment *env)
+{
+    Value *fn;
+    Value *args;
+    Value *expr = form;
+    Environment *new_env = env;
+    LOG_INFO("in form:  %s", core_str(expr)->value.str);
+    while((fn = get_macro_fn(expr, new_env)) != NULL) {
+        args = value_new_list(list_tail(LIST(expr)));
+        apply(fn, args, &expr, &new_env);
+    }
+    LOG_INFO("out form: %s", core_str(expr)->value.str);
+    return expr;
+}
+
+static Value *macroexpand_1(Value *expr, Environment *env)
+{
+    if (!is_list(expr)) {
+        LOG_CRITICAL("Require macro call for expansion");
+        return NULL;
+    }
+    Value *args = list_head(list_tail(LIST(expr)));
+    return macroexpand(args, env);
+}
+
+static Value *eval_all(Value *expr, Environment *env)
 {
     // eval every element of a list
-    List* list = expr->value.list;
-    List* evaluated_list = list_new();
-    Value* head;
-    Value* evaluated_head;
+    List *list = expr->value.list;
+    List *evaluated_list = list_new();
+    Value *head;
+    Value *evaluated_head;
     while ((head = list_head(list)) != NULL) {
         evaluated_head = eval(head, env);
         if (!evaluated_head) {
@@ -366,11 +443,11 @@ static Value* eval_all(Value* expr, Environment* env)
 }
 
 
-Value* eval(Value* expr, Environment* env)
+Value *eval(Value *expr, Environment *env)
 {
-    Value* tco_expr = NULL;
-    Value* ret = NULL;
-    Environment* tco_env = NULL;
+    Value *tco_expr = NULL;
+    Value *ret = NULL;
+    Environment *tco_env = NULL;
 tco:
     if (!expr) {
         LOG_CRITICAL("Passed NULL ptr to eval");
@@ -381,12 +458,20 @@ tco:
     } else if (is_variable(expr)) {
         ret = lookup_variable_value(expr, env);
         return ret;
-    } else if (is_quoted(expr)) {
+    }
+
+    LOG_INFO("p: %p", expr);
+    LOG_INFO("Eval/macroex pre:  %s", core_pr_str(expr)->value.str);
+    expr = macroexpand(expr, env);
+    LOG_INFO("Eval/macroex post: %s", core_pr_str(expr)->value.str);
+    if (!is_list(expr)) goto tco;
+
+    if (is_quoted(expr)) {
         return eval_quote(expr);
     } else if (is_quasiquoted(expr)) {
         tco_expr = NULL;
         tco_env = NULL;
-        Value* result = eval_quasiquote(expr, env, &tco_expr, &tco_env);
+        Value *result = eval_quasiquote(expr, env, &tco_expr, &tco_env);
         if (tco_expr && tco_env) {
             expr = tco_expr;
             env = tco_env;
@@ -395,12 +480,14 @@ tco:
         return result;
     } else if (is_assignment(expr)) {
         return eval_assignment(expr, env);
+    } else if (is_macro_definition(expr)) {
+        return eval_macro_definition(expr, env);
     } else if (is_definition(expr)) {
         return eval_definition(expr, env);
     } else if (is_let(expr)) {
         tco_expr = NULL;
         tco_env = NULL;
-        Value* result = eval_let(expr, env, &tco_expr, &tco_env);
+        Value *result = eval_let(expr, env, &tco_expr, &tco_env);
         if (tco_expr && tco_env) {
             expr = tco_expr;
             env = tco_env;
@@ -410,7 +497,7 @@ tco:
     } else if (is_if(expr)) {
         tco_expr = NULL;
         tco_env = NULL;
-        Value* result = eval_if(expr, env, &tco_expr, &tco_env);
+        Value *result = eval_if(expr, env, &tco_expr, &tco_env);
         if (tco_expr && tco_env) {
             expr = tco_expr;
             env = tco_env;
@@ -420,7 +507,7 @@ tco:
     } else if (is_do(expr)) {
         tco_expr = NULL;
         tco_env = NULL;
-        Value* result = eval_do(expr, env, &tco_expr, &tco_env);
+        Value *result = eval_do(expr, env, &tco_expr, &tco_env);
         if (tco_expr && tco_env) {
             expr = tco_expr;
             env = tco_env;
@@ -429,6 +516,8 @@ tco:
         return result;
     } else if (is_lambda(expr)) {
         return declare_fn(expr, env);
+    } else if (is_macro_expansion(expr)) {
+        return macroexpand_1(expr, env);
     } else if (is_application(expr)) {
         tco_expr = NULL;
         tco_env = NULL;

@@ -2,3 +2,4 @@
 --pad-oper
 --preserve-date
 --max-code-length=100
+--align-pointer=name

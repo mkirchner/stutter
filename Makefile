@@ -4,8 +4,8 @@
 GIT_VERSION := "$(shell git describe --abbrev=8 --dirty --always --tags)"
 
 CC=clang
-CFLAGS=-g -Wall -Wextra -pedantic -Iinclude -Ilib/gc/src -D__STUTTER_VERSION__=\"$(GIT_VERSION)\"
-LDFLAGS=-g -Lbuild/src -Lbuild/lib/gc/src
+CFLAGS=-g -Wall -Wextra -pedantic -Iinclude -Ilib/gc/src -D__STUTTER_VERSION__=\"$(GIT_VERSION)\" -fprofile-arcs -ftest-coverage -Wno-gnu-zero-variadic-macro-arguments -Wno-gnu-case-range
+LDFLAGS=-g -Lbuild/src -Lbuild/lib/gc/src --coverage
 LDLIBS=-ledit
 RM=rm
 BUILD_DIR=./build

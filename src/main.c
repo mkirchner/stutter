@@ -87,7 +87,7 @@ Environment* global_env()
     // add stutter basics
     size_t N_EXPRS = 1;
     const char* exprs[N_EXPRS];
-    exprs[0] = "(define load-file"
+    exprs[0] = "(def load-file"
                "  (lambda (path)"
                "    (eval (read-string (str \"(do \" (slurp path) \")\")))))";
     for (size_t i = 0; i < N_EXPRS; ++i) {

@@ -407,8 +407,10 @@ static char* core_str_inner(char* str, const Value* v)
         str = str_append(str, strlen(str), ")", 1);
         break;
     case VALUE_FN:
+    case VALUE_MACRO_FN:
         str = str_append(str, strlen(str), "(lambda ", 8);
         str = core_str_inner(str, FN(v)->args);
+        str = str_append(str, strlen(str), " ", 1);
         str = core_str_inner(str, FN(v)->body);
         str = str_append(str, strlen(str), ")", 1);
         break;
@@ -427,14 +429,18 @@ Value* core_str_outer(const Value* args, bool printable)
         return value_new_string("");
 
     char* str = calloc(1, sizeof(char));
-    List* list = LIST(args);
-    Value* head;
-    while ((head = list_head(list)) != NULL) {
-        str = core_str_inner(str, head);
-        list = list_tail(list);
-        if (printable) {
-            str = str_append(str, strlen(str), " ", 1);
+    if (args->type == VALUE_LIST) {
+        List* list = LIST(args);
+        Value* head;
+        while ((head = list_head(list)) != NULL) {
+            str = core_str_inner(str, head);
+            list = list_tail(list);
+            if (printable) {
+                str = str_append(str, strlen(str), " ", 1);
+            }
         }
+    } else {
+        str = core_str_inner(str, args);
     }
     Value* ret = value_new_string(str);
     free(str);

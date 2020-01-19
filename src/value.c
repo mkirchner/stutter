@@ -62,6 +62,16 @@ Value* value_new_fn(Value* args, Value* body, Environment* env)
     return v;
 }
 
+Value* value_new_macro(Value* args, Value* body, Environment* env)
+{
+    Value* v = value_new(VALUE_MACRO_FN);
+    v->value.fn = gc_calloc(&gc, 1, sizeof(CompositeFunction));
+    v->value.fn->args = args;
+    v->value.fn->body = body;
+    v->value.fn->env = env;
+    return v;
+}
+
 Value* value_new_string(const char* str)
 {
     Value* v = value_new(VALUE_STRING);
@@ -127,6 +137,11 @@ void value_print(const Value* v)
         break;
     case VALUE_FN:
         fprintf(stderr, "lambda: ");
+        value_print(FN(v)->args);
+        value_print(FN(v)->body);
+        break;
+    case VALUE_MACRO_FN:
+        fprintf(stderr, "macro: ");
         value_print(FN(v)->args);
         value_print(FN(v)->body);
         break;

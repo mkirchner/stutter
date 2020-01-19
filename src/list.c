@@ -8,6 +8,7 @@
 #include "list.h"
 #include "gc.h"
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -98,23 +99,53 @@ List* list_prepend(List* l, void* value)
 
 void* list_head(List* l)
 {
-    return l->begin ? (void*) l->begin->p : NULL;
+    return (l && l->begin && l->begin->p) ? (void*) l->begin->p : NULL;
 }
 
-List* list_tail(List* l)
+void* list_nth(const List* l, const size_t n)
 {
-    // flat copy
-    List* tail = (List*) gc_malloc(&gc, sizeof(List));
-    if (l->size > 1) {
-        tail->begin = l->begin->next;
-        tail->end = l->end;
-        tail->size = l->size - 1;
-    } else {
-        tail->begin = NULL;
-        tail->end = NULL;
-        tail->size = 0;
+    if (!(l->begin)) {
+        return NULL;
     }
-    return tail;
+    const ListItem* cur = l->begin;
+    for (size_t i = 0; i < n; ++i) {
+        cur = cur->next;
+        if (!cur) {
+            return NULL;
+        }
+    }
+    return (void*) cur->p;
+}
+
+/**
+ * Returns the tail of a list.
+ *
+ * Rules:
+ * - The tail of (a b ... c) is (b ... c)
+ * - The tail of (a) is the empty list
+ * - The tail of the empty list is the empty  list
+ *
+ * @param l A list instance.
+ */
+List* list_tail(const List* l)
+{
+    assert(l && "Invalid argument: l must not be NULL");
+    if (l) {
+        // flat copy
+        List* tail = (List*) gc_malloc(&gc, sizeof(List));
+        if (l->size > 1) {
+            tail->begin = l->begin->next;
+            tail->end = l->end;
+            tail->size = l->size - 1;
+            return tail;
+        } else {
+            tail->begin = NULL;
+            tail->end = NULL;
+            tail->size = 0;
+            return tail;
+        }
+    }
+    return NULL;
 }
 
 size_t list_size(List* l)
