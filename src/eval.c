@@ -241,7 +241,7 @@ static Value *eval_let(Value *expr, Environment *env, Value **tco_expr, Environm
             LOG_CRITICAL("Invalid assignment list in let");
             return NULL;
         }
-        List *list = LIST(assignments);
+        const List *list = LIST(assignments);
         Value *name = list_head(list);
         Value *value = list_head(list_tail(list));
         while (name) {
@@ -289,7 +289,7 @@ static Value *eval_do(Value *expr, Environment *env, Value **tco_expr, Environme
 {
     // (do sexpr sexpr ...)
     Value *head;
-    List *list = list_tail(LIST(expr));
+    const List *list = list_tail(LIST(expr));
     while((head = list_head(list)) != NULL) {
         list = list_tail(list);
         if (list_size(list) == 0) {
@@ -328,7 +328,7 @@ static Value *_quasiquote(Value *arg)
     /* If the argument is not a list then act like quote */
     if (!(is_list(arg) && list_size(LIST(arg)) > 0)) {
         Value *ret = value_make_list(value_new_symbol("quote"));
-        LIST(ret) = list_append(LIST(ret), arg);
+        LIST(ret) = list_conj(LIST(ret), arg);
         return ret;
     }
     /* arg is a list, let's peek at the first item */
@@ -350,14 +350,14 @@ static Value *_quasiquote(Value *arg)
             }
             Value *arg01 = list_head(list_tail(LIST(arg0)));
             Value *ast = value_make_list(value_new_symbol("concat"));
-            LIST(ast) = list_append(LIST(ast), arg01);
-            LIST(ast) = list_append(LIST(ast), _quasiquote(value_new_list(list_tail(LIST(arg)))));
+            LIST(ast) = list_conj(LIST(ast), arg01);
+            LIST(ast) = list_conj(LIST(ast), _quasiquote(value_new_list(list_tail(LIST(arg)))));
             return ast;
         }
     }
     Value *ast = value_make_list(value_new_symbol("cons"));
-    LIST(ast) = list_append(LIST(ast), _quasiquote(arg0));
-    LIST(ast) = list_append(LIST(ast), _quasiquote(value_new_list(list_tail(LIST(arg)))));
+    LIST(ast) = list_conj(LIST(ast), _quasiquote(arg0));
+    LIST(ast) = list_conj(LIST(ast), _quasiquote(value_new_list(list_tail(LIST(arg)))));
     return ast;
 }
 
@@ -424,8 +424,8 @@ static Value *macroexpand_1(Value *expr, Environment *env)
 static Value *eval_all(Value *expr, Environment *env)
 {
     // eval every element of a list
-    List *list = expr->value.list;
-    List *evaluated_list = list_new();
+    const List *list = expr->value.list;
+    const List *evaluated_list = list_new();
     Value *head;
     Value *evaluated_head;
     while ((head = list_head(list)) != NULL) {
@@ -435,7 +435,7 @@ static Value *eval_all(Value *expr, Environment *env)
             LOG_CRITICAL("Eval failed.");
             return NULL;
         }
-        evaluated_list = list_append(evaluated_list, evaluated_head);
+        evaluated_list = list_conj(evaluated_list, evaluated_head);
         list = list_tail(list);
     }
     expr->value.list = evaluated_list;

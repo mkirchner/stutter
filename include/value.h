@@ -10,6 +10,7 @@
 
 #include "array.h"
 #include "env.h"
+#include "gc.h"
 #include "map.h"
 #include "list.h"
 

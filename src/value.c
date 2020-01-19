@@ -8,7 +8,6 @@
 #include "value.h"
 #include <string.h>
 #include "log.h"
-#include "gc.h"
 #include <assert.h>
 
 

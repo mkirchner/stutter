@@ -25,6 +25,7 @@ typedef struct List {
 } List;
 
 const List *list_new();
+const List *list_dup(const List *l);
 void *list_head(const List *l);
 void *list_nth(const List *l, const size_t n);
 const List *list_tail(const List *l);
