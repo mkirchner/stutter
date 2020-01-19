@@ -12,26 +12,25 @@
 #include <stddef.h>
 
 typedef struct ListItem {
-    void* p;
-    struct ListItem* prev;
-    struct ListItem* next;
+    void *p;
+    struct ListItem *prev;
+    struct ListItem *next;
 } ListItem;
 
 
 typedef struct List {
-    struct ListItem* begin;
-    struct ListItem* end;
+    struct ListItem *begin;
+    struct ListItem *end;
     size_t size;
 } List;
 
-List* list_new();
-List* list_copy(List* l);
-void* list_head(List* l);
-void* list_nth(const List* l, const size_t n);
-List* list_tail(List* l);
-List* list_append(List* l, void* value);
-List* list_prepend(List* l, void* value);
-size_t list_size(List* l);
-bool list_is_empty(List* l);
+const List *list_new();
+void *list_head(const List *l);
+void *list_nth(const List *l, const size_t n);
+const List *list_tail(const List *l);
+const List *list_conj(const List *l, void *value);
+const List *list_cons(const List *l, void *value);
+size_t list_size(const List *l);
+bool list_is_empty(const List *l);
 
 #endif /* !__LIST_H__ */

@@ -13,36 +13,36 @@
 #include <string.h>
 
 
-List* list_new()
+const List *list_new()
 {
     // doubly-linked list, managed memory
-    List* list = (List*) gc_malloc(&gc, sizeof(List));
+    List *list = (List *) gc_malloc(&gc, sizeof(List));
     list->begin = list->end = NULL;
     list->size = 0;
     return list;
 }
 
-static ListItem* list_item_new(void* value)
+static ListItem *list_item_new(void *value)
 {
-    ListItem* item = (ListItem*) gc_calloc(&gc, 1, sizeof(ListItem));
+    ListItem *item = (ListItem *) gc_calloc(&gc, 1, sizeof(ListItem));
     item->p = value;
     return item;
 }
 
-static ListItem* list_item_copy(const ListItem* li)
+static ListItem *list_item_copy(const ListItem *li)
 {
-    ListItem* copy = (ListItem*) gc_calloc(&gc, 1, sizeof(ListItem));
+    ListItem *copy = (ListItem *) gc_calloc(&gc, 1, sizeof(ListItem));
     memcpy(copy, li, sizeof(ListItem));
     return copy;
 }
 
-List* list_copy(List* l)
+static List *list_mutable_copy(const List *l)
 {
-    List* new_l = gc_calloc(&gc, 1, sizeof(List));
-    void* head = NULL;
-    ListItem* prev = NULL;
+    List *new_l = gc_calloc(&gc, 1, sizeof(List));
+    void *head = NULL;
+    ListItem *prev = NULL;
     while ((head = list_head(l)) != NULL) {
-        ListItem* new_li = list_item_new(head);
+        ListItem *new_li = list_item_new(head);
         new_li->prev = prev;
         if (!prev) {
             new_l->begin = new_li;
@@ -59,10 +59,10 @@ List* list_copy(List* l)
     return new_l;
 }
 
-List* list_append(List* l, void* value)
+const List *list_conj(const List *l, void *value)
 {
-    List* nl = list_copy(l);
-    ListItem* item = list_item_new(value);
+    List *nl = list_mutable_copy(l);
+    ListItem *item = list_item_new(value);
     if (nl->size > 0) {
         nl->end->next = item;
         item->prev = nl->end;
@@ -78,10 +78,10 @@ List* list_append(List* l, void* value)
     return nl;
 }
 
-List* list_prepend(List* l, void* value)
+const List *list_cons(const List *l, void *value)
 {
-    List* nl = list_copy(l);
-    ListItem* item = list_item_new(value);
+    List *nl = list_mutable_copy(l);
+    ListItem *item = list_item_new(value);
     if (nl->size > 0) {
         item->next = nl->begin;
         nl->begin->prev = item;
@@ -97,24 +97,33 @@ List* list_prepend(List* l, void* value)
     return nl;
 }
 
-void* list_head(List* l)
+/**
+ * Return the first element in a list.
+ *
+ * Rules:
+ *   - The head of (a b ... c) is a
+ *   - The head of (a) is a
+ *   - The head of the empty list is nil (we're returning NULL)
+ */
+void *list_head(const List *l)
 {
-    return (l && l->begin && l->begin->p) ? (void*) l->begin->p : NULL;
+    assert(l && "Invalid argument: must pass a list instance");
+    return (l && l->begin && l->begin->p) ? (void *) l->begin->p : NULL;
 }
 
-void* list_nth(const List* l, const size_t n)
+void *list_nth(const List *l, const size_t n)
 {
-    if (!(l->begin)) {
+    if (!(l->begin) || list_size(l) <= n) {
         return NULL;
     }
-    const ListItem* cur = l->begin;
+    const ListItem *cur = l->begin;
     for (size_t i = 0; i < n; ++i) {
         cur = cur->next;
         if (!cur) {
             return NULL;
         }
     }
-    return (void*) cur->p;
+    return (void *) cur->p;
 }
 
 /**
@@ -127,12 +136,12 @@ void* list_nth(const List* l, const size_t n)
  *
  * @param l A list instance.
  */
-List* list_tail(const List* l)
+const List *list_tail(const List *l)
 {
     assert(l && "Invalid argument: l must not be NULL");
     if (l) {
         // flat copy
-        List* tail = (List*) gc_malloc(&gc, sizeof(List));
+        List *tail = (List *) gc_malloc(&gc, sizeof(List));
         if (l->size > 1) {
             tail->begin = l->begin->next;
             tail->end = l->end;
@@ -148,12 +157,12 @@ List* list_tail(const List* l)
     return NULL;
 }
 
-size_t list_size(List* l)
+size_t list_size(const List *l)
 {
     return l->size;
 }
 
-bool list_is_empty(List* l)
+bool list_is_empty(const List *l)
 {
     return list_size(l) == 0;
 }
