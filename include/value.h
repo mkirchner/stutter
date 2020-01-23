@@ -61,6 +61,9 @@ typedef struct Value {
 //
 // functions
 //
+bool is_symbol(const Value *value);
+bool is_macro(const Value *value);
+bool is_list(const Value *value);
 Value *value_new_nil();
 Value *value_new_bool(const bool bool_);
 Value *value_new_int(int int_);

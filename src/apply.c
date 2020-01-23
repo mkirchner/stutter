@@ -38,8 +38,8 @@ static Value *apply_compound_fn(Value *fn, Value *args,
     if (fn && is_compound_fn(fn) && fn->value.fn) {
         // args are fully evaluated, so bind them to the names in the fn def on
         // top of the closure of f
-        List *arg_names = fn->value.fn->args->value.list;
-        List *arg_values = args->value.list;
+        const List *arg_names = fn->value.fn->args->value.list;
+        const List *arg_values = args->value.list;
         if (list_size(arg_names) != list_size(arg_values)) {
             LOG_CRITICAL("Invalid number of arguments for compound fn");
             return NULL;
@@ -49,9 +49,11 @@ static Value *apply_compound_fn(Value *fn, Value *args,
         Value *arg_name = list_head(arg_names);
         Value *arg_value = list_head(arg_values);
         while(arg_name != NULL && arg_value != NULL) {
-            // FIXME: this *assumes* that all entries in the arg_names list are symbols
+            if (!is_symbol(arg_name)) {
+                LOG_CRITICAL("Parameter name should be a symbol.");
+                return NULL;
+            }
             env_set(env, arg_name->value.str, arg_value);
-
             arg_names = list_tail(arg_names);
             arg_values = list_tail(arg_values);
             arg_name = list_head(arg_names);

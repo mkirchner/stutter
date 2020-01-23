@@ -14,7 +14,7 @@
 struct Value;
 
 typedef struct Environment {
-    Map* kv;
+    Map* map;
     struct Environment* parent;
 } Environment;
 

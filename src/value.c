@@ -10,6 +10,20 @@
 #include "log.h"
 #include <assert.h>
 
+bool is_symbol(const Value *value)
+{
+    return value->type == VALUE_SYMBOL;
+}
+
+bool is_macro(const Value *value)
+{
+    return value->type == VALUE_MACRO_FN;
+}
+
+bool is_list(const Value *value)
+{
+    return value->type == VALUE_LIST;
+}
 
 static Value *value_new(ValueType type)
 {

@@ -545,11 +545,13 @@ out:
 }
 
 
+#define REQUIRE_ARGS(args) do  { if (!args) { return NULL; } } while (0)
 #define REQUIRE_TYPE(args, t) do  { if (args->type != t) { LOG_CRITICAL("Type mismatch"); return NULL; } } while (0)
 #define REQUIRE_CARDINALITY(args, n) do { if (list_size(args->value.list) != n) { LOG_CRITICAL("Wrong number of arguments"); return NULL; } } while (0)
 
 Value *core_cons(const Value *args)
 {
+    REQUIRE_ARGS(args);
     REQUIRE_TYPE(args, VALUE_LIST);
     REQUIRE_CARDINALITY(args, 2);
     Value *first = list_head(LIST(args));
@@ -560,6 +562,7 @@ Value *core_cons(const Value *args)
 
 Value *core_concat(const Value *args)
 {
+    REQUIRE_ARGS(args);
     REQUIRE_TYPE(args, VALUE_LIST);
     const List *concat = list_new();
     for (const ListItem *i = LIST(args)->begin; i != NULL; i = i->next) {
