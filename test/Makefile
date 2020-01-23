@@ -28,7 +28,7 @@ all: $(TARGETS)
 
 .PHONY: clean
 clean:
-	rm -f $(BUILD_DIR)/test/*
+	rm -rf $(BUILD_DIR)/test/*
 	rm -f $(BUILD_DIR)/lib/gc/src/*.o
 
 test_setup:
@@ -105,7 +105,7 @@ test_ir: test_setup gc
 # test_lexer
 #
 test_lexer: test_setup gc
-	mkdir -p $(BUILD_DIR)/test/dat
+	mkdir -p $(BUILD_DIR)/test/data
 	$(CC) $(CFLAGS) -MMD -c test_lexer.c -o $(BUILD_DIR)/test/test_lexer.o
 	$(CC) $(LDFLAGS) $(LDLIBS) \
 		$(BUILD_DIR)/test/test_lexer.o -o $(BUILD_DIR)/test/test_lexer

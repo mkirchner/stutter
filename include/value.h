@@ -10,6 +10,7 @@
 
 #include "array.h"
 #include "env.h"
+#include "gc.h"
 #include "map.h"
 #include "list.h"
 
@@ -31,14 +32,15 @@ typedef enum {
     VALUE_SYMBOL,
     VALUE_LIST,
     VALUE_BUILTIN_FN,
-    VALUE_FN
+    VALUE_FN,
+    VALUE_MACRO_FN
 } ValueType;
 
 
 typedef struct CompositeFunction {
-    struct Value* args;
-    struct Value* body;
-    Environment* env;
+    struct Value *args;
+    struct Value *body;
+    Environment *env;
 } CompositeFunction;
 
 typedef struct Value {
@@ -47,30 +49,36 @@ typedef struct Value {
         bool bool_;
         int int_;
         double float_;
-        char* str;
-        Array* vector;
-        List* list;
-        Map* map;
-        struct Value* (*builtin_fn)(const struct Value*);
-        CompositeFunction* fn;
+        char *str;
+        Array *vector;
+        const List *list;
+        Map *map;
+        struct Value *(*builtin_fn)(const struct Value *);
+        CompositeFunction *fn;
     } value;
 } Value;
 
 //
 // functions
 //
-Value* value_new_nil();
-Value* value_new_bool(const bool bool_);
-Value* value_new_int(int int_);
-Value* value_new_float(float float_);
-Value* value_new_builtin_fn(Value* (fn)(const Value*));
-Value* value_new_fn(Value* args, Value* body, Environment* env);
-Value* value_new_string(const char* str);
-Value* value_new_symbol(const char* str);
-Value* value_new_list(List* l);
-Value* value_make_list(Value* v);
-void value_delete(Value* v);
-void value_print(const Value* v);
+bool is_symbol(const Value *value);
+bool is_macro(const Value *value);
+bool is_list(const Value *value);
+Value *value_new_nil();
+Value *value_new_bool(const bool bool_);
+Value *value_new_int(int int_);
+Value *value_new_float(float float_);
+Value *value_new_builtin_fn(Value * (fn)(const Value *));
+Value *value_new_fn(Value *args, Value *body, Environment *env);
+Value *value_new_macro(Value *args, Value *body, Environment *env);
+Value *value_new_string(const char *str);
+Value *value_new_symbol(const char *str);
+Value *value_new_list(const List *l);
+Value *value_make_list(Value *v);
+Value *value_head(const Value *v);
+Value *value_tail(const Value *v);
+void value_delete(Value *v);
+void value_print(const Value *v);
 
 
 #endif /* !VALUE_H */

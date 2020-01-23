@@ -44,7 +44,10 @@ int tests_run = 0;
 
 static char* test_suite()
 {
+    int bos;
+    gc_start(&gc, &bos);
     mu_run_test(test_env);
+    gc_stop(&gc);
     return 0;
 }
 

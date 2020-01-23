@@ -14,21 +14,22 @@ Environment* env_new(Environment* parent)
 {
     Environment* env = gc_malloc(&gc, sizeof(Environment));
     env->parent = parent;
-    env->kv = map_new(32);
+    env->map = map_new(32);
     return env;
 }
 
 void env_set(Environment* env, char* symbol, const Value* value)
 {
-    map_put(env->kv, symbol, (void*) value, sizeof(Value));
+    map_put(env->map, symbol, (void*) value, sizeof(Value));
 }
 
 Value* env_get(Environment* env, char* symbol)
 {
     Environment* cur_env = env;
+    Value* value;
     while(cur_env) {
-        if (cur_env->kv) {
-            void* value = map_get(cur_env->kv, symbol);
+        if (cur_env->map) {
+            value = (Value*) map_get(cur_env->map, symbol);
             if (value) {
                 return value;
             }

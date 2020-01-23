@@ -13,17 +13,17 @@
 #include "log.h"
 
 
-static bool is_builtin_fn(const Value* value)
+static bool is_builtin_fn(const Value *value)
 {
     return value->type == VALUE_BUILTIN_FN;
 }
 
-static bool is_compound_fn(const Value* fn)
+static bool is_compound_fn(const Value *fn)
 {
-    return fn->type == VALUE_FN;
+    return fn->type == VALUE_FN || fn->type == VALUE_MACRO_FN;
 }
 
-static Value* apply_builtin_fn(Value* fn, Value* args)
+static Value *apply_builtin_fn(Value *fn, Value *args)
 {
     if (fn && fn->type == VALUE_BUILTIN_FN && fn->value.builtin_fn) {
         return fn->value.builtin_fn(args);
@@ -32,26 +32,28 @@ static Value* apply_builtin_fn(Value* fn, Value* args)
     return NULL;
 }
 
-static Value* apply_compound_fn(Value* fn, Value* args,
-        Value** tco_expr, Environment** tco_env)
+static Value *apply_compound_fn(Value *fn, Value *args,
+                                Value **tco_expr, Environment **tco_env)
 {
-    if (fn && fn->type == VALUE_FN && fn->value.fn) {
+    if (fn && is_compound_fn(fn) && fn->value.fn) {
         // args are fully evaluated, so bind them to the names in the fn def on
         // top of the closure of f
-        List* arg_names = fn->value.fn->args->value.list;
-        List* arg_values = args->value.list;
+        const List *arg_names = fn->value.fn->args->value.list;
+        const List *arg_values = args->value.list;
         if (list_size(arg_names) != list_size(arg_values)) {
             LOG_CRITICAL("Invalid number of arguments for compound fn");
             return NULL;
         }
         // create new env on top of closure
-        Environment* env = env_new(fn->value.fn->env);
-        Value* arg_name = list_head(arg_names);
-        Value* arg_value = list_head(arg_values);
+        Environment *env = env_new(fn->value.fn->env);
+        Value *arg_name = list_head(arg_names);
+        Value *arg_value = list_head(arg_values);
         while(arg_name != NULL && arg_value != NULL) {
-            // FIXME: this *assumes* that all entries in the arg_names list are symbols
+            if (!is_symbol(arg_name)) {
+                LOG_CRITICAL("Parameter name should be a symbol.");
+                return NULL;
+            }
             env_set(env, arg_name->value.str, arg_value);
-
             arg_names = list_tail(arg_names);
             arg_values = list_tail(arg_values);
             arg_name = list_head(arg_names);
@@ -66,7 +68,7 @@ static Value* apply_compound_fn(Value* fn, Value* args,
     return NULL;
 }
 
-Value* apply(Value* fn, Value* args, Value** tco_expr, Environment** tco_env)
+Value *apply(Value *fn, Value *args, Value **tco_expr, Environment **tco_env)
 {
     *tco_expr = NULL;
     *tco_env = NULL;
