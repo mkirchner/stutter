@@ -110,11 +110,9 @@ void map_put(Map* ht, char* key, void* value, size_t siz)
 void* map_get(Map* ht, char* key)
 {
     unsigned long index = map_index(ht, key);
-    // LOG_DEBUG("index: %lu", index);
     MapItem* cur = ht->items[index];
-    // LOG_DEBUG("ptr: %p", (void *)cur);
     while(cur != NULL) {
-        if (strcmp(cur->key, key) == 0) {
+        if (strncmp(cur->key, key, strlen(cur->key)) == 0) {
             return cur->value;
         }
         cur = cur->next;
@@ -132,7 +130,6 @@ void map_remove(Map* ht, char* key)
     while(cur != NULL) {
         // Separate chaining w/ linked lists
         if (strcmp(cur->key, key) == 0) {
-            // LOG_DEBUG("Removing map item at index %lu, pos %lu.", index, cur - ht->items[index]);
             // found it
             if (!prev) {
                 // first item in list
@@ -147,7 +144,6 @@ void map_remove(Map* ht, char* key)
             ht->size--;
         } else {
             // move on
-            // LOG_DEBUG("Skipping map item at index %lu, pos %lu.", index, cur - ht->items[index]);
             prev = cur;
             cur = cur->next;
         }

@@ -29,8 +29,7 @@ Value* env_get(Environment* env, char* symbol)
     Value* value;
     while(cur_env) {
         if (cur_env->map) {
-            value = (Value*) map_get(cur_env->map, symbol);
-            if (value) {
+            if ((value = (Value*) map_get(cur_env->map, symbol))) {
                 return value;
             }
         }

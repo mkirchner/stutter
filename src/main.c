@@ -119,10 +119,9 @@ Value* read_(char* input) {
 
 Value* core_read_string(const Value* args)
 {
-    if (args->type == VALUE_LIST) {
-        // FIXME: check argn == 1
+    if (is_list(args)) {
         Value* str = list_head(LIST(args));
-        return read_(str->value.str);
+        return read_(STRING(str));
     }
     return NULL;
 }
@@ -133,7 +132,7 @@ Value* core_eval(const Value* args)
     /* This assumes that everything is loaded in the global env.
      * Otherwise we should implement it as a special form.
      */
-    if (args->type == VALUE_LIST) {
+    if (is_list(args)) {
         return eval(list_head(LIST(args)), ENV);
     }
     return NULL;
@@ -147,8 +146,9 @@ int main(int argc, char* argv[])
 
     // set up garbage collection
     gc_start(&gc, &argc);
-    // create env
+    // create env and tell GC to never collect it
     ENV = global_env();
+    gc_make_static(&gc, ENV);
 
     while(true) {
         char* input = readline("stutter> ");
