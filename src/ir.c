@@ -8,14 +8,14 @@
 #include "ir.h"
 #include "log.h"
 
-Value* ir_from_ast(AstSexpr* ast)
+Value *ir_from_ast(AstSexpr *ast)
 {
     return ir_from_ast_sexpr(ast);
 }
 
-Value* ir_from_ast_atom(AstAtom* atom)
+Value *ir_from_ast_atom(AstAtom *atom)
 {
-    Value* v;
+    Value *v;
     switch (atom->type) {
     case ATOM_FLOAT:
         v = value_new_float(atom->value.float_);
@@ -36,23 +36,23 @@ Value* ir_from_ast_atom(AstAtom* atom)
     return v;
 }
 
-Value* ir_from_ast_list(AstList* ast_list)
+Value *ir_from_ast_list(AstList *ast_list)
 {
     if (ast_list->type == LIST_EMPTY) {
         return value_new_list(NULL);
     }
-    Value* sexpr = ir_from_ast_sexpr(ast_list->ast.compound.sexpr);
-    Value* list = ir_from_ast_list(ast_list->ast.compound.list);
+    Value *sexpr = ir_from_ast_sexpr(ast_list->ast.compound.sexpr);
+    Value *list = ir_from_ast_list(ast_list->ast.compound.list);
     list->value.list = list_cons(list->value.list, sexpr);
     return list;
 }
 
-Value* ir_from_ast_sexpr(AstSexpr* ast)
+Value *ir_from_ast_sexpr(AstSexpr *ast)
 {
     if (!ast) return NULL;
-    Value* result;
-    Value* quote;
-    Value* sexpr;
+    Value *result;
+    Value *quote;
+    Value *sexpr;
     switch (ast->type) {
     case SEXPR_ATOM:
         result = ir_from_ast_atom(ast->ast.atom);

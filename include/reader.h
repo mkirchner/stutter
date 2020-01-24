@@ -17,7 +17,7 @@
 #define READER_FAILURE 1
 
 typedef struct {
-    Lexer* lexer;
+    Lexer *lexer;
 } Reader;
 
 /*
@@ -27,8 +27,8 @@ typedef struct {
 /*
  * The reader interface
  */
-Reader* reader_new(FILE* stream);
-void reader_delete(Reader* r);
-AstSexpr* reader_read(Reader* r);
+Reader *reader_new(FILE *stream);
+void reader_delete(Reader *r);
+AstSexpr *reader_read(Reader *r);
 
 #endif /* !__READER_H__ */

@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-const char* token_type_names[] = {
+const char *token_type_names[] = {
     "LEXER_TOK_ERROR",
     "LEXER_TOK_INT",
     "LEXER_TOK_FLOAT",
@@ -22,46 +22,46 @@ const char* token_type_names[] = {
     "LEXER_TOK_EOF"
 };
 
-static char* symbol_chars = "!*+-0123456789<=>?@"
+static char *symbol_chars = "!*+-0123456789<=>?@"
                             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                             "abcdefghijklmnopqrstuvwxyz";
 
-Lexer* lexer_new(FILE* fp)
+Lexer *lexer_new(FILE *fp)
 {
-    Lexer* lexer = (Lexer*) malloc(sizeof(Lexer));
+    Lexer *lexer = (Lexer *) malloc(sizeof(Lexer));
     *lexer = (Lexer) {
-        .fp=fp,
-        .state=LEXER_STATE_ZERO,
-        .line_no=1,
-        .char_no=0
+        .fp = fp,
+        .state = LEXER_STATE_ZERO,
+        .line_no = 1,
+        .char_no = 0
     };
     return lexer;
 }
 
-void lexer_delete(Lexer* l)
+void lexer_delete(Lexer *l)
 {
     free(l);
 }
 
-void lexer_delete_token(LexerToken* t)
+void lexer_delete_token(LexerToken *t)
 {
     free(t->value);
     free(t);
 }
 
-static LexerToken* lexer_make_token(TokenType token_type, char* buf)
+static LexerToken *lexer_make_token(TokenType token_type, char *buf)
 {
     /* FIXME: check malloc return values for NULL */
-    LexerToken* tok = (LexerToken*) malloc(sizeof(LexerToken));
+    LexerToken *tok = (LexerToken *) malloc(sizeof(LexerToken));
     tok->type = token_type;
     switch(token_type) {
     case LEXER_TOK_INT:
-        tok->value = (int*) malloc(sizeof(int));
-        *((int*)tok->value) = atoi(buf);
+        tok->value = (int *) malloc(sizeof(int));
+        *((int *)tok->value) = atoi(buf);
         break;
     case LEXER_TOK_FLOAT:
-        tok->value = (double*) malloc(sizeof(double));
-        *((double*)tok->value) = atof(buf);
+        tok->value = (double *) malloc(sizeof(double));
+        *((double *)tok->value) = atof(buf);
         break;
     case LEXER_TOK_STRING:
     case LEXER_TOK_ERROR:
@@ -69,8 +69,8 @@ static LexerToken* lexer_make_token(TokenType token_type, char* buf)
     case LEXER_TOK_LPAREN:
     case LEXER_TOK_RPAREN:
     case LEXER_TOK_QUOTE:
-        tok->value = (char*) malloc(strlen(buf)*sizeof(char));
-        strcpy((char*) tok->value, buf);
+        tok->value = (char *) malloc(strlen(buf) * sizeof(char));
+        strcpy((char *) tok->value, buf);
         break;
     case LEXER_TOK_EOF:
         tok->value = NULL;
@@ -79,12 +79,12 @@ static LexerToken* lexer_make_token(TokenType token_type, char* buf)
     return tok;
 }
 
-LexerToken* lexer_get_token(Lexer* l)
+LexerToken *lexer_get_token(Lexer *l)
 {
     char buf[1024] = {0};
     size_t bufpos = 0;
     int c;
-    char* pos;
+    char *pos;
     while ((c = fgetc(l->fp)) != EOF) {
         switch (l->state) {
         case LEXER_STATE_ZERO:

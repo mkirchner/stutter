@@ -15,31 +15,31 @@
 #undef LOGLEVEL
 #define LOGLEVEL LOGLEVEL_INFO
 
-Reader* reader_new(FILE* stream)
+Reader *reader_new(FILE *stream)
 {
-    Lexer* lexer = lexer_new(stream);
-    Reader* reader = (Reader*) malloc(sizeof(Reader));
+    Lexer *lexer = lexer_new(stream);
+    Reader *reader = (Reader *) malloc(sizeof(Reader));
     *reader = (Reader) {
         .lexer = lexer
     };
     return reader;
 }
 
-void reader_delete(Reader* r)
+void reader_delete(Reader *r)
 {
     free(r->lexer);
     free(r);
 }
 
-AstSexpr* reader_read(Reader* reader)
+AstSexpr *reader_read(Reader *reader)
 {
-    AstSexpr* ast = NULL;
-    ReaderStack* stack = reader_stack_new(1024);
+    AstSexpr *ast = NULL;
+    ReaderStack *stack = reader_stack_new(1024);
     ReaderStackToken eof = { .type = T_EOF, .ast = {NULL} };
     ReaderStackToken start = { .type = N_PROG, .ast = {NULL} };
     reader_stack_push(stack, eof);
     reader_stack_push(stack, start);
-    LexerToken* tok;
+    LexerToken *tok;
     ReaderStackToken tos;
 
     tok = lexer_get_token(reader->lexer);

@@ -11,9 +11,9 @@
 #include "ast.h"
 #include "value.h"
 
-Value* ir_from_ast(AstSexpr* ast);
-Value* ir_from_ast_atom(AstAtom*);
-Value* ir_from_ast_list(AstList*);
-Value* ir_from_ast_sexpr(AstSexpr*);
+Value *ir_from_ast(AstSexpr *ast);
+Value *ir_from_ast_atom(AstAtom *);
+Value *ir_from_ast_list(AstList *);
+Value *ir_from_ast_sexpr(AstSexpr *);
 
 #endif /* !IR_H */

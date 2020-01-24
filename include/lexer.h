@@ -22,11 +22,11 @@ typedef enum {
     LEXER_TOK_EOF
 } TokenType;
 
-extern const char* token_type_names[];
+extern const char *token_type_names[];
 
 typedef struct {
     TokenType type;
-    void* value;
+    void *value;
 } LexerToken;
 
 #define LEXER_TOKEN_VAL_AS_STR(t) ((char*) (t)->value)
@@ -43,18 +43,18 @@ typedef enum {
 } LexerState;
 
 typedef struct {
-    FILE* fp;
+    FILE *fp;
     LexerState state;
     size_t line_no;
     size_t char_no;
 } Lexer;
 
 /* object lifecycle */
-Lexer* lexer_new(FILE* fp);
-void lexer_delete(Lexer* l);
+Lexer *lexer_new(FILE *fp);
+void lexer_delete(Lexer *l);
 
 /* interface */
-LexerToken* lexer_get_token(Lexer* l);
-void lexer_delete_token(LexerToken* tok);
+LexerToken *lexer_get_token(Lexer *l);
+void lexer_delete_token(LexerToken *tok);
 
 #endif /* !__LEXER_H__ */

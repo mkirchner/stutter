@@ -40,7 +40,7 @@
 
 unsigned long djb2(char *str)
 {
-    unsigned char* s = (unsigned char*) str;
+    unsigned char *s = (unsigned char *) str;
     unsigned long hash = 5381;
     int c;
 

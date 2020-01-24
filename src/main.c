@@ -24,15 +24,15 @@
 #include "reader.h"
 #include "value.h"
 
-Value* core_read_string(const Value* args);
-Value* core_eval(const Value* str);
+Value *core_read_string(const Value *args);
+Value *core_eval(const Value *str);
 
 /* The global environment */
-Environment* ENV;
+Environment *ENV;
 
-Environment* global_env()
+Environment *global_env()
 {
-    Environment* env = env_new(NULL);
+    Environment *env = env_new(NULL);
 
     env_set(env, "nil", CORE_NIL);
     env_set(env, "true", CORE_TRUE);
@@ -42,32 +42,32 @@ Environment* global_env()
     env_set(env, "pr-str", value_new_builtin_fn(core_pr_str));
     env_set(env, "prn", value_new_builtin_fn(core_prn));
 
-    Value* plus = value_new_builtin_fn(core_plus);
+    Value *plus = value_new_builtin_fn(core_plus);
     env_set(env, "+", plus);
     env_set(env, "plus", plus);
-    Value* minus = value_new_builtin_fn(core_minus);
+    Value *minus = value_new_builtin_fn(core_minus);
     // FIXME: no "-", need to extend lexer w/ negative numbers and unary minus
     env_set(env, "minus", minus);
-    Value* mul = value_new_builtin_fn(core_mul);
+    Value *mul = value_new_builtin_fn(core_mul);
     env_set(env, "*", mul);
     env_set(env, "mul", mul);
-    Value* div = value_new_builtin_fn(core_div);
+    Value *div = value_new_builtin_fn(core_div);
     env_set(env, "/", div);
     env_set(env, "div", div);
 
-    Value* eq = value_new_builtin_fn(core_eq);
+    Value *eq = value_new_builtin_fn(core_eq);
     env_set(env, "=", eq);
     env_set(env, "eq", eq);
-    Value* lt = value_new_builtin_fn(core_lt);
+    Value *lt = value_new_builtin_fn(core_lt);
     env_set(env, "<", lt);
     env_set(env, "lt", lt);
-    Value* leq = value_new_builtin_fn(core_leq);
+    Value *leq = value_new_builtin_fn(core_leq);
     env_set(env, "<=", leq);
     env_set(env, "leq", leq);
-    Value* gt = value_new_builtin_fn(core_gt);
+    Value *gt = value_new_builtin_fn(core_gt);
     env_set(env, ">", gt);
     env_set(env, "gt", gt);
-    Value* geq = value_new_builtin_fn(core_geq);
+    Value *geq = value_new_builtin_fn(core_geq);
     env_set(env, ">=", geq);
     env_set(env, "geq", geq);
 
@@ -86,7 +86,7 @@ Environment* global_env()
 
     // add stutter basics
     size_t N_EXPRS = 1;
-    const char* exprs[N_EXPRS];
+    const char *exprs[N_EXPRS];
     exprs[0] = "(def load-file"
                "  (lambda (path)"
                "    (eval (read-string (str \"(do \" (slurp path) \")\")))))";
@@ -96,38 +96,39 @@ Environment* global_env()
     return env;
 }
 
-Value* read_(char* input) {
+Value *read_(char *input)
+{
     // Get a handle on the input
     size_t n = strlen(input);
-    FILE* stream = fmemopen(input, n, "r");
+    FILE *stream = fmemopen(input, n, "r");
     if (!stream) {
         printf("%s\n", strerror(errno));
         return NULL;
     }
 
     // Create the initial AST
-    Reader* reader = reader_new(stream);
-    AstSexpr* ast = reader_read(reader);
+    Reader *reader = reader_new(stream);
+    AstSexpr *ast = reader_read(reader);
     reader_delete(reader);
     fclose(stream);
 
     // Condense the AST
-    Value* ast2 = ir_from_ast(ast);
+    Value *ast2 = ir_from_ast(ast);
     ast_delete_sexpr(ast);
     return ast2;
 }
 
-Value* core_read_string(const Value* args)
+Value *core_read_string(const Value *args)
 {
     if (is_list(args)) {
-        Value* str = list_head(LIST(args));
+        Value *str = list_head(LIST(args));
         return read_(STRING(str));
     }
     return NULL;
 }
 
 
-Value* core_eval(const Value* args)
+Value *core_eval(const Value *args)
 {
     /* This assumes that everything is loaded in the global env.
      * Otherwise we should implement it as a special form.
@@ -139,7 +140,7 @@ Value* core_eval(const Value* args)
 }
 
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
     fprintf(stderr, "Stutter %s (clang %d.%d.%d on darwin)\n", __STUTTER_VERSION__,
             __clang_major__, __clang_minor__, __clang_patchlevel__);
@@ -151,7 +152,7 @@ int main(int argc, char* argv[])
     gc_make_static(&gc, ENV);
 
     while(true) {
-        char* input = readline("stutter> ");
+        char *input = readline("stutter> ");
         if (input == NULL) {
             break;
         }
@@ -159,8 +160,8 @@ int main(int argc, char* argv[])
             continue;
         }
         add_history(input);
-        Value* expr = read_(input);
-        Value* eval_result = eval(expr, ENV);
+        Value *expr = read_(input);
+        Value *eval_result = eval(expr, ENV);
         core_prn(value_make_list(eval_result));
         // fprintf(stdout, "\n");
         free(input);

@@ -28,15 +28,15 @@ typedef enum {
     T_SYM
 } ReaderStackTokenType;
 
-extern const char* reader_stack_token_type_names[];
+extern const char *reader_stack_token_type_names[];
 
 typedef struct ReaderStackToken {
     ReaderStackTokenType type;
     union {
-        struct AstList* list;
-        struct AstAtom* atom;
-        struct AstSexpr* quoted;
-        struct AstSexpr* sexp;
+        struct AstList *list;
+        struct AstAtom *atom;
+        struct AstSexpr *quoted;
+        struct AstSexpr *sexp;
     } ast;
 } ReaderStackToken;
 
@@ -44,15 +44,15 @@ typedef struct ReaderStackToken {
 typedef struct ReaderStack {
     size_t capacity;
     size_t size;
-    ReaderStackToken* bos;  /* bottom of stack */
+    ReaderStackToken *bos;  /* bottom of stack */
 } ReaderStack;
 
-ReaderStack* reader_stack_new(size_t capacity);
-void reader_stack_delete(ReaderStack* stack);
+ReaderStack *reader_stack_new(size_t capacity);
+void reader_stack_delete(ReaderStack *stack);
 
-void reader_stack_push(ReaderStack* stack, ReaderStackToken item);
-int reader_stack_pop(ReaderStack* stack, ReaderStackToken* value);
-int reader_stack_peek(ReaderStack* stack, ReaderStackToken* value);
+void reader_stack_push(ReaderStack *stack, ReaderStackToken item);
+int reader_stack_pop(ReaderStack *stack, ReaderStackToken *value);
+int reader_stack_peek(ReaderStack *stack, ReaderStackToken *value);
 bool reader_is_terminal(ReaderStackToken value);
 bool reader_is_nonterminal(ReaderStackToken value);
 

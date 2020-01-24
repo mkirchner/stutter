@@ -14,15 +14,15 @@
 struct Value;
 
 typedef struct Environment {
-    Map* map;
-    struct Environment* parent;
+    Map *map;
+    struct Environment *parent;
 } Environment;
 
-Environment* env_new(Environment* parent);
-void env_delete(Environment* env);
+Environment *env_new(Environment *parent);
+void env_delete(Environment *env);
 
-void env_set(Environment* env, char* symbol, const struct Value* value);
-struct Value* env_get(Environment* env, char* symbol);
-bool env_contains(Environment* env, char* symbol);
+void env_set(Environment *env, char *symbol, const struct Value *value);
+struct Value *env_get(Environment *env, char *symbol);
+bool env_contains(Environment *env, char *symbol);
 
 #endif /* !__ENV_H__ */

@@ -11,6 +11,6 @@
 #include <env.h>
 #include <value.h>
 
-Value* eval(Value* expr, Environment* env);
+Value *eval(Value *expr, Environment *env);
 
 #endif /* !EVAL_H */

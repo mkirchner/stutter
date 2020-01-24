@@ -15,15 +15,15 @@
 #include "map.h"
 #include "primes.h"
 
-static double load_factor(Map* ht)
+static double load_factor(Map *ht)
 {
     // LOG_DEBUG("Load factor: %.2f", (double) ht->size / (double) ht->capacity);
     return (double) ht->size / (double) ht->capacity;
 }
 
-static MapItem* map_item_new(char* key, void* value, size_t siz)
+static MapItem *map_item_new(char *key, void *value, size_t siz)
 {
-    MapItem* item = (MapItem*) gc_malloc(&gc, sizeof(MapItem));
+    MapItem *item = (MapItem *) gc_malloc(&gc, sizeof(MapItem));
     item->key = gc_strdup(&gc, key);
     item->size = siz;
     item->value = gc_malloc(&gc, siz);
@@ -32,7 +32,7 @@ static MapItem* map_item_new(char* key, void* value, size_t siz)
     return item;
 }
 
-static void map_item_delete(MapItem* item)
+static void map_item_delete(MapItem *item)
 {
     if (item) {
         gc_free(&gc, item->key);
@@ -41,19 +41,19 @@ static void map_item_delete(MapItem* item)
     }
 }
 
-Map* map_new(size_t capacity)
+Map *map_new(size_t capacity)
 {
-    Map* ht = (Map*) gc_malloc(&gc, sizeof(Map));
+    Map *ht = (Map *) gc_malloc(&gc, sizeof(Map));
     ht->capacity = next_prime(capacity);
     ht->size = 0;
-    ht->items = gc_calloc(&gc, ht->capacity, sizeof(MapItem*));
+    ht->items = gc_calloc(&gc, ht->capacity, sizeof(MapItem *));
     return ht;
 }
 
-void map_delete(Map* ht)
+void map_delete(Map *ht)
 {
-    MapItem* item, *tmp;
-    for (size_t i=0; i < ht->capacity; ++i) {
+    MapItem *item, *tmp;
+    for (size_t i = 0; i < ht->capacity; ++i) {
         if ((item = ht->items[i]) != NULL) {
             while (item) {
                 tmp = item;
@@ -66,21 +66,21 @@ void map_delete(Map* ht)
     gc_free(&gc, ht);
 }
 
-unsigned long map_index(Map* map, char* key)
+unsigned long map_index(Map *map, char *key)
 {
     return djb2(key) % map->capacity;
 }
 
-void map_put(Map* ht, char* key, void* value, size_t siz)
+void map_put(Map *ht, char *key, void *value, size_t siz)
 {
     // hash
     unsigned long index = map_index(ht, key);
     // LOG_DEBUG("index: %lu", index);
     // create item
-    MapItem* item = map_item_new(key, value, siz);
-    MapItem* cur = ht->items[index];
+    MapItem *item = map_item_new(key, value, siz);
+    MapItem *cur = ht->items[index];
     // update if exists
-    MapItem* prev = NULL;
+    MapItem *prev = NULL;
     while(cur != NULL) {
         if (strcmp(cur->key, key) == 0) {
             // found it
@@ -104,13 +104,13 @@ void map_put(Map* ht, char* key, void* value, size_t siz)
     ht->items[index] = item;
     ht->size++;
     if (load_factor(ht) > 0.7)
-        map_resize(ht, next_prime(ht->capacity*2));
+        map_resize(ht, next_prime(ht->capacity * 2));
 }
 
-void* map_get(Map* ht, char* key)
+void *map_get(Map *ht, char *key)
 {
     unsigned long index = map_index(ht, key);
-    MapItem* cur = ht->items[index];
+    MapItem *cur = ht->items[index];
     while(cur != NULL) {
         if (strncmp(cur->key, key, strlen(cur->key)) == 0) {
             return cur->value;
@@ -120,13 +120,13 @@ void* map_get(Map* ht, char* key)
     return NULL;
 }
 
-void map_remove(Map* ht, char* key)
+void map_remove(Map *ht, char *key)
 {
     // ignores unknown keys
     unsigned long index = map_index(ht, key);
-    MapItem* cur = ht->items[index];
-    MapItem* prev = NULL;
-    MapItem* tmp = NULL;
+    MapItem *cur = ht->items[index];
+    MapItem *prev = NULL;
+    MapItem *tmp = NULL;
     while(cur != NULL) {
         // Separate chaining w/ linked lists
         if (strcmp(cur->key, key) == 0) {
@@ -149,20 +149,20 @@ void map_remove(Map* ht, char* key)
         }
     }
     if (load_factor(ht) < 0.1)
-        map_resize(ht, next_prime(ht->capacity/2));
+        map_resize(ht, next_prime(ht->capacity / 2));
 }
 
-void map_resize(Map* ht, size_t new_capacity)
+void map_resize(Map *ht, size_t new_capacity)
 {
     // Replaces the existing items array in the hash table
     // with a resized one and pushes items into the new, correct buckets
     // LOG_DEBUG("Resizing to %lu", new_capacity);
-    MapItem** resized_items = gc_calloc(&gc, new_capacity, sizeof(MapItem*));
+    MapItem **resized_items = gc_calloc(&gc, new_capacity, sizeof(MapItem *));
 
-    for (size_t i=0; i<ht->capacity; ++i) {
-        MapItem* item = ht->items[i];
+    for (size_t i = 0; i < ht->capacity; ++i) {
+        MapItem *item = ht->items[i];
         while(item) {
-            MapItem* next_item = item->next;
+            MapItem *next_item = item->next;
             unsigned long new_index = djb2(item->key) % new_capacity;
             item->next = resized_items[new_index];
             resized_items[new_index] = item;

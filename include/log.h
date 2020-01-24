@@ -13,14 +13,14 @@
 #define LOGLEVEL LOGLEVEL_DEBUG
 
 enum {
-	LOGLEVEL_CRITICAL, // 0
-	LOGLEVEL_WARNING, // 1
-	LOGLEVEL_INFO, // 2
-	LOGLEVEL_DEBUG, // 3
-	LOGLEVEL_NONE // 4
+    LOGLEVEL_CRITICAL, // 0
+    LOGLEVEL_WARNING, // 1
+    LOGLEVEL_INFO, // 2
+    LOGLEVEL_DEBUG, // 3
+    LOGLEVEL_NONE // 4
 };
 
-extern const char* log_level_strings[];
+extern const char *log_level_strings[];
 
 #define log(level, fmt, ...) \
     do { if (level <= LOGLEVEL) fprintf(stderr, "[%s] %s:%s:%d: " fmt "\n", log_level_strings[level], __func__, __FILE__, __LINE__, ##__VA_ARGS__); } while (0)
