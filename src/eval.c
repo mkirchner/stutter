@@ -163,7 +163,7 @@ static Value *lookup_variable_value(Value *expr, Environment *env)
 static Value *eval_quote(Value *expr)
 {
     // (quote expr)
-    if (has_cardinality(expr, 2)) {
+    if (expr && has_cardinality(expr, 2)) {
         return list_nth(LIST(expr), 1);
     }
     LOG_CRITICAL("Invalid parameter to built-in quote");
@@ -308,6 +308,9 @@ static Value *_quasiquote(Value *arg)
      * Step 3 basically replaces the `cons` with a `concat` in the right places.
      */
 
+    /* require a valid pointer */
+    if (!arg) return NULL;
+
     /* If the argument is not a list then act like quote */
     if (!(is_list(arg) && list_size(LIST(arg)) > 0)) {
         Value *ret = value_make_list(value_new_symbol("quote"));
@@ -381,11 +384,12 @@ static Value *operands(Value *expr)
 
 static Value *macroexpand(Value *form, Environment *env)
 {
+    if (!(form && env)) return NULL;
     Value *fn;
     Value *args;
     Value *expr = form;
     Environment *new_env = env;
-    while((fn = get_macro_fn(expr, new_env)) != NULL) {
+    while(expr && (fn = get_macro_fn(expr, new_env)) != NULL) {
         args = value_new_list(list_tail(LIST(expr)));
         apply(fn, args, &expr, &new_env);
         expr = eval(expr, new_env);
@@ -440,7 +444,10 @@ tco:
         ret = lookup_variable_value(expr, env);
         return ret;
     }
-    expr = macroexpand(expr, env);
+    if (!(expr = macroexpand(expr, env))) {
+        LOG_CRITICAL("Macro expansion failed.");
+        return NULL;
+    }
     if (!is_list(expr)) goto tco;
     if (is_quoted(expr)) {
         return eval_quote(expr);

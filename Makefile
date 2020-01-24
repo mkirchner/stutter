@@ -36,10 +36,12 @@ test:
 .PHONY: clean
 clean:
 	$(RM) -f $(STUTTER_OBJS)
+	$(RM) -f $(BUILD_DIR)/src/*gcd*
+	$(RM) -f $(BUILD_DIR)/lib/gc/src/*gcd*
+	$(RM) -f $(BUILD_DIR)/test/*gcd*
 	$(MAKE) -C test clean
 
 distclean: clean
 	$(RM) -f $(BUILD_DIR)/$(STUTTER_BINARY)
-	$(RM) -f $(BUILD_DIR)/test/*gcd*
 	$(MAKE) -C test distclean
 
