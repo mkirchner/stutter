@@ -16,6 +16,7 @@ This should work on a Mac with a recent `clang`. No efforts to make it portable
 
 ### Next steps
 
-* Nicer error handling
+* Interpret/execute a file
+* Nicer/more informative error handling and reporting
 * Write tests in `stt`
 * `try`/`catch` support
