@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <editline/readline.h>
 
 #include "ast.h"
@@ -139,20 +140,58 @@ Value *core_eval(const Value *args)
     return NULL;
 }
 
+#define BOLD         "\033[1m"
+#define NO_BOLD      "\033[22m"
+
+void show_help()
+{
+    char* help =
+        "-=[ Stutter %s (clang %d.%d.%d on darwin)\n"
+        BOLD "USAGE\n" NO_BOLD
+        "  $ stutter [-h] [file]\n"
+        "\n"
+        BOLD "ARGUMENTS\n" NO_BOLD
+        "  file      Execute FILE as a stutter program\n"
+        "\n"
+        BOLD "OPTIONS\n" NO_BOLD
+        "  -h        Show this help text\n";
+    fprintf(stderr, help, __STUTTER_VERSION__, __clang_major__, __clang_minor__, __clang_patchlevel__);
+}
 
 int main(int argc, char *argv[])
 {
-    fprintf(stderr, "Stutter %s (clang %d.%d.%d on darwin)\n", __STUTTER_VERSION__,
-            __clang_major__, __clang_minor__, __clang_patchlevel__);
-
     // set up garbage collection
     gc_start(&gc, &argc);
     // create env and tell GC to never collect it
     ENV = global_env();
     gc_make_static(&gc, ENV);
 
+    int c;
+    while ((c = getopt(argc, argv, "h")) != -1) {
+        switch(c) {
+            case 'h':
+            default:
+                show_help();
+                exit(0);
+        }
+    }
+    if (argc > 1) {
+        /* In order to execute a file, explicitly construct a load-file
+         * call to avoid interpretation of the filename. */
+        Value *src = value_make_list(value_new_symbol("load-file"));
+        src = value_new_list(list_conj(LIST(src), value_new_string(argv[optind])));
+        Value *eval_result = eval(src, ENV);
+        core_prn(value_make_list(eval_result));
+        return eval_result != NULL ? 0 : 1;
+    }
+
+    // REPL
+    fprintf(stderr, "Stutter %s (clang %d.%d.%d on darwin)\n", __STUTTER_VERSION__,
+            __clang_major__, __clang_minor__, __clang_patchlevel__);
+
     while(true) {
-        char *input = readline("stutter> ");
+        // char *input = readline("stutter> ");
+        char *input = readline("\U000003BB> ");
         if (input == NULL) {
             break;
         }
@@ -163,10 +202,10 @@ int main(int argc, char *argv[])
         Value *expr = read_(input);
         Value *eval_result = eval(expr, ENV);
         core_prn(value_make_list(eval_result));
-        // fprintf(stdout, "\n");
         free(input);
     }
     gc_stop(&gc);
+    fprintf(stdout, "\n");
     return 0;
 }
 
