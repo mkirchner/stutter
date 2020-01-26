@@ -208,7 +208,7 @@ static Value *eval_macro_definition(Value *expr, Environment *env)
         Value *body = list_nth(LIST(expr), 3);
         Value *macro = value_new_macro(args, body, env);
         env_set(env, SYMBOL(name), macro);
-        return macro;
+        return NULL;
     }
     LOG_CRITICAL("Invalid macro declaration");
     return NULL;
