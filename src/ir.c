@@ -63,7 +63,28 @@ Value *ir_from_ast_sexpr(AstSexpr *ast)
     case SEXPR_QUOTE:
         result = value_new_list(NULL);
         sexpr = ir_from_ast_sexpr(ast->ast.quoted);
-        quote = value_new_string("quote");
+        quote = value_new_symbol("quote");
+        result->value.list = list_conj(result->value.list, quote);
+        result->value.list = list_conj(result->value.list, sexpr);
+        break;
+    case SEXPR_QUASIQUOTE:
+        result = value_new_list(NULL);
+        sexpr = ir_from_ast_sexpr(ast->ast.quoted);
+        quote = value_new_symbol("quasiquote");
+        result->value.list = list_conj(result->value.list, quote);
+        result->value.list = list_conj(result->value.list, sexpr);
+        break;
+    case SEXPR_UNQUOTE:
+        result = value_new_list(NULL);
+        sexpr = ir_from_ast_sexpr(ast->ast.quoted);
+        quote = value_new_symbol("unquote");
+        result->value.list = list_conj(result->value.list, quote);
+        result->value.list = list_conj(result->value.list, sexpr);
+        break;
+    case SEXPR_SPLICE_UNQUOTE:
+        result = value_new_list(NULL);
+        sexpr = ir_from_ast_sexpr(ast->ast.quoted);
+        quote = value_new_symbol("splice-unquote");
         result->value.list = list_conj(result->value.list, quote);
         result->value.list = list_conj(result->value.list, sexpr);
         break;

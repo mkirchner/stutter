@@ -58,6 +58,12 @@ AstSexpr *reader_read(Reader *reader)
                 reader_stack_pop(stack, &tos);
             } else if (tos.type == T_QUOTE && tok->type == LEXER_TOK_QUOTE) {
                 reader_stack_pop(stack, &tos);
+            } else if (tos.type == T_QUASIQUOTE && tok->type == LEXER_TOK_QUASIQUOTE) {
+                reader_stack_pop(stack, &tos);
+            } else if (tos.type == T_UNQUOTE && tok->type == LEXER_TOK_UNQUOTE) {
+                reader_stack_pop(stack, &tos);
+            } else if (tos.type == T_SPLICE_UNQUOTE && tok->type == LEXER_TOK_SPLICE_UNQUOTE) {
+                reader_stack_pop(stack, &tos);
             } else {
                 // report error looking for tok at top of stack
                 LOG_CRITICAL("Parse error stack/terminal mismatch (tok=%s, tos=%s)",
@@ -70,7 +76,7 @@ AstSexpr *reader_read(Reader *reader)
             // Non-terminals, do a leftmost derivation.
             /*
              * program ::= sexpr EOF
-             * sexpr   ::= atom | LPAREN list RPAREN | QUOTE sexpr
+             * sexpr   ::= atom | LPAREN list RPAREN | [QUASI|UN|SPLICE_UN]QUOTE sexpr
              * list    ::= sexpr list | ∅
              * atom    ::= STRING | SYMBOL | INT | FLOAT
              */
@@ -99,6 +105,9 @@ AstSexpr *reader_read(Reader *reader)
             } else if (tos.type == N_LIST) {
                 if (tok->type == LEXER_TOK_LPAREN ||
                         tok->type == LEXER_TOK_QUOTE ||
+                        tok->type == LEXER_TOK_QUASIQUOTE ||
+                        tok->type == LEXER_TOK_UNQUOTE ||
+                        tok->type == LEXER_TOK_SPLICE_UNQUOTE ||
                         tok->type == LEXER_TOK_INT ||
                         tok->type == LEXER_TOK_FLOAT ||
                         tok->type == LEXER_TOK_STRING ||
@@ -163,19 +172,38 @@ AstSexpr *reader_read(Reader *reader)
                     token.type = T_LPAREN;
                     reader_stack_push(stack, token);
                     continue; // do not advance token
-                } else if (tok->type == LEXER_TOK_QUOTE) {
+                } else if (tok->type == LEXER_TOK_QUOTE ||
+                           tok->type == LEXER_TOK_QUASIQUOTE ||
+                           tok->type == LEXER_TOK_UNQUOTE ||
+                           tok->type == LEXER_TOK_SPLICE_UNQUOTE) {
                     // S -> 'S
-                    LOG_DEBUG("Rule: %s", "S->'S");
+                    LOG_DEBUG("Rule: %s", "S->['`~@]S"); // FIXME: add splice-unquote
                     // pop current token from stack and create nodes in the AST
                     reader_stack_pop(stack, &tos);
-                    tos.ast.sexp->type = SEXPR_QUOTE;
+                    if (tok->type == LEXER_TOK_QUOTE) {
+                        tos.ast.sexp->type = SEXPR_QUOTE;
+                    } else if (tok->type == LEXER_TOK_QUASIQUOTE) {
+                        tos.ast.sexp->type = SEXPR_QUASIQUOTE;
+                    } else if (tok->type == LEXER_TOK_UNQUOTE) {
+                        tos.ast.sexp->type = SEXPR_UNQUOTE;
+                    } else if (tok->type == LEXER_TOK_SPLICE_UNQUOTE) {
+                        tos.ast.sexp->type = SEXPR_SPLICE_UNQUOTE;
+                    }
                     tos.ast.sexp->ast.quoted = ast_new_sexpr();
                     // push rule RHS onto stack in reverse order
                     ReaderStackToken token;
                     token.type = N_SEXP;
                     token.ast.sexp = tos.ast.list->ast.compound.sexpr;
                     reader_stack_push(stack, token);
-                    token.type = T_QUOTE;
+                    if (tok->type == LEXER_TOK_QUOTE) {
+                        token.type = T_QUOTE;
+                    } else if (tok->type == LEXER_TOK_QUASIQUOTE) {
+                        token.type = T_QUASIQUOTE;
+                    } else if (tok->type == LEXER_TOK_UNQUOTE) {
+                        token.type = T_UNQUOTE;
+                    } else if (tok->type == LEXER_TOK_SPLICE_UNQUOTE) {
+                        token.type = T_SPLICE_UNQUOTE;
+                    }
                     token.ast.sexp = tos.ast.sexp->ast.quoted;
                     reader_stack_push(stack, token);
                     continue; // do not advance token

@@ -23,12 +23,22 @@
 struct AstAtom;
 struct AstList;
 
+typedef enum {
+    SEXPR_LIST,
+    SEXPR_ATOM,
+    SEXPR_QUOTE,
+    SEXPR_QUASIQUOTE,
+    SEXPR_UNQUOTE,
+    SEXPR_SPLICE_UNQUOTE
+} AstSexprType;
+
 typedef struct AstSexpr {
-    enum {SEXPR_LIST, SEXPR_ATOM, SEXPR_QUOTE} type;
+    AstSexprType type;
     union {
         struct AstList *list;
         struct AstAtom *atom;
         struct AstSexpr *quoted;
+        struct AstSexpr *unquoted;
     } ast;
 } AstSexpr;
 
@@ -56,6 +66,7 @@ AstSexpr *ast_new_sexpr();
 AstSexpr *ast_sexpr_from_list(AstList *list);
 AstSexpr *ast_sexpr_from_atom(AstAtom *atom);
 AstSexpr *ast_sexpr_from_quote(AstSexpr *quoted);
+AstSexpr *ast_sexpr_from_quasiquote(AstSexpr *quoted);
 AstList *ast_new_list();
 AstList *ast_list_from_compound_list(AstSexpr *s, AstList *l);
 AstList *ast_list_empty();
