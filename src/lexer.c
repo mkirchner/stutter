@@ -19,6 +19,9 @@ const char *token_type_names[] = {
     "LEXER_TOK_LPAREN",
     "LEXER_TOK_RPAREN",
     "LEXER_TOK_QUOTE",
+    "LEXER_TOK_QUASIQUOTE",
+    "LEXER_TOK_UNQUOTE",
+    "LEXER_TOK_SPLICE_UNQUOTE",
     "LEXER_TOK_EOF"
 };
 
@@ -69,6 +72,7 @@ static LexerToken *lexer_make_token(TokenType token_type, char *buf)
     case LEXER_TOK_LPAREN:
     case LEXER_TOK_RPAREN:
     case LEXER_TOK_QUOTE:
+    case LEXER_TOK_QUASIQUOTE:
         tok->value = (char *) malloc(strlen(buf) * sizeof(char));
         strcpy((char *) tok->value, buf);
         break;
@@ -100,6 +104,10 @@ LexerToken *lexer_get_token(Lexer *l)
             case '\'':
                 buf[bufpos++] = c;
                 return lexer_make_token(LEXER_TOK_QUOTE, buf);
+                break;
+            case '`':
+                buf[bufpos++] = c;
+                return lexer_make_token(LEXER_TOK_QUASIQUOTE, buf);
                 break;
             /* start a string */
             case '\"':

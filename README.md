@@ -14,6 +14,13 @@ $ make && make test
 This should work on a Mac with a recent `clang`. No efforts to make it portable
 (yet).
 
+### Open issues
+
+* Lexer & reader
+  * Support for unary -, i.e. negative numbers
+  * Reader macros for quasiquote, unquote and splice-unquote
+  *
+
 ### Next steps
 
 * Interpret/execute a file

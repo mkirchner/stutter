@@ -30,12 +30,22 @@ AstSexpr *ast_sexpr_from_atom(AstAtom *atom)
     return sexpr;
 }
 
-AstSexpr *ast_sexpr_from_quote(AstSexpr *quoted)
+static AstSexpr *ast_sexpr_from_anyquote(AstSexpr *quoted, AstSexprType t)
 {
     AstSexpr *sexpr = malloc(sizeof(AstSexpr));
-    sexpr->type = SEXPR_QUOTE;
+    sexpr->type = t;
     sexpr->ast.quoted = quoted;
     return sexpr;
+}
+
+AstSexpr *ast_sexpr_from_quote(AstSexpr *quoted)
+{
+    return ast_sexpr_from_anyquote(quoted, SEXPR_QUOTE);
+}
+
+AstSexpr *ast_sexpr_from_quasiquote(AstSexpr *quoted)
+{
+    return ast_sexpr_from_anyquote(quoted, SEXPR_QUASIQUOTE);
 }
 
 AstList *ast_new_list()
@@ -110,6 +120,7 @@ void ast_delete_sexpr(AstSexpr *s)
             ast_delete_list(s->ast.list);
             break;
         case SEXPR_QUOTE:
+        case SEXPR_QUASIQUOTE:
             ast_delete_sexpr(s->ast.quoted);
             break;
         }
@@ -168,6 +179,7 @@ void ast_print_sexpr(AstSexpr *s, int indent)
             ast_print_list(s->ast.list, indent + 2);
             break;
         case SEXPR_QUOTE:
+        case SEXPR_QUASIQUOTE:
             ast_print_sexpr(s->ast.quoted, indent + 2);
             break;
         }

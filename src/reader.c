@@ -58,6 +58,9 @@ AstSexpr *reader_read(Reader *reader)
                 reader_stack_pop(stack, &tos);
             } else if (tos.type == T_QUOTE && tok->type == LEXER_TOK_QUOTE) {
                 reader_stack_pop(stack, &tos);
+            } else if (tos.type == LEXER_TOK_QUASIQUOTE &&
+                    tok->type == LEXER_TOK_QUASIQUOTE) {
+                reader_stack_pop(stack, &tos);
             } else {
                 // report error looking for tok at top of stack
                 LOG_CRITICAL("Parse error stack/terminal mismatch (tok=%s, tos=%s)",
@@ -99,6 +102,7 @@ AstSexpr *reader_read(Reader *reader)
             } else if (tos.type == N_LIST) {
                 if (tok->type == LEXER_TOK_LPAREN ||
                         tok->type == LEXER_TOK_QUOTE ||
+                        tok->type == LEXER_TOK_QUASIQUOTE ||
                         tok->type == LEXER_TOK_INT ||
                         tok->type == LEXER_TOK_FLOAT ||
                         tok->type == LEXER_TOK_STRING ||
@@ -163,19 +167,20 @@ AstSexpr *reader_read(Reader *reader)
                     token.type = T_LPAREN;
                     reader_stack_push(stack, token);
                     continue; // do not advance token
-                } else if (tok->type == LEXER_TOK_QUOTE) {
+                } else if (tok->type == LEXER_TOK_QUOTE ||
+                           tok->type == LEXER_TOK_QUASIQUOTE) {
                     // S -> 'S
                     LOG_DEBUG("Rule: %s", "S->'S");
                     // pop current token from stack and create nodes in the AST
                     reader_stack_pop(stack, &tos);
-                    tos.ast.sexp->type = SEXPR_QUOTE;
+                    tos.ast.sexp->type = tok->type == LEXER_TOK_QUOTE ? SEXPR_QUOTE : SEXPR_QUASIQUOTE;
                     tos.ast.sexp->ast.quoted = ast_new_sexpr();
                     // push rule RHS onto stack in reverse order
                     ReaderStackToken token;
                     token.type = N_SEXP;
                     token.ast.sexp = tos.ast.list->ast.compound.sexpr;
                     reader_stack_push(stack, token);
-                    token.type = T_QUOTE;
+                    token.type = tok->type == LEXER_TOK_QUOTE ? T_QUOTE : T_QUASIQUOTE;
                     token.ast.sexp = tos.ast.sexp->ast.quoted;
                     reader_stack_push(stack, token);
                     continue; // do not advance token

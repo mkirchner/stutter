@@ -19,6 +19,7 @@ const char *reader_stack_token_type_names[] = {
     "T_LPAREN",
     "T_RPAREN",
     "T_QUOTE",
+    "T_QUASIQUOTE",
     "T_INT",
     "T_FLOAT",
     "T_STR",
@@ -82,6 +83,7 @@ static int _get_stack_symbol_type(ReaderStackToken symbol)
     case(T_LPAREN):
     case(T_RPAREN):
     case(T_QUOTE):
+    case(T_QUASIQUOTE):
     case(T_INT):
     case(T_FLOAT):
     case(T_STR):

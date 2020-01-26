@@ -22,6 +22,7 @@ typedef enum {
     T_LPAREN,
     T_RPAREN,
     T_QUOTE,
+    T_QUASIQUOTE,
     T_INT,
     T_FLOAT,
     T_STR,
