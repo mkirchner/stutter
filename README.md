@@ -18,8 +18,6 @@ This should work on a Mac with a recent `clang`. No efforts to make it portable
 
 * Lexer & reader
   * Support for unary -, i.e. negative numbers
-  * Reader macros for quasiquote, unquote and splice-unquote
-  *
 
 ### Next steps
 
