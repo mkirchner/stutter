@@ -73,6 +73,8 @@ static LexerToken *lexer_make_token(TokenType token_type, char *buf)
     case LEXER_TOK_RPAREN:
     case LEXER_TOK_QUOTE:
     case LEXER_TOK_QUASIQUOTE:
+    case LEXER_TOK_UNQUOTE:
+    case LEXER_TOK_SPLICE_UNQUOTE:
         tok->value = (char *) malloc(strlen(buf) * sizeof(char));
         strcpy((char *) tok->value, buf);
         break;
@@ -108,6 +110,11 @@ LexerToken *lexer_get_token(Lexer *l)
             case '`':
                 buf[bufpos++] = c;
                 return lexer_make_token(LEXER_TOK_QUASIQUOTE, buf);
+                break;
+            /* start an unquote */
+            case '~':
+                buf[bufpos++] = c;
+                l->state = LEXER_STATE_UNQUOTE;
                 break;
             /* start a string */
             case '\"':
@@ -145,6 +152,18 @@ LexerToken *lexer_get_token(Lexer *l)
                 return lexer_make_token(LEXER_TOK_ERROR, buf);
             }
             break;
+
+        case LEXER_STATE_UNQUOTE:
+            l->state = LEXER_STATE_ZERO;
+            if (c == '@') {
+                buf[bufpos++] = c;
+                return lexer_make_token(LEXER_TOK_SPLICE_UNQUOTE, buf);
+            } else {
+                ungetc(c, l->fp);
+                return lexer_make_token(LEXER_TOK_UNQUOTE, buf);
+            }
+            break;
+
         case LEXER_STATE_STRING:
             if (c != '\"') {
                 buf[bufpos++] = c;

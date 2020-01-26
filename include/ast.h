@@ -23,7 +23,14 @@
 struct AstAtom;
 struct AstList;
 
-typedef enum {SEXPR_LIST, SEXPR_ATOM, SEXPR_QUOTE, SEXPR_QUASIQUOTE} AstSexprType;
+typedef enum {
+    SEXPR_LIST,
+    SEXPR_ATOM,
+    SEXPR_QUOTE,
+    SEXPR_QUASIQUOTE,
+    SEXPR_UNQUOTE,
+    SEXPR_SPLICE_UNQUOTE
+} AstSexprType;
 
 typedef struct AstSexpr {
     AstSexprType type;
@@ -31,6 +38,7 @@ typedef struct AstSexpr {
         struct AstList *list;
         struct AstAtom *atom;
         struct AstSexpr *quoted;
+        struct AstSexpr *unquoted;
     } ast;
 } AstSexpr;
 
