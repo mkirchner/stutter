@@ -143,6 +143,17 @@ Value *core_eval(const Value *args)
 #define BOLD         "\033[1m"
 #define NO_BOLD      "\033[22m"
 
+const char* banner()
+{
+    const char* banner =
+    "         __        __  __\n"
+    "   _____/ /___  __/ /_/ /____  _____\n"
+    "  / ___/ __/ / / / __/ __/ _ \\/ ___/\n"
+    " (__  ) /_/ /_/ / /_/ /_/  __/ /\n"
+    "/____/\\__/\\__,_/\\__/\\__/\\___/_/\n";
+    return banner;
+}
+
 void show_help()
 {
     char* help =
@@ -155,6 +166,7 @@ void show_help()
         "\n"
         BOLD "OPTIONS\n" NO_BOLD
         "  -h        Show this help text\n";
+    fprintf(stdout, "%s\n", banner());
     fprintf(stderr, help, __STUTTER_VERSION__, __clang_major__, __clang_minor__, __clang_patchlevel__);
 }
 
@@ -186,7 +198,8 @@ int main(int argc, char *argv[])
     }
 
     // REPL
-    fprintf(stderr, "Stutter %s (clang %d.%d.%d on darwin)\n", __STUTTER_VERSION__,
+    fprintf(stdout, "%s\n", banner());
+    fprintf(stdout, "Stutter %s (clang %d.%d.%d on darwin)\n", __STUTTER_VERSION__,
             __clang_major__, __clang_minor__, __clang_patchlevel__);
 
     while(true) {
