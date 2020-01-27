@@ -43,12 +43,12 @@ Environment *global_env()
     env_set(env, "pr-str", value_new_builtin_fn(core_pr_str));
     env_set(env, "prn", value_new_builtin_fn(core_prn));
 
-    Value *plus = value_new_builtin_fn(core_plus);
-    env_set(env, "+", plus);
-    env_set(env, "plus", plus);
-    Value *minus = value_new_builtin_fn(core_minus);
-    // FIXME: no "-", need to extend lexer w/ negative numbers and unary minus
-    env_set(env, "minus", minus);
+    Value *add = value_new_builtin_fn(core_add);
+    env_set(env, "+", add);
+    env_set(env, "add", add);
+    Value *sub = value_new_builtin_fn(core_sub);
+    env_set(env, "sub", sub);
+    env_set(env, "-", sub);
     Value *mul = value_new_builtin_fn(core_mul);
     env_set(env, "*", mul);
     env_set(env, "mul", mul);

@@ -60,12 +60,12 @@ Value *core_is_empty(const Value *args)
     return NULL;
 }
 
-static float acc_plus(float acc, float x)
+static float acc_add(float acc, float x)
 {
     return acc + x;
 }
 
-static float acc_minus(float acc, float x)
+static float acc_sub(float acc, float x)
 {
     return acc - x;
 }
@@ -122,14 +122,14 @@ static Value *core_acc(const Value *args, float (*accumulate)(float, float))
     return ret;
 }
 
-Value *core_plus(const Value *args)
+Value *core_add(const Value *args)
 {
-    return core_acc(args, acc_plus);
+    return core_acc(args, acc_add);
 }
 
-Value *core_minus(const Value *args)
+Value *core_sub(const Value *args)
 {
-    return core_acc(args, acc_minus);
+    return core_acc(args, acc_sub);
 }
 
 Value *core_mul(const Value *args)

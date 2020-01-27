@@ -138,6 +138,10 @@ LexerToken *lexer_get_token(Lexer *l)
                 buf[bufpos++] = c;
                 l->state = LEXER_STATE_SYMBOL;
                 break;
+            case '-':
+                buf[bufpos++] = c;
+                l->state = LEXER_STATE_MINUS;
+                break;
             /* eat whitespace */
             case ' ':
             case '\r':
@@ -153,6 +157,48 @@ LexerToken *lexer_get_token(Lexer *l)
             }
             break;
 
+        case LEXER_STATE_MINUS:
+            /* This one is a little finicky since we want to allow for
+             * symbols that start with a dash ("-main"), negative numbers
+             * (-1, -2.4, -.7), and the subtraction operator (- 3 1). */
+            switch(c) {
+            case '0' ... '9':
+                buf[bufpos++] = c;
+                l->state = LEXER_STATE_NUMBER;
+                break;
+            case '.':
+                buf[bufpos++] = c;
+                l->state = LEXER_STATE_FLOAT;
+                break;
+            /* start a symbol */
+            case 'a' ... 'z':
+            case 'A' ... 'Z':
+            case '+':
+            case '/':
+            case '*':
+            case '<':
+            case '=':
+            case '>':
+                ungetc(c, l->fp);
+                l->state = LEXER_STATE_SYMBOL;
+                break;
+            /* minus symbol */
+            case ' ':
+            case '\r':
+            case '\t':
+                return lexer_make_token(LEXER_TOK_SYMBOL, buf);
+                break;
+            case '\n':
+                l->line_no++;
+                return lexer_make_token(LEXER_TOK_SYMBOL, buf);
+                break;
+            /* error */
+            default:
+                buf[bufpos++] = c;
+                return lexer_make_token(LEXER_TOK_ERROR, buf);
+
+            }
+            break;
         case LEXER_STATE_UNQUOTE:
             l->state = LEXER_STATE_ZERO;
             if (c == '@') {
@@ -183,6 +229,7 @@ LexerToken *lexer_get_token(Lexer *l)
                 l->state = LEXER_STATE_ZERO;
                 return lexer_make_token(LEXER_TOK_INT, buf);
             case '\n':
+                l->line_no++;
                 ungetc(c, l->fp);
             case '\t':
             case '\r':
@@ -210,6 +257,7 @@ LexerToken *lexer_get_token(Lexer *l)
                 l->state = LEXER_STATE_ZERO;
                 return lexer_make_token(LEXER_TOK_FLOAT, buf);
             case '\n':
+                l->line_no++;
                 ungetc(c, l->fp);
             case '\t':
             case '\r':
@@ -240,10 +288,18 @@ LexerToken *lexer_get_token(Lexer *l)
             return lexer_make_token(LEXER_TOK_ERROR, buf);
         }
     }
-    if (l->state != LEXER_STATE_ZERO) {
-        return lexer_make_token(LEXER_TOK_ERROR, buf);
-    } else {
-        return lexer_make_token(LEXER_TOK_EOF, NULL);
+    /* acceptance states */
+    switch(l->state) {
+        case LEXER_STATE_ZERO:
+            return lexer_make_token(LEXER_TOK_EOF, NULL);
+        case LEXER_STATE_NUMBER:
+            l->state = LEXER_STATE_ZERO;
+            return lexer_make_token(LEXER_TOK_INT, buf);
+        case LEXER_STATE_FLOAT:
+            l->state = LEXER_STATE_ZERO;
+            return lexer_make_token(LEXER_TOK_FLOAT, buf);
+        default:
+            return lexer_make_token(LEXER_TOK_ERROR, buf);
     }
 }
 
