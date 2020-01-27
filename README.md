@@ -20,8 +20,6 @@ This should work on a Mac with a recent `clang`. No efforts to make it portable
 
 ### Open issues
 
-- [ ] Support negative numbers in the reader
-  - [ ] Support for unary "-"
 - [ ] Create `stutter` test suite
   - [ ] implement `(assert ...)` or `(is ...)`
   - [ ] write tests
