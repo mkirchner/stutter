@@ -150,24 +150,24 @@ const char* banner()
     "   _____/ /___  __/ /_/ /____  _____\n"
     "  / ___/ __/ / / / __/ __/ _ \\/ ___/\n"
     " (__  ) /_/ /_/ / /_/ /_/  __/ /\n"
-    "/____/\\__/\\__,_/\\__/\\__/\\___/_/\n";
+    "/____/\\__/\\__,_/\\__/\\__/\\___/_/";
     return banner;
 }
 
 void show_help()
 {
     char* help =
-        "-=[ Stutter %s (clang %d.%d.%d on darwin)\n"
+        " %s\n\n"
         BOLD "USAGE\n" NO_BOLD
-        "  $ stutter [-h] [file]\n"
+        "  stutter [-h] [file]\n"
         "\n"
         BOLD "ARGUMENTS\n" NO_BOLD
         "  file      Execute FILE as a stutter program\n"
         "\n"
         BOLD "OPTIONS\n" NO_BOLD
         "  -h        Show this help text\n";
-    fprintf(stdout, "%s\n", banner());
-    fprintf(stderr, help, __STUTTER_VERSION__, __clang_major__, __clang_minor__, __clang_patchlevel__);
+    fprintf(stderr, "%s", banner());
+    fprintf(stderr, help, __STUTTER_VERSION__);
 }
 
 int main(int argc, char *argv[])
@@ -198,9 +198,7 @@ int main(int argc, char *argv[])
     }
 
     // REPL
-    fprintf(stdout, "%s\n", banner());
-    fprintf(stdout, "Stutter %s (clang %d.%d.%d on darwin)\n", __STUTTER_VERSION__,
-            __clang_major__, __clang_minor__, __clang_patchlevel__);
+    fprintf(stdout, "%s %s\n\n", banner(), __STUTTER_VERSION__);
 
     while(true) {
         // char *input = readline("stutter> ");
