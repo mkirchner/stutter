@@ -95,6 +95,9 @@ LexerToken *lexer_get_token(Lexer *l)
         switch (l->state) {
         case LEXER_STATE_ZERO:
             switch(c) {
+            case ';':
+                l->state = LEXER_STATE_COMMENT;
+                break;
             case '(':
                 buf[bufpos++] = c;
                 return lexer_make_token(LEXER_TOK_LPAREN, buf);
@@ -154,6 +157,18 @@ LexerToken *lexer_get_token(Lexer *l)
             default:
                 buf[bufpos++] = c;
                 return lexer_make_token(LEXER_TOK_ERROR, buf);
+            }
+            break;
+
+        case LEXER_STATE_COMMENT:
+            switch(c) {
+            case '\n':
+                l->line_no++;
+                l->state = LEXER_STATE_ZERO;
+                break;
+            default:
+                /* gobble up everything until EOL */
+                break;
             }
             break;
 
@@ -291,6 +306,7 @@ LexerToken *lexer_get_token(Lexer *l)
     /* acceptance states */
     switch(l->state) {
         case LEXER_STATE_ZERO:
+        case LEXER_STATE_COMMENT:
             return lexer_make_token(LEXER_TOK_EOF, NULL);
         case LEXER_STATE_NUMBER:
             l->state = LEXER_STATE_ZERO;
