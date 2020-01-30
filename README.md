@@ -30,11 +30,8 @@ This should work on a Mac with a recent `clang`. No efforts to make it portable
   - [ ] Concept that avoids global error state
   - [ ] Implement
 - [ ] Language document
-  - [ ] define core language  
+  - [ ] define core language
 - [ ] Missing core functions
-  - [ ] `map`
-  - [ ] `apply`
-  - [ ] `defn` (as a shorthand for `(define f (lambda ...))`)
   - [ ] `nil?`, `true?`, `false?`, `symbol?`
 - [ ] Refactor AST/IR to a single representation (this is an artifact)
 - [ ] Core capabilities

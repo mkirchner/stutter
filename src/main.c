@@ -5,8 +5,6 @@
  * Distributed under terms of the MIT license.
  */
 
-// #define __STUTTER_VERSION__ "0.0.1-alpha"
-
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
