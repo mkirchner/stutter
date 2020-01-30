@@ -85,6 +85,9 @@ Environment *global_env()
     env_set(env, "cons", value_new_builtin_fn(core_cons));
     env_set(env, "concat", value_new_builtin_fn(core_concat));
 
+    env_set(env, "map", value_new_builtin_fn(core_map));
+    env_set(env, "apply", value_new_builtin_fn(core_apply));
+
     // add stutter basics
     size_t N_EXPRS = 1;
     const char *exprs[N_EXPRS];

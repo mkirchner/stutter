@@ -10,6 +10,8 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <string.h>
+#include "apply.h"
+#include "eval.h"
 #include "log.h"
 
 Value *CORE_TRUE = &((Value)
@@ -48,6 +50,7 @@ Value *core_list(const Value *args)
 
 Value *core_is_list(const Value *args)
 {
+    // FIXME: needs to be a list of lists to be a list
     return (args && args->type == VALUE_LIST) ? CORE_TRUE : CORE_FALSE;
 }
 
@@ -548,6 +551,7 @@ out:
 #define REQUIRE_ARGS(args) do  { if (!args) { return NULL; } } while (0)
 #define REQUIRE_TYPE(args, t) do  { if (args->type != t) { LOG_CRITICAL("Type mismatch"); return NULL; } } while (0)
 #define REQUIRE_CARDINALITY(args, n) do { if (list_size(args->value.list) != n) { LOG_CRITICAL("Wrong number of arguments"); return NULL; } } while (0)
+#define REQUIRE_CARDINALITY_GE(args, n) do { if (list_size(args->value.list) < n) { LOG_CRITICAL("Wrong number of arguments"); return NULL; } } while (0)
 
 Value *core_cons(const Value *args)
 {
@@ -573,4 +577,55 @@ Value *core_concat(const Value *args)
         }
     }
     return value_new_list(concat);
+}
+
+Value *core_map(const Value *args)
+{
+    /* (map f '(a b c ...)) */
+    REQUIRE_ARGS(args);
+    REQUIRE_TYPE(args, VALUE_LIST);
+    REQUIRE_CARDINALITY(args, 2);
+    Value *fn = list_nth(LIST(args), 0);
+    Value *fn_args = list_nth(LIST(args), 1);
+
+    REQUIRE_TYPE(fn_args, VALUE_LIST);
+    const List *mapped = list_new();
+    Value *tco_expr;
+    Environment *tco_env;
+    for (size_t i = 0; i < list_size(LIST(fn_args)); ++i) {
+        Value *result = apply(fn, value_make_list(list_nth(LIST(fn_args), i)),
+                              &tco_expr, &tco_env);
+        /* need to call eval since apply defers to eval for TCO support */
+        mapped = list_conj(mapped, tco_expr ? eval(tco_expr, tco_env) : result);
+    }
+    return value_new_list(mapped);
+}
+
+Value *core_apply(const Value *args)
+{
+    /* (apply f a b c d ...) == (f a b c d ...) */
+    REQUIRE_ARGS(args);
+    REQUIRE_TYPE(args, VALUE_LIST);
+    REQUIRE_CARDINALITY_GE(args, 2);
+    Value *fn = list_head(LIST(args));
+    Value *fn_args = value_new_list(list_tail(LIST(args)));
+    size_t n_args = list_size(LIST(fn_args));
+
+    /* Merge the arguments w/ a potential list of arguments at the end of
+     * the argument list */
+    if (is_list(list_nth(LIST(fn_args), n_args - 1))) {
+        const List* concat = list_new();
+        for (const ListItem *j = LIST(fn_args)->begin; j != LIST(fn_args)->end; j = j->next) {
+            concat = list_conj(concat, j->p);
+        }
+        for (const ListItem *j = LIST(((Value *)(LIST(fn_args)->end->p)))->begin; j != NULL; j = j->next) {
+            concat = list_conj(concat, j->p);
+        }
+        fn_args = value_new_list(concat);
+    }
+    Value *tco_expr;
+    Environment *tco_env;
+    Value *result = apply(fn, fn_args, &tco_expr, &tco_env);
+    /* need to call eval since apply defers to eval for TCO support */
+    return  tco_expr ? eval(tco_expr, tco_env) : result;
 }

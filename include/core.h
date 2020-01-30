@@ -23,6 +23,7 @@ extern  Value *CORE_FALSE;
 extern  Value *CORE_NIL;
 
 Value *core_add(const Value *args);
+Value *core_apply(const Value *args);
 Value *core_concat(const Value *args);
 Value *core_cons(const Value *args);
 Value *core_count(const Value *args);
@@ -35,6 +36,7 @@ Value *core_is_list(const Value *args);
 Value *core_leq(const Value *args);
 Value *core_list(const Value *args);
 Value *core_lt(const Value *args);
+Value *core_map(const Value *args);
 Value *core_mul(const Value *args);
 Value *core_pr(const Value *args);
 Value *core_pr_str(const Value *args);

@@ -59,7 +59,7 @@ static Value *apply_compound_fn(Value *fn, Value *args,
             arg_name = list_head(arg_names);
             arg_value = list_head(arg_values);
         }
-        // eval
+        // eval via TCO
         *tco_expr = fn->value.fn->body;
         *tco_env = env;
         return NULL;
