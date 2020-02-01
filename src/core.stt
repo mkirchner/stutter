@@ -1,3 +1,5 @@
 (define *VERSION* "stutter-0.1.0")
 
 (defmacro defn (name parameters body) `(define ~name (lambda ~parameters ~body)))
+
+(defn not (a) (if a false true))
