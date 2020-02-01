@@ -7,6 +7,8 @@
 
 #include "apply.h"
 
+#include <string.h>
+
 #include "stdbool.h"
 #include "eval.h"
 #include "list.h"
@@ -44,7 +46,8 @@ static Value *apply_compound_fn(Value *fn, Value *args,
             LOG_CRITICAL("Invalid number of arguments for compound fn");
             return NULL;
         }
-        // create new env on top of closure
+        // bind arguments
+        // FIXME: support variadic bind for last arg
         Environment *env = env_new(fn->value.fn->env);
         Value *arg_name = list_head(arg_names);
         Value *arg_value = list_head(arg_values);
@@ -53,13 +56,19 @@ static Value *apply_compound_fn(Value *fn, Value *args,
                 LOG_CRITICAL("Parameter name should be a symbol.");
                 return NULL;
             }
+            if (strcmp(SYMBOL(arg_name), "&") == 0) {
+                Value* rest_name = list_head(list_tail(arg_names));
+                Value* rest_value = value_new_list(arg_values);
+                env_set(env, SYMBOL(rest_name), rest_value);
+                break;
+            }
             env_set(env, arg_name->value.str, arg_value);
             arg_names = list_tail(arg_names);
             arg_values = list_tail(arg_values);
             arg_name = list_head(arg_names);
             arg_value = list_head(arg_values);
         }
-        // eval via TCO
+        // eval via TCO: don't call eval here, return the pointers
         *tco_expr = fn->value.fn->body;
         *tco_env = env;
         return NULL;

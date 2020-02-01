@@ -25,7 +25,7 @@ const char *token_type_names[] = {
     "LEXER_TOK_EOF"
 };
 
-static char *symbol_chars = "!*+-0123456789<=>?@"
+static char *symbol_chars = "!&*+-0123456789<=>?@"
                             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                             "abcdefghijklmnopqrstuvwxyz";
 
@@ -138,6 +138,7 @@ LexerToken *lexer_get_token(Lexer *l)
             case '<':
             case '=':
             case '>':
+            case '&':
                 buf[bufpos++] = c;
                 l->state = LEXER_STATE_SYMBOL;
                 break;
