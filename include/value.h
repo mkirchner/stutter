@@ -58,9 +58,16 @@ typedef struct Value {
     } value;
 } Value;
 
-//
-// functions
-//
+/*
+ * constants
+ */
+extern  Value *VALUE_CONST_TRUE;
+extern  Value *VALUE_CONST_FALSE;
+extern  Value *VALUE_CONST_NIL;
+
+/*
+ * functions
+ */
 bool is_symbol(const Value *value);
 bool is_macro(const Value *value);
 bool is_list(const Value *value);

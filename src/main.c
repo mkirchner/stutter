@@ -33,9 +33,12 @@ Environment *global_env()
 {
     Environment *env = env_new(NULL);
 
-    env_set(env, "nil", CORE_NIL);
-    env_set(env, "true", CORE_TRUE);
-    env_set(env, "false", CORE_FALSE);
+    env_set(env, "nil", VALUE_CONST_NIL);
+    env_set(env, "true", VALUE_CONST_TRUE);
+    env_set(env, "false", VALUE_CONST_FALSE);
+    env_set(env, "nil?", value_new_builtin_fn(core_is_nil));
+    env_set(env, "true?", value_new_builtin_fn(core_is_true));
+    env_set(env, "false?", value_new_builtin_fn(core_is_false));
 
     env_set(env, "pr", value_new_builtin_fn(core_pr));
     env_set(env, "pr-str", value_new_builtin_fn(core_pr_str));

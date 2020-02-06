@@ -10,6 +10,19 @@
 #include "log.h"
 #include <assert.h>
 
+Value *VALUE_CONST_TRUE = &((Value)
+{
+    .type = VALUE_BOOL, .value = { .bool_ = true }
+});
+Value *VALUE_CONST_FALSE = &((Value)
+{
+    .type = VALUE_BOOL, .value = { .bool_ = false }
+});
+Value *VALUE_CONST_NIL = &((Value)
+{
+    .type = VALUE_NIL, .value = { .float_ = 0.0 }
+});
+
 bool is_symbol(const Value *value)
 {
     return value->type == VALUE_SYMBOL;

@@ -18,10 +18,6 @@ typedef struct {
 
 extern CoreFn core_fns[];
 
-extern  Value *CORE_TRUE;
-extern  Value *CORE_FALSE;
-extern  Value *CORE_NIL;
-
 Value *core_add(const Value *args);
 Value *core_apply(const Value *args);
 Value *core_concat(const Value *args);
@@ -32,7 +28,10 @@ Value *core_eq(const Value *args);
 Value *core_geq(const Value *args);
 Value *core_gt(const Value *args);
 Value *core_is_empty(const Value *args);
+Value *core_is_false(const Value *args);
 Value *core_is_list(const Value *args);
+Value *core_is_nil(const Value *args);
+Value *core_is_true(const Value *args);
 Value *core_leq(const Value *args);
 Value *core_list(const Value *args);
 Value *core_lt(const Value *args);
