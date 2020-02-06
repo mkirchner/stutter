@@ -32,7 +32,7 @@ This should work on a Mac with a recent `clang`. No efforts to make it portable
 - [ ] Language document
   - [ ] define core language
 - [ ] Missing core functions
-  - [ ] `nil?`, `true?`, `false?`, `symbol?`
+  - [ ] ... tbd ...
 - [ ] Refactor AST/IR to a single representation (this is an artifact)
 - [ ] Core capabilities
   - [ ] `keyword` support

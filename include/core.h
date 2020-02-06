@@ -31,6 +31,7 @@ Value *core_is_empty(const Value *args);
 Value *core_is_false(const Value *args);
 Value *core_is_list(const Value *args);
 Value *core_is_nil(const Value *args);
+Value *core_is_symbol(const Value *args);
 Value *core_is_true(const Value *args);
 Value *core_leq(const Value *args);
 Value *core_list(const Value *args);

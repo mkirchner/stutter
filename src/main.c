@@ -39,6 +39,7 @@ Environment *global_env()
     env_set(env, "nil?", value_new_builtin_fn(core_is_nil));
     env_set(env, "true?", value_new_builtin_fn(core_is_true));
     env_set(env, "false?", value_new_builtin_fn(core_is_false));
+    env_set(env, "symbol?", value_new_builtin_fn(core_is_symbol));
 
     env_set(env, "pr", value_new_builtin_fn(core_pr));
     env_set(env, "pr-str", value_new_builtin_fn(core_pr_str));

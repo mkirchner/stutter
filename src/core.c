@@ -29,7 +29,6 @@ static bool is_nil(const Value *v)
     return v->type == VALUE_NIL;
 }
 
-
 Value *core_list(const Value *args)
 {
     return value_new_list(args->value.list);
@@ -642,4 +641,13 @@ Value *core_is_false(const Value *args)
     REQUIRE_CARDINALITY(args, 1);
     Value *expr = list_head(LIST(args));
     return value_new_bool(is_false(expr));
+}
+
+Value *core_is_symbol(const Value *args)
+{
+    REQUIRE_ARGS(args);
+    REQUIRE_TYPE(args, VALUE_LIST);
+    REQUIRE_CARDINALITY(args, 1);
+    Value *expr = list_head(LIST(args));
+    return value_new_bool(is_symbol(expr));
 }
