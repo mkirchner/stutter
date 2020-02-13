@@ -25,7 +25,6 @@ This should work on a Mac with a recent `clang`. No efforts to make it portable
   - [ ] write tests
 - [ ] Better error reporting
   - [ ] Extend `LexerToken` w/ line #, char pos
-  - [ ] Add error type in the `Value` union
 - [ ] Support `try/catch`
   - [ ] Concept that avoids global error state
   - [ ] Implement

@@ -216,9 +216,11 @@ int main(int argc, char *argv[])
         }
         add_history(input);
         Value *expr = read_(input);
-        Value *eval_result = eval(expr, ENV);
-        if (eval_result) {
-            core_prn(value_make_list(eval_result));
+        if (expr) {
+            Value *eval_result = eval(expr, ENV);
+            if (eval_result) {
+                core_prn(value_make_list(eval_result));
+            }
         }
         free(input);
     }

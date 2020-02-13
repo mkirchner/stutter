@@ -9,6 +9,23 @@
 #include <string.h>
 #include "log.h"
 #include <assert.h>
+#include <stdarg.h>
+
+
+const char *value_type_names[] = {
+    "VALUE_BOOL",
+    "VALUE_BUILTIN_FN",
+    "VALUE_ERROR",
+    "VALUE_FLOAT",
+    "VALUE_FN",
+    "VALUE_INT",
+    "VALUE_LIST",
+    "VALUE_MACRO_FN",
+    "VALUE_NIL",
+    "VALUE_STRING",
+    "VALUE_SYMBOL"
+};
+
 
 Value *VALUE_CONST_TRUE = &((Value)
 {
@@ -22,6 +39,11 @@ Value *VALUE_CONST_NIL = &((Value)
 {
     .type = VALUE_NIL, .value = { .float_ = 0.0 }
 });
+
+bool is_error(const Value *value)
+{
+    return value->type == VALUE_ERROR;
+}
 
 bool is_symbol(const Value *value)
 {
@@ -106,6 +128,25 @@ Value *value_new_string(const char *str)
     return v;
 }
 
+Value *value_new_error(const char *str)
+{
+    Value *v = value_new(VALUE_ERROR);
+    v->value.str = gc_strdup(&gc, str);
+    return v;
+}
+
+Value *value_make_error(const char* fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    char *message = NULL;
+    vasprintf(&message, fmt, args);
+    va_end(args);
+    Value *error = value_new_error(message);
+    free(message);
+    return error;
+}
+
 Value *value_new_symbol(const char *str)
 {
     Value *v = value_new(VALUE_SYMBOL);
@@ -147,6 +188,7 @@ void value_print(const Value *v)
     case VALUE_FLOAT:
         fprintf(stderr, "%f", v->value.float_);
         break;
+    case VALUE_ERROR:
     case VALUE_STRING:
     case VALUE_SYMBOL:
         fprintf(stderr, "%s", v->value.str);

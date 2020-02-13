@@ -43,18 +43,15 @@ static Value *apply_compound_fn(Value *fn, Value *args,
         const List *arg_names = fn->value.fn->args->value.list;
         const List *arg_values = args->value.list;
         if (list_size(arg_names) != list_size(arg_values)) {
-            LOG_CRITICAL("Invalid number of arguments for compound fn");
-            return NULL;
+            return value_make_error("Invalid number of arguments for compound fn");
         }
         // bind arguments
-        // FIXME: support variadic bind for last arg
         Environment *env = env_new(fn->value.fn->env);
         Value *arg_name = list_head(arg_names);
         Value *arg_value = list_head(arg_values);
         while(arg_name != NULL && arg_value != NULL) {
             if (!is_symbol(arg_name)) {
-                LOG_CRITICAL("Parameter name should be a symbol.");
-                return NULL;
+                return value_make_error("Parameter names must be symbols");
             }
             if (strcmp(SYMBOL(arg_name), "&") == 0) {
                 Value* rest_name = list_head(list_tail(arg_names));
@@ -79,6 +76,7 @@ static Value *apply_compound_fn(Value *fn, Value *args,
 
 Value *apply(Value *fn, Value *args, Value **tco_expr, Environment **tco_env)
 {
+    if (!fn) return NULL;
     *tco_expr = NULL;
     *tco_env = NULL;
     if (is_builtin_fn(fn)) {
@@ -86,8 +84,7 @@ Value *apply(Value *fn, Value *args, Value **tco_expr, Environment **tco_env)
     } else if (is_compound_fn(fn)) {
         return apply_compound_fn(fn, args, tco_expr, tco_env);
     } else {
-        LOG_CRITICAL("Unknown function type in apply: %u.", fn->type);
+        return value_make_error("apply: not a function");
     }
-    return NULL;
 }
 

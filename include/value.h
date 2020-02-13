@@ -15,27 +15,30 @@
 #include "list.h"
 
 #define BOOL(v) (v->value.bool_)
-#define INT(v)  (v->value.int_)
+#define BUILTIN_FN(v) (v->value.builtin_fn)
+#define ERROR(v) (v->value.str)
 #define FLOAT(v) (v->value.float_)
+#define FN(v) (v->value.fn)
+#define INT(v)  (v->value.int_)
+#define LIST(v) (v->value.list)
 #define STRING(v) (v->value.str)
 #define SYMBOL(v) (v->value.str)
-#define LIST(v) (v->value.list)
-#define BUILTIN_FN(v) (v->value.builtin_fn)
-#define FN(v) (v->value.fn)
 
 typedef enum {
-    VALUE_NIL,
     VALUE_BOOL,
-    VALUE_INT,
-    VALUE_FLOAT,
-    VALUE_STRING,
-    VALUE_SYMBOL,
-    VALUE_LIST,
     VALUE_BUILTIN_FN,
+    VALUE_ERROR,
+    VALUE_FLOAT,
     VALUE_FN,
-    VALUE_MACRO_FN
+    VALUE_INT,
+    VALUE_LIST,
+    VALUE_MACRO_FN,
+    VALUE_NIL,
+    VALUE_STRING,
+    VALUE_SYMBOL
 } ValueType;
 
+extern const char *value_type_names[];
 
 typedef struct CompositeFunction {
     struct Value *args;
@@ -71,8 +74,11 @@ extern  Value *VALUE_CONST_NIL;
 bool is_symbol(const Value *value);
 bool is_macro(const Value *value);
 bool is_list(const Value *value);
+bool is_error(const Value *value);
 Value *value_new_nil();
 Value *value_new_bool(const bool bool_);
+Value *value_new_error(const char *str);
+Value *value_make_error(const char* fmt, ...);
 Value *value_new_int(int int_);
 Value *value_new_float(float float_);
 Value *value_new_builtin_fn(Value * (fn)(const Value *));

@@ -125,6 +125,8 @@ static bool is_true(const Value *v)
     switch(v->type) {
     case VALUE_NIL:
         return false;
+    case VALUE_ERROR:
+        return false;
     case VALUE_BOOL:
         return v->value.bool_ == true;
     case VALUE_INT:
@@ -154,8 +156,8 @@ static Value *lookup_variable_value(Value *expr, Environment *env)
 {
     Value *sym = NULL;
     if ((sym = env_get(env, SYMBOL(expr))) == NULL) {
-        LOG_CRITICAL("Unknown name: %s", SYMBOL(expr));
-        // FIXME: how to fail?
+        // LOG_CRITICAL("Unknown name: %s", SYMBOL(expr));
+        return value_make_error("Unknown name: %s", SYMBOL(expr));
     }
     return sym;
 }
@@ -167,7 +169,7 @@ static Value *eval_quote(Value *expr)
         return list_nth(LIST(expr), 1);
     }
     LOG_CRITICAL("Invalid parameter to built-in quote");
-    return NULL;
+    return value_make_error("Invalid parameter to built-in quote");
 }
 
 static Value *eval_assignment(Value *expr, Environment *env)
@@ -180,11 +182,11 @@ static Value *eval_assignment(Value *expr, Environment *env)
             value = eval(value, env);
             env_set(env, SYMBOL(name), value);
             return value;
-        } else {
-            LOG_CRITICAL("Could not find symbol %s.", SYMBOL(name));
         }
+        LOG_CRITICAL("Could not find symbol %s.", SYMBOL(name));
+        value_make_error("Could not find symbol %s.", SYMBOL(name));
     }
-    return NULL;
+    return value_make_error("set! requires 2 parameters");
 }
 
 static Value *eval_definition(Value *expr, Environment *env)
@@ -399,9 +401,8 @@ static Value *macroexpand(Value *form, Environment *env)
 
 static Value *macroexpand_1(Value *expr, Environment *env)
 {
-    if (!is_list(expr)) {
-        LOG_CRITICAL("Require macro call for expansion");
-        return NULL;
+    if (!is_list(expr)) { // FIXME: this is checking the outer list
+        return value_make_error("Require macro call for expansion");
     }
     Value *args = list_head(list_tail(LIST(expr)));
     return macroexpand(args, env);
@@ -419,6 +420,9 @@ static Value *eval_all(Value *expr, Environment *env)
         if (!evaluated_head) {
             LOG_CRITICAL("Eval failed.");
             return NULL;
+        }
+        if (is_error(evaluated_head)) {
+            return evaluated_head;
         }
         evaluated_list = list_conj(evaluated_list, evaluated_head);
         list = list_tail(list);
@@ -438,15 +442,19 @@ tco:
         LOG_CRITICAL("Passed NULL ptr to eval");
         return NULL;
     }
+    if (is_error(expr)) {
+        return expr;
+    }
     if (is_self_evaluating(expr)) {
         return expr;
     } else if (is_variable(expr)) {
         ret = lookup_variable_value(expr, env);
         return ret;
     }
-    if (!(expr = macroexpand(expr, env))) {
+    expr = macroexpand(expr, env);
+    if (is_error(expr)) {
         LOG_CRITICAL("Macro expansion failed.");
-        return NULL;
+        return expr;
     }
     if (!is_list(expr)) goto tco;
     if (is_quoted(expr)) {
@@ -504,16 +512,18 @@ tco:
     } else if (is_application(expr)) {
         tco_expr = NULL;
         tco_env = NULL;
-        ret = apply(eval(operator(expr), env), eval_all(operands(expr), env),
-                    &tco_expr, &tco_env);
+        Value *fn = eval(operator(expr), env);
+        if (is_error(fn)) return fn;
+        Value *args = eval_all(operands(expr), env);
+        if (is_error(args)) return args;
+        ret = apply(fn, args, &tco_expr, &tco_env);
         if (tco_expr && tco_env) {
             expr = tco_expr;
             env = tco_env;
             goto tco;
         }
         return ret;
-    } else {
-        LOG_CRITICAL("Unknown expression: %d", expr->type);
     }
-    return NULL;
+    LOG_CRITICAL("Unknown expression: %d", expr->type);
+    return value_new_error("Unknown expression");
 }

@@ -14,6 +14,37 @@
 #include "eval.h"
 #include "log.h"
 
+
+#define CHECK_ARGLIST(args) do  {\
+    if (!(args && args->type == VALUE_LIST)) {\
+        LOG_CRITICAL("Invalid argument list in core function");\
+        return NULL;\
+    }\
+} while (0)
+
+#define REQUIRE_VALUE_TYPE(value, t, msg) do  {\
+    if (value->type != t) {\
+        LOG_CRITICAL("%s: expected %s, got %s", msg, value_type_names[t], value_type_names[value->type]);\
+        return value_make_error("%s: expected %s, got %s", msg, value_type_names[t], value_type_names[value->type]);\
+    }\
+} while (0)
+
+
+#define REQUIRE_LIST_CARDINALITY(val, n, msg) do {\
+    if (list_size(val->value.list) != n) {\
+        LOG_CRITICAL("%s: expected %lu, got %lu", msg, n, list_size(val->value.list));\
+        return value_make_error("%s: expected %lu, got %lu", msg, n, list_size(val->value.list));\
+    }\
+} while (0)
+
+#define REQUIRE_LIST_CARDINALITY_GE(val, n, msg) do {\
+    if (list_size(val->value.list) < (size_t) n) {\
+        LOG_CRITICAL("%s: expected at least %lu, got %lu", msg, n, list_size(val->value.list));\
+        return value_make_error("%s: expected at least %lu, got %lu", msg, n, list_size(val->value.list));\
+    }\
+} while (0)
+
+
 static bool is_true(const Value *v)
 {
     return v->type == VALUE_BOOL && v->value.bool_;
@@ -31,22 +62,25 @@ static bool is_nil(const Value *v)
 
 Value *core_list(const Value *args)
 {
-    return value_new_list(args->value.list);
+    CHECK_ARGLIST(args);
+    return value_new_list(LIST(args));
 }
 
 Value *core_is_list(const Value *args)
 {
-    // FIXME: needs to be a list of lists to be a list
-    return (args && args->type == VALUE_LIST) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
+    CHECK_ARGLIST(args);
+    REQUIRE_LIST_CARDINALITY(args, 1ul, "list? requires exactly one parameter");
+    Value *arg0 = list_head(LIST(args));
+    return arg0->type == VALUE_LIST ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
 }
 
 Value *core_is_empty(const Value *args)
 {
-    if (args && args->type == VALUE_LIST) {
-        return list_size(args->value.list) == 0 ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
-    }
-    LOG_CRITICAL("Do not know how to determine emptyness of given type");
-    return NULL;
+    CHECK_ARGLIST(args);
+    REQUIRE_LIST_CARDINALITY(args, 1ul, "empty? requires exactly one parameter");
+    Value *arg0 = list_head(LIST(args));
+    REQUIRE_VALUE_TYPE(arg0, VALUE_LIST, "empty? requires a list type");
+    return list_size(LIST(arg0)) == 0 ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
 }
 
 static float acc_add(float acc, float x)
@@ -72,12 +106,8 @@ static float acc_div(float acc, float x)
 
 static Value *core_acc(const Value *args, float (*accumulate)(float, float))
 {
-    if (!args || list_size(args->value.list) == 0) {
-        if (args) {
-            LOG_CRITICAL("Not a list: %d", args->type);
-        }
-        return NULL;
-    }
+    CHECK_ARGLIST(args);
+    REQUIRE_LIST_CARDINALITY_GE(args, 1ul, "Require at least one argument");
     bool all_int = true;
     const List *list = args->value.list;
     Value *head = list_head(list);
@@ -88,7 +118,7 @@ static Value *core_acc(const Value *args, float (*accumulate)(float, float))
     } else if (head->type == VALUE_INT) {
         acc = (float) head->value.int_;
     } else {
-        LOG_CRITICAL("Require numeric arguments, got %d", head->type);
+        return value_make_error("Non-numeric argument in accumulation");
     }
     list = list_tail(list);
     while ((head = list_head(list)) != NULL) {
@@ -98,7 +128,7 @@ static Value *core_acc(const Value *args, float (*accumulate)(float, float))
         } else if (head->type == VALUE_INT) {
             acc = accumulate(acc, (float) head->value.int_);
         } else {
-            LOG_CRITICAL("Require numeric arguments, got %d", head->type);
+            return value_make_error("Non-numeric argument in accumulation");
         }
         list = list_tail(list);
     }
@@ -138,6 +168,9 @@ static Value *cmp_eq(const Value *a, const Value *b)
         case VALUE_NIL:
             /* NIL equals NIL */
             return VALUE_CONST_TRUE;
+        case VALUE_ERROR:
+            /* Errors do not support comparison */
+            return value_make_error("Comparison of error values is not supported");
         case VALUE_BOOL:
             return BOOL(a) == BOOL(b) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
         case VALUE_INT:
@@ -177,9 +210,12 @@ static Value *cmp_eq(const Value *a, const Value *b)
             }
             return VALUE_CONST_FALSE;
         }
+    } else if (a->type == VALUE_INT && b->type == VALUE_FLOAT) {
+        return ((float) INT(a)) == FLOAT(b) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
+    } else if (b->type == VALUE_INT && a->type == VALUE_FLOAT) {
+        return ((float) INT(b)) == FLOAT(a) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
     }
-    LOG_CRITICAL("Comparing incompatible types");
-    return NULL;
+    return value_make_error("Cannot compare incompatible types");
 }
 
 static Value *cmp_lt(const Value *a, const Value *b)
@@ -187,11 +223,11 @@ static Value *cmp_lt(const Value *a, const Value *b)
     if (a->type == b->type) {
         switch(a->type) {
         case VALUE_NIL:
-            LOG_CRITICAL("Cannot order NIL values");
-            return NULL;
+            return value_make_error("Cannot order NIL values");
+        case VALUE_ERROR:
+            return value_make_error("Cannot order ERROR values");
         case VALUE_BOOL:
-            LOG_CRITICAL("Cannot order boolean values");
-            return NULL;
+            return value_make_error("Cannot order BOOLEAN values");
         case VALUE_INT:
             return INT(a) < INT(b) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
         case VALUE_FLOAT:
@@ -202,15 +238,16 @@ static Value *cmp_lt(const Value *a, const Value *b)
         case VALUE_BUILTIN_FN:
         case VALUE_FN:
         case VALUE_MACRO_FN:
-            LOG_CRITICAL("Cannot compare functions");
-            return NULL;
+            return value_make_error("Cannot order functions");
         case VALUE_LIST:
-            LOG_CRITICAL("Cannot order lists");
-            return NULL;
+            return value_make_error("Cannot order lists");
         }
+    } else if (a->type == VALUE_INT && b->type == VALUE_FLOAT) {
+        return ((float) INT(a)) < FLOAT(b) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
+    } else if (b->type == VALUE_INT && a->type == VALUE_FLOAT) {
+        return FLOAT(a) < ((float) INT(b)) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
     }
-    LOG_CRITICAL("Comparing incompatible types");
-    return NULL;
+    return value_make_error("Cannot compare incompatible types");
 }
 
 static Value *cmp_leq(const Value *a, const Value *b)
@@ -218,11 +255,11 @@ static Value *cmp_leq(const Value *a, const Value *b)
     if (a->type == b->type) {
         switch(a->type) {
         case VALUE_NIL:
-            LOG_CRITICAL("Cannot less-equal compare NIL");
-            return NULL;
+            return value_make_error("Cannot order NIL values");
+        case VALUE_ERROR:
+            return value_make_error("Cannot order ERROR values");
         case VALUE_BOOL:
-            LOG_CRITICAL("Cannot less-equal compare booleans");
-            return NULL;
+            return value_make_error("Cannot order BOOLEAN values");
         case VALUE_INT:
             return INT(a) <= INT(b) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
         case VALUE_FLOAT:
@@ -233,15 +270,16 @@ static Value *cmp_leq(const Value *a, const Value *b)
         case VALUE_BUILTIN_FN:
         case VALUE_FN:
         case VALUE_MACRO_FN:
-            LOG_CRITICAL("Cannot less-equal compare functions");
-            return NULL;
+            return value_make_error("Cannot order functions");
         case VALUE_LIST:
-            LOG_CRITICAL("Cannot order lists");
-            return NULL;
+            return value_make_error("Cannot order lists");
         }
+    } else if (a->type == VALUE_INT && b->type == VALUE_FLOAT) {
+        return ((float) INT(a)) <= FLOAT(b) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
+    } else if (b->type == VALUE_INT && a->type == VALUE_FLOAT) {
+        return FLOAT(a) <= ((float) INT(b)) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
     }
-    LOG_CRITICAL("Comparing incompatible types");
-    return NULL;
+    return value_make_error("Cannot compare incompatible types");
 }
 
 static Value *cmp_gt(const Value *a, const Value *b)
@@ -249,11 +287,11 @@ static Value *cmp_gt(const Value *a, const Value *b)
     if (a->type == b->type) {
         switch(a->type) {
         case VALUE_NIL:
-            LOG_CRITICAL("Cannot order NIL values");
-            return NULL;
+            return value_make_error("Cannot order NIL values");
+        case VALUE_ERROR:
+            return value_make_error("Cannot order ERROR values");
         case VALUE_BOOL:
-            LOG_CRITICAL("Cannot order boolean values");
-            return NULL;
+            return value_make_error("Cannot order BOOLEAN values");
         case VALUE_INT:
             return INT(a) > INT(b) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
         case VALUE_FLOAT:
@@ -262,17 +300,18 @@ static Value *cmp_gt(const Value *a, const Value *b)
         case VALUE_SYMBOL:
             return strcmp(STRING(a), STRING(b)) > 0 ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
         case VALUE_BUILTIN_FN:
-        case VALUE_MACRO_FN:
         case VALUE_FN:
-            LOG_CRITICAL("Cannot compare functions");
-            return NULL;
+        case VALUE_MACRO_FN:
+            return value_make_error("Cannot order functions");
         case VALUE_LIST:
-            LOG_CRITICAL("Cannot greater-compare lists");
-            return NULL;
+            return value_make_error("Cannot order lists");
         }
+    } else if (a->type == VALUE_INT && b->type == VALUE_FLOAT) {
+        return ((float) INT(a)) > FLOAT(b) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
+    } else if (b->type == VALUE_INT && a->type == VALUE_FLOAT) {
+        return FLOAT(a) > ((float) INT(b)) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
     }
-    LOG_CRITICAL("Comparing incompatible types");
-    return NULL;
+    return value_make_error("Cannot compare incompatible types");
 }
 
 static Value *cmp_geq(const Value *a, const Value *b)
@@ -280,11 +319,11 @@ static Value *cmp_geq(const Value *a, const Value *b)
     if (a->type == b->type) {
         switch(a->type) {
         case VALUE_NIL:
-            LOG_CRITICAL("Cannot order NIL values");
-            return NULL;
+            return value_make_error("Cannot order NIL values");
+        case VALUE_ERROR:
+            return value_make_error("Cannot order ERROR values");
         case VALUE_BOOL:
-            LOG_CRITICAL("Cannot order boolean values");
-            return NULL;
+            return value_make_error("Cannot order BOOLEAN values");
         case VALUE_INT:
             return INT(a) >= INT(b) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
         case VALUE_FLOAT:
@@ -295,36 +334,31 @@ static Value *cmp_geq(const Value *a, const Value *b)
         case VALUE_BUILTIN_FN:
         case VALUE_FN:
         case VALUE_MACRO_FN:
-            LOG_CRITICAL("Cannot compare functions");
-            return NULL;
+            return value_make_error("Cannot order functions");
         case VALUE_LIST:
-            LOG_CRITICAL("Cannot order lists");
-            return NULL;
+            return value_make_error("Cannot order lists");
         }
+    } else if (a->type == VALUE_INT && b->type == VALUE_FLOAT) {
+        return ((float) INT(a)) >= FLOAT(b) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
+    } else if (b->type == VALUE_INT && a->type == VALUE_FLOAT) {
+        return FLOAT(a) >= ((float) INT(b)) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
     }
-    LOG_CRITICAL("Comparing incompatible types");
-    return NULL;
+    return value_make_error("Cannot compare incompatible types");
 }
 
 static Value *compare(const Value *args, Value * (*comparison_fn)(const Value *, const Value *))
 {
     // (= a b c)
-    if (!args) {
-        LOG_CRITICAL("Require an argument");
-        return NULL;
-    }
-    if (!(args->type == VALUE_LIST && list_size(args->value.list) >= 2)) {
-        LOG_CRITICAL("Require a list argument of size greater or equal to 2");
-        return NULL;
-    }
-    const List *list = args->value.list;
+    CHECK_ARGLIST(args);
+    REQUIRE_LIST_CARDINALITY_GE(args, 2ul, "Require at least two values to compare");
+    const List *list = LIST(args);
     Value *head;
     Value *prev = NULL;
     while ((head = list_head(list)) != NULL) {
         if (prev) {
             Value *cmp_result = comparison_fn(prev, head);
             if (!(cmp_result == VALUE_CONST_TRUE)) {
-                return cmp_result;  /* NULL or VALUE_CONST_FALSE */
+                return cmp_result;
             }
         }
         prev = head;
@@ -389,6 +423,7 @@ static char *core_str_inner(char *str, const Value *v)
         break;
     case VALUE_STRING:
     case VALUE_SYMBOL:
+    case VALUE_ERROR:
         asprintf(&partial, "%s", STRING(v));
         str = str_append(str, strlen(str), partial, strlen(partial));
         free(partial);
@@ -478,86 +513,75 @@ Value *core_prn(const Value *args)
 
 Value *core_count(const Value *args)
 {
+    CHECK_ARGLIST(args);
     Value *list = list_head(LIST(args));
-    if (list->type != VALUE_LIST) {
-        LOG_CRITICAL("count requires a list argument");
-        return NULL;
-    }
+    REQUIRE_VALUE_TYPE(list, VALUE_LIST, "count requires a list argument");
     return value_new_int(list_size(LIST(list)));
 }
 
 Value *core_slurp(const Value *args)
 {
+    CHECK_ARGLIST(args);
+    REQUIRE_LIST_CARDINALITY(args, 1ul, "slurp takes exactly one argument");
     // This is not for binary streams since we're using ftell.
     // (It's portable, though)
-    if (args->type == VALUE_LIST && list_size(LIST(args)) == 1) {
-        Value *v = list_head(LIST(args));
-        Value *retval = NULL;
-        FILE *f = NULL;
-        if (!(f = fopen(v->value.str, "r"))) {
-            LOG_CRITICAL("Failed to open file %s: %s", v->value.str, strerror(errno));
-            goto out;
-        }
-        int ret;
-        if ((ret = fseek(f, 0L, SEEK_END)) != 0) {
-            LOG_CRITICAL("Failed to determine file size for %s: %s",
-                         v->value.str, strerror(errno));
-            goto out_file;
-        }
-        long fsize;
-        if ((fsize = ftell(f)) < 0) {
-            LOG_CRITICAL("Failed to determine file size for %s: %s",
-                         v->value.str, strerror(errno));
-            goto out_file;
-        }
-        char *buf = malloc(fsize + 1);
-        if ((ret = fseek(f, 0L, SEEK_SET)) != 0) {
-            LOG_CRITICAL("Failed to read file %s", v->value.str);
-            goto out_buf;
-        }
-        size_t n_read;
-        if ((n_read = fread(buf, 1, fsize, f)) < (size_t) fsize)   {
-            LOG_CRITICAL("Failed to read file %s", v->value.str);
-            goto out_buf;
-        }
-        buf[fsize] = '\0';
-        retval = value_new_string(buf); // FIXME: fx value constructors to avoid copy
-out_buf:
-        free(buf);
-out_file:
-        fclose(f);
-out:
-        return retval;
+    Value *v = list_head(LIST(args));
+    Value *retval = NULL;
+    FILE *f = NULL;
+    if (!(f = fopen(v->value.str, "r"))) {
+        retval = value_make_error("Failed to open file %s: %s", v->value.str, strerror(errno));
+        goto out;
     }
-    LOG_CRITICAL("Wrong argument type or wrong number of arguments for slurp");
-    return NULL;
+    int ret;
+    if ((ret = fseek(f, 0L, SEEK_END)) != 0) {
+        retval = value_make_error("Failed to determine file size for %s: %s",
+                                  v->value.str, strerror(errno));
+        goto out_file;
+    }
+    long fsize;
+    if ((fsize = ftell(f)) < 0) {
+        retval = value_make_error("Failed to determine file size for %s: %s",
+                                  v->value.str, strerror(errno));
+        goto out_file;
+    }
+    char *buf = malloc(fsize + 1);
+    if ((ret = fseek(f, 0L, SEEK_SET)) != 0) {
+        retval = value_make_error("Failed to read file %s", v->value.str);
+        goto out_buf;
+    }
+    size_t n_read;
+    if ((n_read = fread(buf, 1, fsize, f)) < (size_t) fsize)   {
+        retval = value_make_error("Failed to read file %s", v->value.str);
+        goto out_buf;
+    }
+    buf[fsize] = '\0';
+    retval = value_new_string(buf); // FIXME: fx value constructors to avoid copy
+out_buf:
+    free(buf);
+out_file:
+    fclose(f);
+out:
+    return retval;
 }
 
 
-#define REQUIRE_ARGS(args) do  { if (!args) { return NULL; } } while (0)
-#define REQUIRE_TYPE(args, t) do  { if (args->type != t) { LOG_CRITICAL("Type mismatch"); return NULL; } } while (0)
-#define REQUIRE_CARDINALITY(args, n) do { if (list_size(args->value.list) != n) { LOG_CRITICAL("Wrong number of arguments"); return NULL; } } while (0)
-#define REQUIRE_CARDINALITY_GE(args, n) do { if (list_size(args->value.list) < n) { LOG_CRITICAL("Wrong number of arguments"); return NULL; } } while (0)
-
 Value *core_cons(const Value *args)
 {
-    REQUIRE_ARGS(args);
-    REQUIRE_TYPE(args, VALUE_LIST);
-    REQUIRE_CARDINALITY(args, 2);
-    Value *first = list_head(LIST(args));
-    Value *second = list_head(list_tail(LIST(args)));
-    REQUIRE_TYPE(second, VALUE_LIST);
+    CHECK_ARGLIST(args);
+    REQUIRE_LIST_CARDINALITY(args, 2ul, "CONS takes exactly two arguments");
+    Value *first = list_nth(LIST(args), 0);
+    Value *second = list_nth(LIST(args), 1);
+    REQUIRE_VALUE_TYPE(second, VALUE_LIST, "the second parameter to CONS must be a list");
     return value_new_list(list_cons(LIST(second), first));
 }
 
 Value *core_concat(const Value *args)
 {
-    REQUIRE_ARGS(args);
-    REQUIRE_TYPE(args, VALUE_LIST);
+    CHECK_ARGLIST(args);
     const List *concat = list_new();
     for (const ListItem *i = LIST(args)->begin; i != NULL; i = i->next) {
         Value *v = (Value *) i->p;
-        REQUIRE_TYPE(v, VALUE_LIST);
+        REQUIRE_VALUE_TYPE(v, VALUE_LIST, "all parameters to CONCAT must be lists");
         for (const ListItem *j = LIST(v)->begin; j != NULL; j = j->next) {
             concat = list_conj(concat, j->p);
         }
@@ -568,19 +592,19 @@ Value *core_concat(const Value *args)
 Value *core_map(const Value *args)
 {
     /* (map f '(a b c ...)) */
-    REQUIRE_ARGS(args);
-    REQUIRE_TYPE(args, VALUE_LIST);
-    REQUIRE_CARDINALITY(args, 2);
+    CHECK_ARGLIST(args);
+    REQUIRE_LIST_CARDINALITY(args, 2ul, "MAP takes exactly two parameters");
     Value *fn = list_nth(LIST(args), 0);
     Value *fn_args = list_nth(LIST(args), 1);
 
-    REQUIRE_TYPE(fn_args, VALUE_LIST);
+    REQUIRE_VALUE_TYPE(fn_args, VALUE_LIST, "The second parameter to MAP must be a list");
     const List *mapped = list_new();
     Value *tco_expr;
     Environment *tco_env;
     for (size_t i = 0; i < list_size(LIST(fn_args)); ++i) {
         Value *result = apply(fn, value_make_list(list_nth(LIST(fn_args), i)),
                               &tco_expr, &tco_env);
+        if (is_error(result)) return result;
         /* need to call eval since apply defers to eval for TCO support */
         mapped = list_conj(mapped, tco_expr ? eval(tco_expr, tco_env) : result);
     }
@@ -590,9 +614,8 @@ Value *core_map(const Value *args)
 Value *core_apply(const Value *args)
 {
     /* (apply f a b c d ...) == (f a b c d ...) */
-    REQUIRE_ARGS(args);
-    REQUIRE_TYPE(args, VALUE_LIST);
-    REQUIRE_CARDINALITY_GE(args, 2);
+    CHECK_ARGLIST(args);
+    REQUIRE_LIST_CARDINALITY_GE(args, 2ul, "APPLY requires at least two arguments");
     Value *fn = list_head(LIST(args));
     Value *fn_args = value_new_list(list_tail(LIST(args)));
     size_t n_args = list_size(LIST(fn_args));
@@ -618,36 +641,32 @@ Value *core_apply(const Value *args)
 
 Value *core_is_nil(const Value *args)
 {
-    REQUIRE_ARGS(args);
-    REQUIRE_TYPE(args, VALUE_LIST);
-    REQUIRE_CARDINALITY(args, 1);
+    CHECK_ARGLIST(args);
+    REQUIRE_LIST_CARDINALITY(args, 1ul, "NIL? takes exactly one argument");
     Value *expr = list_head(LIST(args));
     return value_new_bool(is_nil(expr));
 }
 
 Value *core_is_true(const Value *args)
 {
-    REQUIRE_ARGS(args);
-    REQUIRE_TYPE(args, VALUE_LIST);
-    REQUIRE_CARDINALITY(args, 1);
+    CHECK_ARGLIST(args);
+    REQUIRE_LIST_CARDINALITY(args, 1ul, "TRUE? takes exactly one argument");
     Value *expr = list_head(LIST(args));
     return value_new_bool(is_true(expr));
 }
 
 Value *core_is_false(const Value *args)
 {
-    REQUIRE_ARGS(args);
-    REQUIRE_TYPE(args, VALUE_LIST);
-    REQUIRE_CARDINALITY(args, 1);
+    CHECK_ARGLIST(args);
+    REQUIRE_LIST_CARDINALITY(args, 1ul, "FALSE? takes exactly one argument");
     Value *expr = list_head(LIST(args));
     return value_new_bool(is_false(expr));
 }
 
 Value *core_is_symbol(const Value *args)
 {
-    REQUIRE_ARGS(args);
-    REQUIRE_TYPE(args, VALUE_LIST);
-    REQUIRE_CARDINALITY(args, 1);
+    CHECK_ARGLIST(args);
+    REQUIRE_LIST_CARDINALITY(args, 1ul, "SYMBOL? takes exactly one argument");
     Value *expr = list_head(LIST(args));
     return value_new_bool(is_symbol(expr));
 }
