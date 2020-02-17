@@ -202,10 +202,12 @@ LexerToken *lexer_get_token(Lexer *l)
             case ' ':
             case '\r':
             case '\t':
+                l->state = LEXER_STATE_ZERO;
                 return lexer_make_token(LEXER_TOK_SYMBOL, buf);
                 break;
             case '\n':
                 l->line_no++;
+                l->state = LEXER_STATE_ZERO;
                 return lexer_make_token(LEXER_TOK_SYMBOL, buf);
                 break;
             /* error */
