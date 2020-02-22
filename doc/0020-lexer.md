@@ -32,7 +32,7 @@ Terminals
 Using an FSM for the lexer
 --------------------------
 
-![lexer state diagram](./lexer/state_diag.png)
+![lexer state diagram](./lexer/fsm.png)
 
 
 Design / Concept
