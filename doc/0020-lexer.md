@@ -1,12 +1,36 @@
 The Lexer
 =========
 
-* takes a stream of characters and converts them into a stream of labeled
-  tokens
-  * e.g. 3 * ( 4 + 5.2 ) -> INT(3) MUL LPAREN INT(4) OP(+) FLOAT(5.2) RPAREN
-* Enables the parser to reason at the token level instead of the parser level
-* Look at the grammar in order to determine the set of tokens we need to
-  support
+> [...] lexical analysis, lexing or tokenization is the process of converting
+> a sequence of characters (such as in a computer program [...]) into a
+> sequence of tokens (strings with an assigned and thus identified meaning).
+> A program that performs lexical analysis may be termed a lexer [...]
+> -- Wikipedia, [Lexical Analysis](https://en.wikipedia.org/wiki/Lexical_analysis)
+
+The *Lexer* takes a stream of characters and converts them into a stream of
+tokens, e.g
+
+    3 * ( 4 + 5.2 )
+
+becomes
+
+    INT(3) STRING(*) LPAREN INT(4) STRING(+) FLOAT(5.2) RPAREN
+
+This allows later stages in the parser pipeline (and in particular the parser
+itself) to reason at the token level instead of the character level. The output
+of the lexer feeds into the parser (which, since this is about parsing a LIST,
+is called the *reader*).
+
+
+Design / Concept
+----------------
+
+* model as a finite state machine (a Mealey, to be precise)
+* nested `case` statements in a loop
+* single point of entry: loop keeps reading fp until EOF
+* outer nesting: FSM states
+* inner nesting: lookahead token (i.e. the input into the FSM)
+* show example code
 
 
 Terminals
@@ -33,17 +57,6 @@ Using an FSM for the lexer
 --------------------------
 
 ![lexer state diagram](./lexer/fsm.png)
-
-
-Design / Concept
-----------------
-
-* model as a finite state machine (a Mealey, to be precise)
-* nested `case` statements in a loop
-* loop keeps reading fp until EOF
-* outer nesting: FSM states
-* inner nesting: lookahead token (i.e. the input into the FSM)
-* show example code
 
 
 Interface/API
