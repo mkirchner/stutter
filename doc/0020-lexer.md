@@ -174,6 +174,70 @@ strings that will hold the token names:
 extern const char *token_type_names[];
 ```
 
-The above definitions allows up to 
+Creating a new instance of a lexer token is slightly more involved: we pass the
+desired `TokenType` and a character buffer (that has beed read from the file
+pointer of the `Lexer` object). For the token types that require a string, we
+simply duplicate the buffer to the `char *` pointer. If we require an integer
+or a float type, we fall back on the `atoi()` and `atof()` functions,
+respectively:
 
-* retrieve and destroy lexer token
+```c
+static LexerToken *lexer_make_token(TokenType token_type, char *buf)
+{
+    LexerToken *tok = (LexerToken *) malloc(sizeof(LexerToken));
+    if (tok) {
+        tok->type = token_type;
+        switch(token_type) {
+        case LEXER_TOK_INT:
+            tok->value.int_ = atoi(buf);
+            break;
+        case LEXER_TOK_FLOAT:
+            tok->value.double_ = atof(buf);
+            break;
+        case LEXER_TOK_STRING:
+        case LEXER_TOK_ERROR:
+        case LEXER_TOK_SYMBOL:
+        case LEXER_TOK_LPAREN:
+        case LEXER_TOK_RPAREN:
+        case LEXER_TOK_QUOTE:
+        case LEXER_TOK_QUASIQUOTE:
+        case LEXER_TOK_UNQUOTE:
+        case LEXER_TOK_SPLICE_UNQUOTE:
+            tok->value.str = strdup(buf);
+            break;
+        case LEXER_TOK_EOF:
+            tok->value.str = NULL;
+            break;
+        }
+    }
+    return tok;
+}
+```
+
+Deleting a token is equally simple: if the tagged union holds a token type for
+which we allocated a string buffer, we clean the allocation before freeing the
+token itself:
+
+```c
+void lexer_delete_token(LexerToken *t)
+{
+    switch(t->type) {
+    case LEXER_TOK_INT:
+    case LEXER_TOK_FLOAT:
+    case LEXER_TOK_EOF:
+        break;
+    case LEXER_TOK_STRING:
+    case LEXER_TOK_ERROR:
+    case LEXER_TOK_SYMBOL:
+    case LEXER_TOK_LPAREN:
+    case LEXER_TOK_RPAREN:
+    case LEXER_TOK_QUOTE:
+    case LEXER_TOK_QUASIQUOTE:
+    case LEXER_TOK_UNQUOTE:
+    case LEXER_TOK_SPLICE_UNQUOTE:
+        free(t->value.str);
+        break;
+    }
+    free(t);
+}
+```
