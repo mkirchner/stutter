@@ -1,8 +1,7 @@
 SRCS=$(wildcard src/*.md.in)
-# DOCS=$(SRCS:%.md.in=build/%.md)
-DOCS=$(subst src,build,$(SRCS:.md.in=.md))
+DOCS=$(subst src,dist,$(SRCS:.md.in=.md))
 
-build/%.md : src/%.md.in
+dist/%.md : src/%.md.in
 	pandoc --filter pandoc-citeproc \
 	       --bibliography=bib.bib \
 	       --toc \
@@ -12,10 +11,12 @@ build/%.md : src/%.md.in
 	       -t gfm \
 	       -o $@
 
-all: $(DOCS)
-	mkdir -p build
-	echo $(DOCS)
+dist: dir $(DOCS)
 
+dir:
+	mkdir -p dist
+
+.PHONY: clean
 clean:
 	rm -f $(DOCS)
 

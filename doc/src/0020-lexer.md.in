@@ -47,7 +47,7 @@ to formal language theory. For a quick overview, the Wikipedia pages on
 [Automata Theory][wp_at] and [FSMs][wp_fsm] are good starting points. Some of
 the standard literature in the field are the textbooks by
 [Sipser][sipser_12_introduction][@sipser_12_introduction] and
-[Hopcroft][hopcroft_08_introduction][@hopcroft_08_introduction].
+[Hopcroft][hopcroft_13_introduction][@hopcroft_13_introduction].
 
 [wp_mm]: https://en.wikipedia.org/wiki/Mealy_machine
 [wp_fst]: https://en.wikipedia.org/wiki/Finite-state_transducer
@@ -56,7 +56,7 @@ the standard literature in the field are the textbooks by
 [wp_fsm_class]: https://en.wikipedia.org/wiki/Finite-state_machine#Classification
 
 [sipser_12_introduction]: https://amzn.to/2Vd0vek
-[hopcroft_08_introduction]: https://amzn.to/2PhNOuX
+[hopcroft_13_introduction]: https://amzn.to/2PhNOuX
 [marcolli_xx_flt]: http://www.its.caltech.edu/~matilde/FormalLanguageTheory.pdf
 
 Terminals
