@@ -46,7 +46,7 @@ There is a vast body of literature for state automata and their relation
 to formal language theory. For a quick overview, the Wikipedia pages on
 [Automata Theory][wp_at] and [FSMs][wp_fsm] are good starting points. Some of
 the standard literature in the field are the textbooks by
-[Sipser][sipser_12_introduction][@sipser_12_introduction] and
+[Aho][aho_86_compilers][@aho_86_compilers], [Sipser][sipser_12_introduction][@sipser_12_introduction] and
 [Hopcroft][hopcroft_13_introduction][@hopcroft_13_introduction].
 
 [wp_mm]: https://en.wikipedia.org/wiki/Mealy_machine
@@ -55,6 +55,7 @@ the standard literature in the field are the textbooks by
 [wp_fsm]: https://en.wikipedia.org/wiki/Finite-state_machine
 [wp_fsm_class]: https://en.wikipedia.org/wiki/Finite-state_machine#Classification
 
+[aho_86_compilers]: https://amzn.to/38SJVnV
 [sipser_12_introduction]: https://amzn.to/2Vd0vek
 [hopcroft_13_introduction]: https://amzn.to/2PhNOuX
 [marcolli_xx_flt]: http://www.its.caltech.edu/~matilde/FormalLanguageTheory.pdf
