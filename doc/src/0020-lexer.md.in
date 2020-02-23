@@ -46,7 +46,8 @@ There is a vast body of literature for state automata and their relation
 to formal language theory. For a quick overview, the Wikipedia pages on
 [Automata Theory][wp_at] and [FSMs][wp_fsm] are good starting points. Some of
 the standard literature in the field are the textbooks by
-[Sipser][sipser_12_introduction] and [Hopcroft][hopcroft_08_introduction].
+[Sipser][sipser_12_introduction][@sipser_12_introduction] and
+[Hopcroft][hopcroft_08_introduction][@hopcroft_08_introduction].
 
 [wp_mm]: https://en.wikipedia.org/wiki/Mealy_machine
 [wp_fst]: https://en.wikipedia.org/wiki/Finite-state_transducer
@@ -61,21 +62,22 @@ the standard literature in the field are the textbooks by
 Terminals
 ---------
 
-* The set of tokens created by the lexer must eventually form the terminals of
-  the grammar we attempt to parse
+The set of tokens created by the lexer must eventually form the terminals of
+the grammar we attempt to parse
 
-| Token           | Characters                              |
-|-----------------|-----------------------------------------|
-| EOF             |                                         |
-| LPAREN          | `(`                                     |
-| RPAREN          | `)`                                     |
-| QUASIQUOTE      | `\``                                    |
-| UNQUOTE         | `~`                                     |
-| SPLICE_UNQUOTE  | `~@`                                    |
-| STRING          | `"[^"]"`                                |
-| SYMBOL          | `[a-zA-Z+*-/<>=][0-9a-zA-Z!&*+-<=>?@]*` |
-| INT             | `[0-9]+`                                |
-| FLOAT           | `[0-9]+`                                |
+
+            Token Characters                               
+----------------- ----------------------------------------- 
+ EOF              n/a
+ LPAREN           `(`
+ RPAREN           `)`
+ QUASIQUOTE       `\``
+ UNQUOTE          `~`
+ SPLICE_UNQUOTE   `~@`
+ STRING           `"[^"]"`
+ SYMBOL           `[a-zA-Z+*-/<>=][0-9a-zA-Z!&*+-<=>?@]*`
+ INT              `[0-9]+`
+ FLOAT            `[0-9]+`
 
 
 Using an FSM for the lexer
@@ -279,3 +281,9 @@ void lexer_delete_token(LexerToken *t)
     free(t);
 }
 ```
+
+Bibliography
+============
+
+::: {#refs}
+:::
