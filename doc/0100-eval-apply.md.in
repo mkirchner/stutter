@@ -1,0 +1,7 @@
+Eval & apply
+============
+
+* Eval is basically a 1:1 copy from [SICP][sicp]
+* Strategy: implement the eval fn, no TCO, no error checking
+
+[sicp]: https://mitpress.mit.edu/sites/default/files/sicp/index.html
