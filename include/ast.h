@@ -38,7 +38,6 @@ typedef struct AstSexpr {
         struct AstList *list;
         struct AstAtom *atom;
         struct AstSexpr *quoted;
-        struct AstSexpr *unquoted;
     } ast;
 } AstSexpr;
 
