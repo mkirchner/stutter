@@ -527,6 +527,7 @@ tco:
         Value *fn = eval(operator(expr), env);
         if (is_error(fn)) return fn;
         Value *args = eval_all(operands(expr), env);
+        if (!args) return NULL;
         if (is_error(args)) return args;
         ret = apply(fn, args, &tco_expr, &tco_env);
         if (tco_expr && tco_env) {

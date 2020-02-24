@@ -34,6 +34,8 @@ typedef struct {
         int int_;
         double double_;
     } value;
+    size_t line;
+    size_t column;
 } LexerToken;
 
 #define LEXER_TOKEN_VAL_AS_STR(t) (t->value.str)
