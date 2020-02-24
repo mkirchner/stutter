@@ -48,23 +48,10 @@ void lexer_delete(Lexer *l)
 
 void lexer_delete_token(LexerToken *t)
 {
-    free(t->value);
-    free(t);
-}
-
-static LexerToken *lexer_make_token(TokenType token_type, char *buf)
-{
-    /* FIXME: check malloc return values for NULL */
-    LexerToken *tok = (LexerToken *) malloc(sizeof(LexerToken));
-    tok->type = token_type;
-    switch(token_type) {
+    switch(t->type) {
     case LEXER_TOK_INT:
-        tok->value = (int *) malloc(sizeof(int));
-        *((int *)tok->value) = atoi(buf);
-        break;
     case LEXER_TOK_FLOAT:
-        tok->value = (double *) malloc(sizeof(double));
-        *((double *)tok->value) = atof(buf);
+    case LEXER_TOK_EOF:
         break;
     case LEXER_TOK_STRING:
     case LEXER_TOK_ERROR:
@@ -75,12 +62,39 @@ static LexerToken *lexer_make_token(TokenType token_type, char *buf)
     case LEXER_TOK_QUASIQUOTE:
     case LEXER_TOK_UNQUOTE:
     case LEXER_TOK_SPLICE_UNQUOTE:
-        tok->value = (char *) malloc(strlen(buf) * sizeof(char));
-        strcpy((char *) tok->value, buf);
+        free(t->value.str);
         break;
-    case LEXER_TOK_EOF:
-        tok->value = NULL;
-        break;
+    }
+    free(t);
+}
+
+static LexerToken *lexer_make_token(TokenType token_type, char *buf)
+{
+    LexerToken *tok = (LexerToken *) malloc(sizeof(LexerToken));
+    if (tok) {
+        tok->type = token_type;
+        switch(token_type) {
+        case LEXER_TOK_INT:
+            tok->value.int_ = atoi(buf);
+            break;
+        case LEXER_TOK_FLOAT:
+            tok->value.double_ = atof(buf);
+            break;
+        case LEXER_TOK_STRING:
+        case LEXER_TOK_ERROR:
+        case LEXER_TOK_SYMBOL:
+        case LEXER_TOK_LPAREN:
+        case LEXER_TOK_RPAREN:
+        case LEXER_TOK_QUOTE:
+        case LEXER_TOK_QUASIQUOTE:
+        case LEXER_TOK_UNQUOTE:
+        case LEXER_TOK_SPLICE_UNQUOTE:
+            tok->value.str = strdup(buf);
+            break;
+        case LEXER_TOK_EOF:
+            tok->value.str = NULL;
+            break;
+        }
     }
     return tok;
 }
