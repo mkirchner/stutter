@@ -85,12 +85,12 @@ AstSexpr *reader_read(Reader *reader)
             if (tos.type == N_ATOM && tok->type == LEXER_TOK_INT) {
                 reader_stack_pop(stack, &tos);
                 tos.ast.atom->type = ATOM_INT;
-                tos.ast.atom->value.int_ = *LEXER_TOKEN_VAL_AS_INT(tok);
+                tos.ast.atom->value.int_ = LEXER_TOKEN_VAL_AS_INT(tok);
                 LOG_DEBUG("Rule: A->int (int=%d)", tos.ast.atom->value.int_);
             } else if (tos.type == N_ATOM && tok->type == LEXER_TOK_FLOAT) {
                 reader_stack_pop(stack, &tos);
                 tos.ast.atom->type = ATOM_FLOAT;
-                tos.ast.atom->value.float_ = *LEXER_TOKEN_VAL_AS_FLOAT(tok);
+                tos.ast.atom->value.float_ = LEXER_TOKEN_VAL_AS_FLOAT(tok);
                 LOG_DEBUG("Rule: A->float (float=%.2f)", tos.ast.atom->value.float_);
             } else if (tos.type == N_ATOM && tok->type == LEXER_TOK_STRING) {
                 reader_stack_pop(stack, &tos);
