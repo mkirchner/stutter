@@ -24,7 +24,7 @@ This should work on a Mac with a recent `clang`. No efforts to make it portable
   - [ ] implement `(assert ...)` or `(is ...)`
   - [ ] write tests
 - [ ] Better error reporting
-  - [ ] Extend `LexerToken` w/ line #, char pos
+  - [ ] Surface lexer token line/col info in the reader
 - [ ] Support `try/catch`
   - [ ] Concept that avoids global error state
   - [ ] Implement
@@ -37,4 +37,5 @@ This should work on a Mac with a recent `clang`. No efforts to make it portable
   - [ ] `keyword` support
   - [ ] `vector` support (`Array` C type is implemented but not surfaced)
   - [ ] `hash-map` support (`Map` C type is available but not surfaced)
+- [ ] Create a type system
 
