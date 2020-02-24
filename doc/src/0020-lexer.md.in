@@ -8,13 +8,13 @@ The Lexer
 > -- Wikipedia, [Lexical Analysis](https://en.wikipedia.org/wiki/Lexical_analysis)
 
 The *Lexer* takes a stream of characters and converts them into a stream of
-tokens, e.g
+tokens, e.g. the string
 
-    3 * ( 4 + 5.2 )
+    "3 * ( 4 + 5.2 )"
 
-becomes
+becomes a sequence
 
-    INT(3) STRING(*) LPAREN INT(4) STRING(+) FLOAT(5.2) RPAREN
+    INT(3), STRING(*), LPAREN, INT(4), STRING(+), FLOAT(5.2), RPAREN
 
 This allows later stages in the parser pipeline (and in particular the parser
 itself) to reason at the token level instead of the character level. The output
@@ -28,9 +28,10 @@ Design / Concept
 We model the lexer as a deterministic [finite state transducer][wp_fst] (FST)
 and, more specifically, as a [Mealy machine][wp_mm].  An FST is a [finite state
 automaton][wp_fsm] (FSA) that maps an input token stream (characters from the
-source file) to an output token stream (the lexer tokens). It differs from and
+source file) to an output token stream (the lexer tokens). It differs from a
 FSA in that it does not only define a set of accepted strings, it also defines
-the set of relations that maps the input to the outputs.
+the set of relations that maps the inputs to the outputs.
+
 
 
 * nested `case` statements in a loop
@@ -46,7 +47,8 @@ There is a vast body of literature for state automata and their relation
 to formal language theory. For a quick overview, the Wikipedia pages on
 [Automata Theory][wp_at] and [FSMs][wp_fsm] are good starting points. Some of
 the standard literature in the field are the textbooks by
-[Aho][aho_86_compilers][@aho_86_compilers], [Sipser][sipser_12_introduction][@sipser_12_introduction] and
+[Aho][aho_86_compilers][@aho_86_compilers],
+[Sipser][sipser_12_introduction][@sipser_12_introduction] and
 [Hopcroft][hopcroft_13_introduction][@hopcroft_13_introduction].
 
 [wp_mm]: https://en.wikipedia.org/wiki/Mealy_machine

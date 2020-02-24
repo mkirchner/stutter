@@ -8,13 +8,13 @@
 > Analysis](https://en.wikipedia.org/wiki/Lexical_analysis)
 
 The *Lexer* takes a stream of characters and converts them into a stream
-of tokens, e.g
+of tokens, e.g. the string
 
-    3 * ( 4 + 5.2 )
+    "3 * ( 4 + 5.2 )"
 
-becomes
+becomes a sequence
 
-    INT(3) STRING(*) LPAREN INT(4) STRING(+) FLOAT(5.2) RPAREN
+    INT(3), STRING(*), LPAREN, INT(4), STRING(+), FLOAT(5.2), RPAREN
 
 This allows later stages in the parser pipeline (and in particular the
 parser itself) to reason at the token level instead of the character
@@ -30,9 +30,9 @@ machine](https://en.wikipedia.org/wiki/Mealy_machine). An FST is a
 [finite state
 automaton](https://en.wikipedia.org/wiki/Finite-state_machine) (FSA)
 that maps an input token stream (characters from the source file) to an
-output token stream (the lexer tokens). It differs from and FSA in that
-it does not only define a set of accepted strings, it also defines the
-set of relations that maps the input to the outputs.
+output token stream (the lexer tokens). It differs from a FSA in that it
+does not only define a set of accepted strings, it also defines the set
+of relations that maps the inputs to the outputs.
 
   - nested `case` statements in a loop
   - single point of entry: loop keeps reading fp until EOF
