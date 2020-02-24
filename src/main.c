@@ -198,8 +198,14 @@ int main(int argc, char *argv[])
         Value *src = value_make_list(value_new_symbol("load-file"));
         src = value_new_list(list_conj(LIST(src), value_new_string(argv[optind])));
         Value *eval_result = eval(src, ENV);
-        core_prn(value_make_list(eval_result));
-        return eval_result != NULL ? 0 : 1;
+        if (eval_result) {
+            core_prn(value_make_list(eval_result));
+        }
+        if (!eval_result || is_error(eval_result)) {
+            return 1;
+        } else {
+            return 0;
+        }
     }
 
     // REPL

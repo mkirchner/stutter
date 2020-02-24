@@ -180,7 +180,9 @@ static Value *eval_assignment(Value *expr, Environment *env)
         if (env_contains(env, SYMBOL(name))) {
             Value *value = list_nth(LIST(expr), 2);
             value = eval(value, env);
-            env_set(env, SYMBOL(name), value);
+            if (!is_error(value)) {
+                env_set(env, SYMBOL(name), value);
+            }
             return value;
         }
         LOG_CRITICAL("Could not find symbol %s.", SYMBOL(name));
@@ -195,6 +197,7 @@ static Value *eval_definition(Value *expr, Environment *env)
     if (has_cardinality(expr, 3)) {
         Value *name = list_nth(LIST(expr), 1);
         Value *value = list_nth(LIST(expr), 2);
+        // FIXME: error management
         value = eval(value, env);
         env_set(env, SYMBOL(name), value);
     }
@@ -230,6 +233,7 @@ static Value *eval_let(Value *expr, Environment *env, Value **tco_expr, Environm
         Value *name = list_head(list);
         Value *value = list_head(list_tail(list));
         while (name) {
+            // FIXME: error management
             env_set(inner, SYMBOL(name), eval(value, inner));
             list = list_tail(list_tail(list)); // +2
             name = list_head(list);
@@ -247,6 +251,9 @@ static Value *eval_if(Value *expr, Environment *env, Value **tco_expr, Environme
     // (if predicate consequent alternative)
     if (has_cardinality(expr, 4)) {
         Value *predicate = eval(list_nth(LIST(expr), 1), env);
+        if (is_error(predicate)) {
+            return predicate;
+        }
         if (is_true(predicate)) {
             *tco_expr = list_nth(LIST(expr), 2);
         } else {
@@ -282,7 +289,11 @@ static Value *eval_do(Value *expr, Environment *env, Value **tco_expr, Environme
             *tco_env = env;
             return NULL;
         }
-        eval(head, env);
+        // FIXME: error checking
+        Value* result = eval(head, env);
+        if (result && is_error(result)) {
+            return result;
+        }
     }
     return NULL;
 }
@@ -395,6 +406,7 @@ static Value *macroexpand(Value *form, Environment *env)
         args = value_new_list(list_tail(LIST(expr)));
         apply(fn, args, &expr, &new_env);
         expr = eval(expr, new_env);
+        // FIXME: error management?
     }
     return expr;
 }
@@ -515,6 +527,7 @@ tco:
         Value *fn = eval(operator(expr), env);
         if (is_error(fn)) return fn;
         Value *args = eval_all(operands(expr), env);
+        if (!args) return NULL;
         if (is_error(args)) return args;
         ret = apply(fn, args, &tco_expr, &tco_env);
         if (tco_expr && tco_env) {

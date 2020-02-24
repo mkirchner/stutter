@@ -606,6 +606,7 @@ Value *core_map(const Value *args)
                               &tco_expr, &tco_env);
         if (is_error(result)) return result;
         /* need to call eval since apply defers to eval for TCO support */
+        // FIXME: error management
         mapped = list_conj(mapped, tco_expr ? eval(tco_expr, tco_env) : result);
     }
     return value_new_list(mapped);
@@ -634,6 +635,7 @@ Value *core_apply(const Value *args)
     }
     Value *tco_expr;
     Environment *tco_env;
+    // FIXME: error management
     Value *result = apply(fn, fn_args, &tco_expr, &tco_env);
     /* need to call eval since apply defers to eval for TCO support */
     return  tco_expr ? eval(tco_expr, tco_env) : result;

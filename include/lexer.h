@@ -29,12 +29,18 @@ extern const char *token_type_names[];
 
 typedef struct {
     TokenType type;
-    void *value;
+    union {
+        char* str;
+        int int_;
+        double double_;
+    } value;
+    size_t line;
+    size_t column;
 } LexerToken;
 
-#define LEXER_TOKEN_VAL_AS_STR(t) ((char*) (t)->value)
-#define LEXER_TOKEN_VAL_AS_INT(t) ((int*) (t)->value)
-#define LEXER_TOKEN_VAL_AS_FLOAT(t) ((double*) (t)->value)
+#define LEXER_TOKEN_VAL_AS_STR(t) (t->value.str)
+#define LEXER_TOKEN_VAL_AS_INT(t) (t->value.int_)
+#define LEXER_TOKEN_VAL_AS_FLOAT(t) (t->value.double_)
 
 typedef enum {
     LEXER_STATE_ZERO,

@@ -66,9 +66,10 @@ AstSexpr *reader_read(Reader *reader)
                 reader_stack_pop(stack, &tos);
             } else {
                 // report error looking for tok at top of stack
-                LOG_CRITICAL("Parse error stack/terminal mismatch (tok=%s, tos=%s)",
-                             token_type_names[tok->type],
-                             reader_stack_token_type_names[tos.type]);
+                LOG_CRITICAL("Parse error at %lu:%lu: expected=%s, found=%s)",
+                             tok->line, tok->column,
+                             reader_stack_token_type_names[tos.type],
+                             token_type_names[tok->type]);
                 ast_delete_sexpr(ast);
                 return NULL;
             }
@@ -85,12 +86,12 @@ AstSexpr *reader_read(Reader *reader)
             if (tos.type == N_ATOM && tok->type == LEXER_TOK_INT) {
                 reader_stack_pop(stack, &tos);
                 tos.ast.atom->type = ATOM_INT;
-                tos.ast.atom->value.int_ = *LEXER_TOKEN_VAL_AS_INT(tok);
+                tos.ast.atom->value.int_ = LEXER_TOKEN_VAL_AS_INT(tok);
                 LOG_DEBUG("Rule: A->int (int=%d)", tos.ast.atom->value.int_);
             } else if (tos.type == N_ATOM && tok->type == LEXER_TOK_FLOAT) {
                 reader_stack_pop(stack, &tos);
                 tos.ast.atom->type = ATOM_FLOAT;
-                tos.ast.atom->value.float_ = *LEXER_TOKEN_VAL_AS_FLOAT(tok);
+                tos.ast.atom->value.float_ = LEXER_TOKEN_VAL_AS_FLOAT(tok);
                 LOG_DEBUG("Rule: A->float (float=%.2f)", tos.ast.atom->value.float_);
             } else if (tos.type == N_ATOM && tok->type == LEXER_TOK_STRING) {
                 reader_stack_pop(stack, &tos);
@@ -133,9 +134,10 @@ AstSexpr *reader_read(Reader *reader)
                     continue; // do not advance token
                 } else {
                     // parse error
-                    LOG_CRITICAL("Parse error for rule L->SL|eps (tok=%s, tos=%s)",
-                                 token_type_names[tok->type],
-                                 reader_stack_token_type_names[tos.type]);
+                    LOG_CRITICAL("Parse error at %lu:%lu: L->SL|eps expected=%s, found=%s)",
+                                 tok->line, tok->column,
+                                 reader_stack_token_type_names[tos.type],
+                                 token_type_names[tok->type]);
                     ast_delete_sexpr(ast);
                     lexer_delete_token(tok);
                     reader_stack_delete(stack);
@@ -209,9 +211,10 @@ AstSexpr *reader_read(Reader *reader)
                     continue; // do not advance token
                 } else {
                     // parse error
-                    LOG_CRITICAL("Parse error for rule S->A|(L)|'S (tok=%s, tos=%s)",
-                                 token_type_names[tok->type],
-                                 reader_stack_token_type_names[tos.type]);
+                    LOG_CRITICAL("Parse error at %lu:%lu: S->A|(L)|'S expected=%s, found=%s)",
+                                 tok->line, tok->column,
+                                 reader_stack_token_type_names[tos.type],
+                                 token_type_names[tok->type]);
                     ast_delete_sexpr(ast);
                     lexer_delete_token(tok);
                     reader_stack_delete(stack);
@@ -242,6 +245,10 @@ AstSexpr *reader_read(Reader *reader)
                 LOG_CRITICAL("Could not find rule for token %s with %s at "
                              "top of stack.", token_type_names[tok->type],
                              reader_stack_token_type_names[tos.type]);
+                LOG_CRITICAL("Parse error at %lu:%lu: could not find rule for %s with input %s)",
+                             tok->line, tok->column,
+                             reader_stack_token_type_names[tos.type],
+                             token_type_names[tok->type]);
                 ast_delete_sexpr(ast);
                 return NULL;
             }
