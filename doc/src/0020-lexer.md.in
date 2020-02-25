@@ -7,6 +7,10 @@ The Lexer
 > A program that performs lexical analysis may be termed a lexer [...]
 > -- Wikipedia, [Lexical Analysis](https://en.wikipedia.org/wiki/Lexical_analysis)
 
+
+Introduction
+------------
+
 The *Lexer* takes a stream of characters and converts them into a stream of
 tokens, e.g. the string
 
@@ -16,10 +20,10 @@ becomes a sequence
 
     INT(3), STRING(*), LPAREN, INT(4), STRING(+), FLOAT(5.2), RPAREN
 
-This allows later stages in the parser pipeline (and in particular the parser
-itself) to reason at the token level instead of the character level. The output
-of the lexer feeds into the parser (which, since this is about parsing a LIST,
-is called the *reader*).
+This allows the parser to reason at a more convenient and suitable level
+of abstraction, i.e. the token level instead of the character level.
+Importantly, the lexer only concerns itself with the identification of
+tokens. Any questions about order or meaning are matters for the parser.
 
 
 Design / Concept
@@ -32,13 +36,49 @@ source file) to an output token stream (the lexer tokens). It differs from a
 FSA in that it does not only define a set of accepted strings, it also defines
 the set of relations that maps the inputs to the outputs.
 
+For our LISP, we will be using the following tokens and their definitions:
+
+            Token Characters                               
+----------------- ----------------------------------------- 
+ EOF              n/a
+ LPAREN           `(`
+ RPAREN           `)`
+ QUASIQUOTE       <pre>`</pre>
+ UNQUOTE          `~`
+ SPLICE_UNQUOTE   `~@`
+ STRING           `"[^"]"` (should be `\"(\\.|[^\"])*\"`)
+ SYMBOL           `[a-zA-Z+*-/<>=][0-9a-zA-Z!&*+-<=>?@]*`
+ INT              `[0-9]+`
+ FLOAT            `[0-9]+`
+
+We're making a two simplifying decisions here: (1) a `SYMBOL` cannot start
+with a number (this is actually quite common across programming
+languages); and (2) we don't implement string escapes.
+
+The implementation now hand-rolls the detection of these patterns and the
+transitions between them. We represent the FST in a [state transition
+table](https://en.wikipedia.org/wiki/State-transition_table):
+
+FIXME: draw state transition table here
+
+FIXME: show transition diagram
 
 
-* nested `case` statements in a loop
+Since we're hand-rolling the implementation, and since the set of tokens is
+small, we'll implement the FST in the simplest possible way: a series of nested
+`case` statements in a loop. The loop will keep reading one character at a time from the input stream; the first level of `case` nesting will manage the FST state and the second level the action on each input in each state.
+
+Here's the outer loop:
+
+
 * single point of entry: loop keeps reading fp until EOF
 * outer nesting: FSM states
 * inner nesting: lookahead token (i.e. the input into the FSM)
 * show example code
+
+* Hand-rolling the lexer is not a best practice!
+* Best practice is regex for transitions in a state diagram (i.e. use lexer generation tools)
+
 
 Further reading
 ---------------
@@ -69,18 +109,6 @@ The set of tokens created by the lexer must eventually form the terminals of
 the grammar we attempt to parse
 
 
-            Token Characters                               
------------------ ----------------------------------------- 
- EOF              n/a
- LPAREN           `(`
- RPAREN           `)`
- QUASIQUOTE       `\``
- UNQUOTE          `~`
- SPLICE_UNQUOTE   `~@`
- STRING           `"[^"]"`
- SYMBOL           `[a-zA-Z+*-/<>=][0-9a-zA-Z!&*+-<=>?@]*`
- INT              `[0-9]+`
- FLOAT            `[0-9]+`
 
 
 Using an FSM for the lexer
