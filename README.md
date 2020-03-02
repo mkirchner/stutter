@@ -1,5 +1,18 @@
-Stutter - a LISP in C
+Stutter - a Lisp in C
 =====================
+
+`stutter` is an educational Lisp implementation in C that follows a strict
+DIY and *do it from scratch* ideology. As such it is also a very elegant
+form of a CS101 practical that touches a wide array of topics: formal languages
+(lexing, parsing, abstract syntax trees), metalinguistic evaluation
+(eval/apply, macros), data structures (lists, trees, maps, arrays), hashing
+functions, automatic memory management (mark & sweep garbage collection), all
+wrapped into a thick educational, down-to-earth package.
+
+I created this since *writing my own Lisp* was high on my bucket list. It has
+been (and still is) an immensely satisfying fun ride that made me significantly
+more competent. Come along!
+
 
 ### Rules
 
@@ -23,7 +36,7 @@ This should work on a Mac with a recent `clang`. No efforts to make it portable
 
 ![screenshot](doc/screenshot.png)
 
-### Open issues
+### Next steps
 
 - [ ] Create `stutter` test suite
   - [ ] implement `(assert ...)` or `(is ...)`
