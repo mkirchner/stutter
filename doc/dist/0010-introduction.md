@@ -1,26 +1,41 @@
 # Introduction
 
-## Why?
+## Motivation
 
-“It seems to me that there have been two really clean, consistent models
-of programming so far: the C model and the Lisp model. These two seem
-points of high ground, with swampy lowlands between them.” – P. Graham
+> “It seems to me that there have been two really clean, consistent
+> models of programming so far: the C model and the Lisp model. These
+> two seem points of high ground, with swampy lowlands between them.” –
+> P. Graham
 
-Invented in 1959 and published in 1960, LISP is the second oldest
-programming language (one year after FORTRAN) and predates C by 12
-years.
+Invented in 1959 and published in 1960, Lisp is the second oldest
+programming language (one year after FORTRAN) in existence and predates
+C by 12 years.
+
+![programming language origins](img/origins.png)
+
+  - Lisp built on top of the foundational work in lambda calculus
+  - C built on top of ALGOL, the first language to unify
+    imperative-style side effects with value-oriented (call-by-name)
+    lambda calculus.
 
 C: \* Very little abstraction between the system and the programmer \*
 pervasive presence: operating systems, device drivers, compilers \* C++
 and Java as “better C” \* fine-grained control over memory, CPU \*
 de-facto standard \* impact of Rust remains to be seen
 
-LISP: \* S-expressions and S-functions \* S-functions are expressed as
-S-expressions -\> homoiconicity \* Garbarge collection (actually, a FREE
-list)
+Lisp: \* McCarthy paper \* S-expressions and S-functions \* S-functions
+are expressed as S-expressions -\> homoiconicity \* Garbarge collection
+(actually, a FREE list) \* the language itself is malleable. An engineer
+typically evolves the language towards the problem domain just as much
+as the problem domain towards the language
 
 > LISP programmers know the value of everyting and the cost of nothing.
 > C programmers know the cost of everything and the value of nothing.
+
+> “Lisp is worth learning for the profound enlightenment experience you
+> will have when you finally get it; that experience will make you a
+> better programmer for the rest of your days, even if you never
+> actually use Lisp itself a lot.” – E. Raymond
 
 The reason Lisp failed was because it fragmented, and it fragmented
 because that was the nature of the language and its domain-specific
@@ -34,11 +49,6 @@ and then looped back to the start of the process. This change allowed
 for incremental development, where you gradually wrote a function, tried
 calling it, tested that it worked, and then moved on to the next bit of
 code.
-
-Eric Raymond: “Lisp is worth learning for the profound enlightenment
-experience you will have when you finally get it; that experience will
-make you a better programmer for the rest of your days, even if you
-never actually use Lisp itself a lot.”
 
 Garbage Collection Lisp was the very first programming language to
 provide automatic garbage collection, based on a stop-the-world

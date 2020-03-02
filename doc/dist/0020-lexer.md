@@ -9,19 +9,27 @@
 
 ## Introduction
 
-The *Lexer* takes a stream of characters and converts them into a stream
-of tokens, e.g. the string
+The first step for any interpreter is to convert the source code into an
+in-memory representation called the abstract syntax tree (AST) that is
+suitable for interpretation.
+
+It is a standard practice (and very reasonable engineering) to split
+that into two phases called *lexing* and *parsing*. The phases are
+strictily sequential and cover two levels of abstraction: Lexing
+identifies *tokens* in the input stream, parsing interprets these tokens
+in the context of a language grammar.
+
+The part of the interpreter code that implements lexing is called the
+*lexer*. The *Lexer* takes a stream of characters and converts them into
+a stream of tokens, e.g. the string
 
     "3 * ( 4 + 5.2 )"
 
-becomes a sequence
+yields the sequence
 
     INT(3), STRING(*), LPAREN, INT(4), STRING(+), FLOAT(5.2), RPAREN
 
-This allows the parser to reason at a more convenient and suitable level
-of abstraction, i.e. the token level instead of the character level.
-Importantly, the lexer only concerns itself with the identification of
-tokens. Any questions about order or meaning are matters for the parser.
+which is subsequently fed into the parser.
 
 ## Design / Concept
 
@@ -31,13 +39,12 @@ and, more specifically, as a [Mealy
 machine](https://en.wikipedia.org/wiki/Mealy_machine). An FST is a
 [finite state
 automaton](https://en.wikipedia.org/wiki/Finite-state_machine) (FSA)
-that maps an input token stream (characters from the source file) to an
-output token stream (the lexer tokens). It differs from a FSA in that it
-does not only define a set of accepted strings, it also defines the set
-of relations that maps the inputs to the outputs.
+that maps an input alphaet (the character stream from the source file)
+to an output alphabet (the stream of lexer tokens). An FST defines a set
+of accepted input strings and also maps the input to a new output.
 
-For our LISP, we will be using the following tokens and their
-definitions:
+Here are the tokens that the `stutter` lexer needs to detect and their
+definition in terms of regular expressions:
 
 ``` 
         Token Characters                               
@@ -45,7 +52,7 @@ definitions:
 
 -----
 
-EOF n/a LPAREN `(` RPAREN `)` QUASIQUOTE
+EOF `EOF` LPAREN `(` RPAREN `)` QUASIQUOTE
 
 <pre>`</pre>
 
@@ -53,17 +60,16 @@ UNQUOTE `~` SPLICE\_UNQUOTE `~@` STRING `"[^"]"` (should be
 `\"(\\.|[^\"])*\"`) SYMBOL `[a-zA-Z+*-/<>=][0-9a-zA-Z!&*+-<=>?@]*` INT
 `[0-9]+` FLOAT `[0-9]+`
 
-We’re making a two simplifying decisions here: (1) a `SYMBOL` cannot
+Note that we make two simplifying decisions here: (1) a `SYMBOL` cannot
 start with a number (this is actually quite common across programming
-languages); and (2) we don’t implement string escapes.
+languages); and (2) we do not (yet) implement string escapes.
 
-The implementation now hand-rolls the detection of these patterns and
-the transitions between them. We represent the FST in a [state
-transition table](https://en.wikipedia.org/wiki/State-transition_table):
+Since the grammar at hand is simple, The implementation can hand-roll
+the detection of these patterns and the transitions between them. We
+represent the FST in a [state transition
+diagram](https://en.wikipedia.org/wiki/State_diagram#Example:_Mealy_machine):
 
-FIXME: draw state transition table here
-
-FIXME: show transition diagram
+<img source="img/lexer/fsm.png" />
 
 Since we’re hand-rolling the implementation, and since the set of tokens
 is small, we’ll implement the FST in the simplest possible way: a series
