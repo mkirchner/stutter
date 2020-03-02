@@ -66,6 +66,7 @@ diagram](https://en.wikipedia.org/wiki/State_diagram#Example:_Mealy_machine):
 
 <img src="../img/lexer/fsm.png" />
 
+![bla](../img/lexer/fsm.png)
 
 
 Since we're hand-rolling the implementation, and since the set of tokens is
