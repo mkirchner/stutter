@@ -82,9 +82,20 @@ token to keep things simple.
 
 Here is the outer loop:
 
-`c while ((c = fgetc(l->fp)) != EOF) { lexer_advance_next_char(l);
-switch (l->state) { case LEXER_STATE_ZERO: ... case LEXER_STATE_COMMENT:
-... case LEXER_STATE_UNQUOTE: ... ... } }`
+``` c
+while ((c = fgetc(l->fp)) != EOF) {
+    lexer_advance_next_char(l);
+    switch (l->state) {
+    case LEXER_STATE_ZERO:
+        ...
+    case LEXER_STATE_COMMENT:
+        ...
+    case LEXER_STATE_UNQUOTE:
+        ...
+    ...
+    }
+}
+```
 
 The code keeps reading from the input file pointer `fp`, advances the
 character count, and switches upon the current state of the lexer.
@@ -92,10 +103,20 @@ character count, and switches upon the current state of the lexer.
 Inside the outer `case` statements, we take action according to the
 rules defined for a particular state, e.g. `STRING`:
 
-`c ... case LEXER_STATE_STRING: if (c != '\"') { buf[bufpos++] = c; if
-(c == '\n') lexer_advance_next_line(l); } else { /* don't put c in the
-buffer */ l->state = LEXER_STATE_ZERO; return lexer_make_token(l,
-LEXER_TOK_STRING, buf); } break; ...`
+``` c
+...
+case LEXER_STATE_STRING:
+    if (c != '\"') {
+    buf[bufpos++] = c;
+    if (c == '\n') lexer_advance_next_line(l);
+    } else {
+    /* don't put c in the buffer */
+    l->state = LEXER_STATE_ZERO;
+    return lexer_make_token(l, LEXER_TOK_STRING, buf);
+    }
+    break;
+...
+```
 
 Here, we check for the occurence of quotation marks to signify the end
 of the string, managing line breaks if we see them. Once we hit
@@ -120,11 +141,15 @@ textbooks by [Aho](https://amzn.to/38SJVnV)\[@aho*86*compilers\],
 
 ## Interface/API
 
-\`\`\`c /\* object lifecycle */ Lexer *lexer\_new(FILE \*fp); void
-lexer\_delete(Lexer \*l);
+``` c
+/* object lifecycle */
+Lexer *lexer_new(FILE *fp);
+void lexer_delete(Lexer *l);
 
-/\* interface */ LexerToken *lexer*get*token(Lexer *l); void
-lexer*delete*token(LexerToken *tok); \`\`\`
+/* interface */
+LexerToken *lexer_get_token(Lexer *l);
+void lexer_delete_token(LexerToken *tok);
+```
 
 ## Implementation details
 
@@ -137,25 +162,52 @@ finite state machine) parsing.
 
 The implementation is
 
-`c typedef struct { FILE *fp; LexerState state; size_t line_no; size_t
-char_no; } Lexer;`
+``` c
+typedef struct {
+    FILE *fp;
+    LexerState state;
+    size_t line_no;
+    size_t char_no;
+} Lexer;
+```
 
 and we define `LexerState` as an `enum` with
 
-`c typedef enum { LEXER_STATE_ZERO, LEXER_STATE_COMMENT,
-LEXER_STATE_NUMBER, LEXER_STATE_FLOAT, LEXER_STATE_SYMBOL,
-LEXER_STATE_STRING, LEXER_STATE_UNQUOTE, LEXER_STATE_MINUS }
-LexerState;`
+``` c
+typedef enum {
+    LEXER_STATE_ZERO,
+    LEXER_STATE_COMMENT,
+    LEXER_STATE_NUMBER,
+    LEXER_STATE_FLOAT,
+    LEXER_STATE_SYMBOL,
+    LEXER_STATE_STRING,
+    LEXER_STATE_UNQUOTE,
+    LEXER_STATE_MINUS
+} LexerState;
+```
 
 Implementing the lexer lifecycle is simple: a `Lexer` instance requires
 a constructor that takes a file pointer and a trivial destructor that
 deletes the allocated memory:
 
-\`\`\`c Lexer \*lexer*new(FILE *fp) { Lexer *lexer = (Lexer *)
-malloc(sizeof(Lexer)); *lexer = (Lexer) { .fp = fp, .state =
-LEXER*STATE*ZERO, .line*no = 1, .char\_no = 0 }; return lexer; }
+``` c
+Lexer *lexer_new(FILE *fp)
+{
+    Lexer *lexer = (Lexer *) malloc(sizeof(Lexer));
+    *lexer = (Lexer) {
+        .fp = fp,
+        .state = LEXER_STATE_ZERO,
+        .line_no = 1,
+        .char_no = 0
+    };
+    return lexer;
+}
 
-void lexer\_delete(Lexer \*l) { free(l); } \`\`\`
+void lexer_delete(Lexer *l)
+{
+    free(l);
+}
+```
 
 ### Lexer tokens
 
@@ -168,26 +220,50 @@ field. At any point in time, the union only holds one of its values,
 either a string, an integer, or a float, as indicated by the value of
 the type variable.
 
-`c typedef struct { TokenType type; union { char* str; int int_; double
-double_; } value; } LexerToken;`
+``` c
+typedef struct {
+    TokenType type;
+    union {
+        char* str;
+        int int_;
+        double double_;
+    } value;
+} LexerToken;
+```
 
 We also add convenience macros for easy access
 
-`c #define LEXER_TOKEN_VAL_AS_STR(t) (t->value.str) #define
-LEXER_TOKEN_VAL_AS_INT(t) (t->value.int_) #define
-LEXER_TOKEN_VAL_AS_FLOAT(t) (t->value.double_)`
+``` c
+#define LEXER_TOKEN_VAL_AS_STR(t) (t->value.str)
+#define LEXER_TOKEN_VAL_AS_INT(t) (t->value.int_)
+#define LEXER_TOKEN_VAL_AS_FLOAT(t) (t->value.double_)
+```
 
 and model the `TokenType` as a typdef'd enum:
 
-`c typedef enum { LEXER_TOK_ERROR, LEXER_TOK_INT, LEXER_TOK_FLOAT,
-LEXER_TOK_STRING, LEXER_TOK_SYMBOL, LEXER_TOK_LPAREN, LEXER_TOK_RPAREN,
-LEXER_TOK_QUOTE, LEXER_TOK_QUASIQUOTE, LEXER_TOK_UNQUOTE,
-LEXER_TOK_SPLICE_UNQUOTE, LEXER_TOK_EOF } TokenType;`
+``` c
+typedef enum {
+    LEXER_TOK_ERROR,
+    LEXER_TOK_INT,
+    LEXER_TOK_FLOAT,
+    LEXER_TOK_STRING,
+    LEXER_TOK_SYMBOL,
+    LEXER_TOK_LPAREN,
+    LEXER_TOK_RPAREN,
+    LEXER_TOK_QUOTE,
+    LEXER_TOK_QUASIQUOTE,
+    LEXER_TOK_UNQUOTE,
+    LEXER_TOK_SPLICE_UNQUOTE,
+    LEXER_TOK_EOF
+} TokenType;
+```
 
 In order to simplify printing the token names we also declare an array
 of strings that will hold the token names:
 
-`c extern const char *token_type_names[];`
+``` c
+extern const char *token_type_names[];
+```
 
 Creating a new instance of a lexer token is slightly more involved: we
 pass the desired `TokenType` and a character buffer (that has beed read
@@ -196,27 +272,66 @@ require a string, we simply duplicate the buffer to the `char *`
 pointer. If we require an integer or a float type, we fall back on the
 `atoi()` and `atof()` functions, respectively:
 
-`c static LexerToken *lexer_make_token(TokenType token_type, char *buf)
-{ LexerToken *tok = (LexerToken *) malloc(sizeof(LexerToken)); if (tok)
-{ tok->type = token_type; switch(token_type) { case LEXER_TOK_INT:
-tok->value.int_ = atoi(buf); break; case LEXER_TOK_FLOAT:
-tok->value.double_ = atof(buf); break; case LEXER_TOK_STRING: case
-LEXER_TOK_ERROR: case LEXER_TOK_SYMBOL: case LEXER_TOK_LPAREN: case
-LEXER_TOK_RPAREN: case LEXER_TOK_QUOTE: case LEXER_TOK_QUASIQUOTE: case
-LEXER_TOK_UNQUOTE: case LEXER_TOK_SPLICE_UNQUOTE: tok->value.str =
-strdup(buf); break; case LEXER_TOK_EOF: tok->value.str = NULL; break; }
-} return tok; }`
+``` c
+static LexerToken *lexer_make_token(TokenType token_type, char *buf)
+{
+    LexerToken *tok = (LexerToken *) malloc(sizeof(LexerToken));
+    if (tok) {
+        tok->type = token_type;
+        switch(token_type) {
+        case LEXER_TOK_INT:
+            tok->value.int_ = atoi(buf);
+            break;
+        case LEXER_TOK_FLOAT:
+            tok->value.double_ = atof(buf);
+            break;
+        case LEXER_TOK_STRING:
+        case LEXER_TOK_ERROR:
+        case LEXER_TOK_SYMBOL:
+        case LEXER_TOK_LPAREN:
+        case LEXER_TOK_RPAREN:
+        case LEXER_TOK_QUOTE:
+        case LEXER_TOK_QUASIQUOTE:
+        case LEXER_TOK_UNQUOTE:
+        case LEXER_TOK_SPLICE_UNQUOTE:
+            tok->value.str = strdup(buf);
+            break;
+        case LEXER_TOK_EOF:
+            tok->value.str = NULL;
+            break;
+        }
+    }
+    return tok;
+}
+```
 
 Deleting a token is equally simple: if the tagged union holds a token
 type for which we allocated a string buffer, we clean the allocation
 before freeing the token itself:
 
-`c void lexer_delete_token(LexerToken *t) { switch(t->type) { case
-LEXER_TOK_INT: case LEXER_TOK_FLOAT: case LEXER_TOK_EOF: break; case
-LEXER_TOK_STRING: case LEXER_TOK_ERROR: case LEXER_TOK_SYMBOL: case
-LEXER_TOK_LPAREN: case LEXER_TOK_RPAREN: case LEXER_TOK_QUOTE: case
-LEXER_TOK_QUASIQUOTE: case LEXER_TOK_UNQUOTE: case
-LEXER_TOK_SPLICE_UNQUOTE: free(t->value.str); break; } free(t); }`
+``` c
+void lexer_delete_token(LexerToken *t)
+{
+    switch(t->type) {
+    case LEXER_TOK_INT:
+    case LEXER_TOK_FLOAT:
+    case LEXER_TOK_EOF:
+        break;
+    case LEXER_TOK_STRING:
+    case LEXER_TOK_ERROR:
+    case LEXER_TOK_SYMBOL:
+    case LEXER_TOK_LPAREN:
+    case LEXER_TOK_RPAREN:
+    case LEXER_TOK_QUOTE:
+    case LEXER_TOK_QUASIQUOTE:
+    case LEXER_TOK_UNQUOTE:
+    case LEXER_TOK_SPLICE_UNQUOTE:
+        free(t->value.str);
+        break;
+    }
+    free(t);
+}
+```
 
 # Bibliography
 

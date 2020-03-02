@@ -88,18 +88,18 @@ The code keeps reading from the input file pointer `fp`, advances the character 
 Inside the outer `case` statements, we take action according to the rules defined for a particular state, e.g. `STRING`:
 
 ```c
-	...
-        case LEXER_STATE_STRING:
-            if (c != '\"') {
-                buf[bufpos++] = c;
-                if (c == '\n') lexer_advance_next_line(l);
-            } else {
-                /* don't put c in the buffer */
-                l->state = LEXER_STATE_ZERO;
-                return lexer_make_token(l, LEXER_TOK_STRING, buf);
-            }
-            break;
-	...
+...
+case LEXER_STATE_STRING:
+    if (c != '\"') {
+	buf[bufpos++] = c;
+	if (c == '\n') lexer_advance_next_line(l);
+    } else {
+	/* don't put c in the buffer */
+	l->state = LEXER_STATE_ZERO;
+	return lexer_make_token(l, LEXER_TOK_STRING, buf);
+    }
+    break;
+...
 ```
 
 Here, we check for the occurence of quotation marks to signify the end of the string, managing line breaks if we see them. Once we hit quotation marks, we create a new `STRING` token and return it to the caller.
