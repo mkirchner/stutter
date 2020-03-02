@@ -55,6 +55,8 @@ Here are the tokens that the `stutter` lexer needs to detect and their definitio
  INT              `[0-9]+`
  FLOAT            `[0-9]+`
 
+Table: Token/expression mappings for the `stutter` lexer.
+
 Note that we make two simplifying decisions here: (1) a `SYMBOL` cannot start
 with a number (this is actually quite common across programming
 languages); and (2) we do not (yet) implement string escapes.
@@ -64,10 +66,9 @@ detection of these patterns and the transitions between them. We represent the
 FST in a [state transition
 diagram](https://en.wikipedia.org/wiki/State_diagram#Example:_Mealy_machine):
 
-<img src="../img/lexer/fsm.png" />
+![stutter lexer state transition diagram](../img/lexer/fsm.png)
 
-![bla](../img/lexer/fsm.png)
-
+In a production-level setup we would fall back on a 
 
 Since we're hand-rolling the implementation, and since the set of tokens is
 small, we'll implement the FST in the simplest possible way: a series of nested

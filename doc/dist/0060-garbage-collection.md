@@ -6,7 +6,7 @@
 
 ## Basic implementation strategy
 
-  - Do not implement the `malloc()` part (e.g. using
+  - Do not implement the `malloc()` part (e.g. using
     [`sbrk()`](http://man7.org/linux/man-pages/man2/sbrk.2.html) or
     [`mmap()`](http://man7.org/linux/man-pages/man2/mmap.2.html)) and
     managing chunk sizes.

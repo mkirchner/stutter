@@ -8,6 +8,7 @@ dist/%.md : src/%.md.in
 	       -M csl=ieee.csl \
 	       -M link-citations=true \
 	       -s $< \
+	       -f markdown_strict+simple_tables+table_captions \
 	       -t gfm \
 	       -o $@
 
