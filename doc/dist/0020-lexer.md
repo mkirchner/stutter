@@ -60,42 +60,52 @@ expressions:
 |             INT | `[0-9]+`                                                         |
 |           FLOAT | `[0-9]+`                                                         |
 
-Token/expression mappings for the `stutter` lexer.
-
 Note that we make two simplifying decisions here: (1) a `SYMBOL` cannot
 start with a number (this is actually quite common across programming
 languages); and (2) we do not (yet) implement string escapes.
 
-Since the grammar at hand is simple, The implementation can hand-roll
-the detection of these patterns and the transitions between them. We
-represent the FST in a [state transition
-diagram](https://en.wikipedia.org/wiki/State_diagram#Example:_Mealy_machine):
+Since we are committed to hand-rolling all lexer code (instead of using
+a regular expression library), it makes sense to detail the design phase
+and explicitly create the [state transition
+diagram](https://en.wikipedia.org/wiki/State_diagram#Example:_Mealy_machine)
+of the FST:
 
 ![stutter lexer state transition diagram](../img/lexer/fsm.png)
 
-In a production-level setup we would fall back on a
+`stutter` implements the state transition diagram in the simplest
+possible way: as a series of nested `case` statements in a loop. The
+loop will keep reading one character at a time from the input stream
+until the input returns EOF; the first level of `case` nesting will
+manage the FST state and the second level the action on each input in
+each state. The implementation occasionally makes use of a lookahead
+token to keep things simple.
 
-Since we're hand-rolling the implementation, and since the set of tokens
-is small, we'll implement the FST in the simplest possible way: a series
-of nested `case` statements in a loop. The loop will keep reading one
-character at a time from the input stream; the first level of `case`
-nesting will manage the FST state and the second level the action on
-each input in each state.
+Here is the outer loop:
 
-Here's the outer loop:
+`c while ((c = fgetc(l->fp)) != EOF) { lexer_advance_next_char(l);
+switch (l->state) { case LEXER_STATE_ZERO: ... case LEXER_STATE_COMMENT:
+... case LEXER_STATE_UNQUOTE: ... ... } }`
 
-  - single point of entry: loop keeps reading fp until EOF
+The code keeps reading from the input file pointer `fp`, advances the
+character count, and switches upon the current state of the lexer.
 
-  - outer nesting: FSM states
+Inside the outer `case` statements, we take action according to the
+rules defined for a particular state, e.g. `STRING`:
 
-  - inner nesting: lookahead token (i.e. the input into the FSM)
+`c ... case LEXER_STATE_STRING: if (c != '\"') { buf[bufpos++] = c; if
+(c == '\n') lexer_advance_next_line(l); } else { /* don't put c in the
+buffer */ l->state = LEXER_STATE_ZERO; return lexer_make_token(l,
+LEXER_TOK_STRING, buf); } break; ...`
 
-  - show example code
+Here, we check for the occurence of quotation marks to signify the end
+of the string, managing line breaks if we see them. Once we hit
+quotation marks, we create a new `STRING` token and return it to the
+caller.
 
-  - Hand-rolling the lexer is not a best practice\!
-
-  - Best practice is regex for transitions in a state diagram (i.e. use
-    lexer generation tools)
+That said, it is Important to note that hand-rolling the lexer is not a
+best practice and, in particular, hand-rolling the inner `case`
+statements is something best not done in production (rely on a regex
+library instead\!).
 
 ## Further reading
 
@@ -108,15 +118,6 @@ textbooks by [Aho](https://amzn.to/38SJVnV)\[@aho*86*compilers\],
 [Sipser](https://amzn.to/2Vd0vek)\[@sipser*12*introduction\] and
 [Hopcroft](https://amzn.to/2PhNOuX)\[@hopcroft*13*introduction\].
 
-## Terminals
-
-The set of tokens created by the lexer must eventually form the
-terminals of the grammar we attempt to parse
-
-## Using an FSM for the lexer
-
-![lexer state diagram](./lexer/fsm.png)
-
 ## Interface/API
 
 \`\`\`c /\* object lifecycle */ Lexer *lexer\_new(FILE \*fp); void
@@ -125,7 +126,7 @@ lexer\_delete(Lexer \*l);
 /\* interface */ LexerToken *lexer*get*token(Lexer *l); void
 lexer*delete*token(LexerToken *tok); \`\`\`
 
-## Implementation
+## Implementation details
 
 ### The lexer struct
 
