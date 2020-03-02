@@ -11,8 +11,8 @@ $ cd stutter
 $ make && make test
 ```
 
-This should work on a Mac with a recent `clang`. No efforts to make it portable
-(yet).
+This should work on a Mac with a recent `clang`. No efforts were made 
+to make it portable (yet).
 
 ### Screenshot
 
