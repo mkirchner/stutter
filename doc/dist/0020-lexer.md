@@ -44,20 +44,21 @@ to an output alphabet (the stream of lexer tokens). An FST defines a set
 of accepted input strings and also maps the input to a new output.
 
 Here are the tokens that the `stutter` lexer needs to detect and their
-definition in terms of regular expressions:
+definition in terms of regular
+expressions:
 
-|           Token | Characters                               |
-| --------------: | :--------------------------------------- |
-|             EOF | `EOF`                                    |
-|          LPAREN | `(`                                      |
-|          RPAREN | `)`                                      |
-|      QUASIQUOTE | <code>\`</code> (single backtick)        |
-|         UNQUOTE | `~`                                      |
-| SPLICE\_UNQUOTE | `~@`                                     |
-|          STRING | `"[^"]"` (should be `\"(\\.\|[^\"])*\"`) |
-|          SYMBOL | `[a-zA-Z+*-/<>=][0-9a-zA-Z!&*+-<=>?@]*`  |
-|             INT | `[0-9]+`                                 |
-|           FLOAT | `[0-9]+`                                 |
+|           Token | Characters                                                       |
+| --------------: | :--------------------------------------------------------------- |
+|             EOF | `EOF`                                                            |
+|          LPAREN | `(`                                                              |
+|          RPAREN | `)`                                                              |
+|      QUASIQUOTE | <code>\`</code> (single backtick)                                |
+|         UNQUOTE | `~`                                                              |
+| SPLICE\_UNQUOTE | `~@`                                                             |
+|          STRING | `"[^"]"` (should be `\"(\\.\|[^\"])*\"` to allow string escapes) |
+|          SYMBOL | `[a-zA-Z+*-/<>=][0-9a-zA-Z!&*+-<=>?@]*`                          |
+|             INT | `[0-9]+`                                                         |
+|           FLOAT | `[0-9]+`                                                         |
 
 Token/expression mappings for the `stutter` lexer.
 
