@@ -47,7 +47,7 @@ Here are the tokens that the `stutter` lexer needs to detect and their definitio
  EOF              `EOF`
  LPAREN           `(`
  RPAREN           `)`
- QUASIQUOTE       <pre>`</pre>
+ QUASIQUOTE       <code>`</code> (single backtick)
  UNQUOTE          `~`
  SPLICE_UNQUOTE   `~@`
  STRING           `"[^"]"` (should be `\"(\\.|[^\"])*\"`)

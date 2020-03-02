@@ -51,7 +51,7 @@ definition in terms of regular expressions:
 |             EOF | `EOF`                                    |
 |          LPAREN | `(`                                      |
 |          RPAREN | `)`                                      |
-|      QUASIQUOTE | <pre>\`</pre>                            |
+|      QUASIQUOTE | <code>\`</code> (single backtick)        |
 |         UNQUOTE | `~`                                      |
 | SPLICE\_UNQUOTE | `~@`                                     |
 |          STRING | `"[^"]"` (should be `\"(\\.\|[^\"])*\"`) |
