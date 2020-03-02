@@ -1,6 +1,11 @@
 Stutter - a LISP in C
 =====================
 
+### Rules
+
+1. Write everything from scratch.
+2. Do not question the rules.
+
 ### Getting started
 
 Clone the repo and its submodules.
