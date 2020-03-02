@@ -8,7 +8,7 @@ dist/%.md : src/%.md.in
 	       -M csl=ieee.csl \
 	       -M link-citations=true \
 	       -s $< \
-	       -f markdown_strict+simple_tables+backtick_code_blocks \
+	       -f markdown_strict+citations+simple_tables+backtick_code_blocks \
 	       -t gfm \
 	       -o $@
 

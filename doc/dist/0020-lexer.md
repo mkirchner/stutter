@@ -135,9 +135,11 @@ to formal language theory. For a quick overview, the Wikipedia pages on
 [Automata Theory](https://en.wikipedia.org/wiki/Automata_theory) and
 [FSMs](https://en.wikipedia.org/wiki/Finite-state_machine) are good
 starting points. Some of the standard literature in the field are the
-textbooks by [Aho](https://amzn.to/38SJVnV)\[@aho*86*compilers\],
-[Sipser](https://amzn.to/2Vd0vek)\[@sipser*12*introduction\] and
-[Hopcroft](https://amzn.to/2PhNOuX)\[@hopcroft*13*introduction\].
+textbooks by
+[Aho](https://amzn.to/38SJVnV)\[[1](#ref-aho_86_compilers)\],
+[Sipser](https://amzn.to/2Vd0vek)\[[2](#ref-sipser_12_introduction)\]
+and
+[Hopcroft](https://amzn.to/2PhNOuX)\[[3](#ref-hopcroft_13_introduction)\].
 
 ## Interface/API
 
@@ -336,3 +338,30 @@ void lexer_delete_token(LexerToken *t)
 # Bibliography
 
 ::: {\#refs} :::
+
+<div id="refs" class="references">
+
+<div id="ref-aho_86_compilers">
+
+\[1\] A. V. Aho, R. Sethi, and J. D. Ullman, *Compilers: Principles,
+techniques and tools (also known as the red dragon book)*.
+Addison-Wesley, 1986.
+
+</div>
+
+<div id="ref-sipser_12_introduction">
+
+\[2\] M. Sipser, *Introduction to the theory of computation*. Cengage
+Learning, 2012.
+
+</div>
+
+<div id="ref-hopcroft_13_introduction">
+
+\[3\] J. Hopcroft, R. Motwani, and J. Ullman, *Introduction to automata
+theory, languages, and computation: Pearson new international edition*.
+Pearson Education Limited, 2013.
+
+</div>
+
+</div>
