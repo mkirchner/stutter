@@ -69,7 +69,7 @@ the detection of these patterns and the transitions between them. We
 represent the FST in a [state transition
 diagram](https://en.wikipedia.org/wiki/State_diagram#Example:_Mealy_machine):
 
-<img source="img/lexer/fsm.png" />
+<img source="../img/lexer/fsm.png" />
 
 Since we’re hand-rolling the implementation, and since the set of tokens
 is small, we’ll implement the FST in the simplest possible way: a series
