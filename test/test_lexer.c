@@ -18,14 +18,16 @@ static char* type_names[] = {
     "LPAREN", "RPAREN", "QUOTE", "EOF"
 };
 
-static char input[] =  "12 ( 34.5 ) \"Hello World!\" abc 23.b (12(23))) \n"
-                       "\"this is a string\" vEryC0mplicated->NamE 'symbol ";
+static char *input[] = {"12 ( 34.5 ) \"Hello World!\" abc 23.b (12(23))) \n"
+                        "\"this is a string\" vEryC0mplicated->NamE 'symbol ",
+                        "x "};
 
-static char expected[] = "INT LPAREN FLOAT RPAREN STRING SYMBOL ERROR LPAREN "
-                         "INT LPAREN INT RPAREN RPAREN RPAREN STRING SYMBOL "
-                         "QUOTE SYMBOL ";
+static char *expected[] = {"INT LPAREN FLOAT RPAREN STRING SYMBOL ERROR LPAREN "
+                           "INT LPAREN INT RPAREN RPAREN RPAREN STRING SYMBOL "
+                           "QUOTE SYMBOL ",
+                           "SYMBOL "};
 
-static char* test_lexer()
+static char* eval_lexer(char* input, char* expected)
 {
     /* set up lexer to read from input file */
     size_t n = strlen(input);
@@ -58,6 +60,17 @@ static char* test_lexer()
     lexer_delete(lexer);
     fclose(ref_fd);
     fclose(in_fd);
+    return 0;
+}
+
+static char* test_lexer()
+{
+    for (size_t i = 0; i < 2; ++i) {
+        char* retval = eval_lexer(input[i], expected[i]);
+        if (retval) {
+            return retval;
+        }
+    }
     return 0;
 }
 

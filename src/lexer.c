@@ -348,6 +348,9 @@ LexerToken *lexer_get_token(Lexer *l)
         case LEXER_STATE_FLOAT:
             l->state = LEXER_STATE_ZERO;
             return lexer_make_token(l, LEXER_TOK_FLOAT, buf);
+        case LEXER_STATE_SYMBOL:
+            l->state = LEXER_STATE_ZERO;
+            return lexer_make_token(l, LEXER_TOK_SYMBOL, buf);
         default:
             return lexer_make_token(l, LEXER_TOK_ERROR, buf);
     }
