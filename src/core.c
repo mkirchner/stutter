@@ -214,6 +214,10 @@ static Value *cmp_eq(const Value *a, const Value *b)
         return ((float) INT(a)) == FLOAT(b) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
     } else if (b->type == VALUE_INT && a->type == VALUE_FLOAT) {
         return ((float) INT(b)) == FLOAT(a) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
+    } else if (b->type == VALUE_NIL || a->type == VALUE_NIL) {
+        /* nil can be compared to anything but will yield false unless compared
+         * to itself */
+        return VALUE_CONST_FALSE;
     }
     return value_make_error("Cannot compare incompatible types");
 }
