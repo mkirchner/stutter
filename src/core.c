@@ -515,6 +515,9 @@ Value *core_count(const Value *args)
 {
     CHECK_ARGLIST(args);
     Value *list = list_head(LIST(args));
+    if (is_nil(list)) {
+        return value_new_int(0);
+    }
     REQUIRE_VALUE_TYPE(list, VALUE_LIST, "count requires a list argument");
     return value_new_int(list_size(LIST(list)));
 }
