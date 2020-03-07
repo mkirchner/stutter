@@ -121,7 +121,12 @@ static bool is_application(const Value *value)
 
 static bool is_true(const Value *v)
 {
-    if (!v) return false;
+    /* we follow Clojure's lead: the only values that are considered
+     * logical false are `false` and `nil` */
+    if (!v) {
+        LOG_CRITICAL("Invalid pointer in is_true(). Returning false.");
+        return false;
+    }
     switch(v->type) {
     case VALUE_NIL:
         return false;
@@ -130,20 +135,14 @@ static bool is_true(const Value *v)
     case VALUE_BOOL:
         return v->value.bool_ == true;
     case VALUE_INT:
-        return v->value.int_ != 0;
     case VALUE_FLOAT:
-        return v->value.float_ != 0.0f;
     case VALUE_STRING:
     case VALUE_SYMBOL:
-        return strncmp(v->value.str, "", 1) != 0;
     case VALUE_LIST:
-        return list_size(v->value.list) > 0;
     case VALUE_FN:
-        return v->value.fn != NULL;
     case VALUE_MACRO_FN:
-        return v->value.fn != NULL;
     case VALUE_BUILTIN_FN:
-        return v->value.builtin_fn != NULL;
+        return true;
     }
 }
 
