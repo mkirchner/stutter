@@ -25,6 +25,7 @@ endef
 .PHONY: all
 all: $(TARGETS)
 	$(foreach T,$(TARGETS),$(call execute-command,$(BUILD_DIR)/test/$(T)))
+	$(BUILD_DIR)/stutter test.stt
 
 .PHONY: clean
 clean:

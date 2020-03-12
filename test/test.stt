@@ -5,15 +5,6 @@
 (defmacro check (form)
   `(report-result ~form '~form))
 
-
-;;
-;; TCO
-;;
-
-(define sum2 (lambda (n acc) (if (= n 0) acc (sum2 (- n 1) (+ n acc)))))
-(define foo (lambda (n) (if (= n 0) 0 (bar (- n 1)))))
-(define bar (lambda (n) (if (= n 0) 0 (foo (- n 1)))))
-
 (define test-basics
   (lambda ()
     (do
@@ -54,7 +45,7 @@
     (if (= n 0)
       1
       (if (= n 1)
-        1 
+        1
         (+ (fib (- n 1)) (fib (- n 2)))))))
 
 (define test-conditionals
@@ -70,12 +61,38 @@
       (check (= (if 0 1 2) 1))
       (check (= (if (list) 1 2) 1))
       (check (= (if (list 0 1 2) 1 2) 1))
-      
       (check (= (= (list) nil) false)))))
+
+
+(define test-equality
+  (lambda ()
+    (do
+      (check (= (= 0 0) true))
+      (check (= (= 1 1) true))
+      (check (= (= 0 1) false))
+      (check (= (= true true) true))
+      (check (= (= false false) true))
+      (check (= (= false nil) false))
+      (check (= (= nil nil) true))
+      (check (= (= (list) (list)) true))
+      (check (= (= (list 0 1 2) (list 0 1 2)) true))
+      (check (= (= (list 0 2 1) (list 0 1 2)) false))
+      (check (= (= (list) (list 0 1 2)) false)))))
+
+(define test-user-fns
+  (lambda ()
+    (do
+      (check (= ((lambda (a b) (+ b a)) 3 4) 7))
+      (check (= ((lambda () 2)) 2))
+      (check (= ((lambda (f x) (f x)) (lambda (a) (+ 1 a)) 7) 8)))))
+
+(define sum2 (lambda (n acc) (if (= n 0) acc (sum2 (- n 1) (+ n acc)))))
+(define foo (lambda (n) (if (= n 0) 0 (bar (- n 1)))))
+(define bar (lambda (n) (if (= n 0) 0 (foo (- n 1)))))
 
 (define test-tco
   (lambda ()
-    (do 
+    (do
       (check (= (foo 10) 0))
       (check (= (sum2 10 0) 55)))))
 
@@ -84,4 +101,6 @@
 (test-env)
 (test-list)
 (test-conditionals)
+(test-equality)
+(test-user-fns)
 (test-tco)
