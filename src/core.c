@@ -15,6 +15,9 @@
 #include "log.h"
 
 
+#define NARGS(args) list_size(LIST(args))
+#define ARG(args, n) list_nth(LIST(args), n)
+
 #define CHECK_ARGLIST(args) do  {\
     if (!(args && args->type == VALUE_LIST)) {\
         LOG_CRITICAL("Invalid argument list in core function");\
@@ -44,6 +47,33 @@
     }\
 } while (0)
 
+
+bool is_truthy(const Value *v)
+{
+    /* we follow Clojure's lead: the only values that are considered
+     * logical false are `false` and `nil` */
+    if (!v) {
+        LOG_CRITICAL("Invalid pointer in is_truthy(). Returning false.");
+        return false;
+    }
+    switch(v->type) {
+    case VALUE_NIL:
+        return false;
+    case VALUE_ERROR:
+        return false;
+    case VALUE_BOOL:
+        return v->value.bool_ == true;
+    case VALUE_INT:
+    case VALUE_FLOAT:
+    case VALUE_STRING:
+    case VALUE_SYMBOL:
+    case VALUE_LIST:
+    case VALUE_FN:
+    case VALUE_MACRO_FN:
+    case VALUE_BUILTIN_FN:
+        return true;
+    }
+}
 
 static bool is_true(const Value *v)
 {
@@ -679,3 +709,31 @@ Value *core_is_symbol(const Value *args)
     Value *expr = list_head(LIST(args));
     return value_new_bool(is_symbol(expr));
 }
+
+Value *core_assert(const Value *args)
+{
+    CHECK_ARGLIST(args);
+    size_t nargs = NARGS(args);
+    if (nargs < 1 || nargs > 2) {
+        LOG_CRITICAL("Invalid argument list in core function: "
+                     "core_assert takes 1 or 2 arguments.");
+        return NULL;
+    }
+    const Value* arg0 = ARG(args, 0);
+    const Value* arg1 = NULL;
+    if (nargs == 2) {
+        arg1 = ARG(args, 1);
+        REQUIRE_VALUE_TYPE(arg1, VALUE_STRING,
+                "Second argument to assert must be a string");
+    }
+    if (is_truthy(arg0)) {
+        return VALUE_CONST_NIL;
+    }
+    if (nargs == 1) {
+        return value_make_error("Assert failed: %s is not true.",
+                core_pr_str(arg0)->value.str);
+    } else {
+        return value_make_error("Assert failed: %s", arg1->value.str);
+    }
+}
+

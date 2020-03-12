@@ -20,6 +20,7 @@ extern CoreFn core_fns[];
 
 Value *core_add(const Value *args);
 Value *core_apply(const Value *args);
+Value *core_assert(const Value *args);
 Value *core_concat(const Value *args);
 Value *core_cons(const Value *args);
 Value *core_count(const Value *args);
@@ -44,5 +45,8 @@ Value *core_prn(const Value *args);
 Value *core_slurp(const Value *args);
 Value *core_str(const Value *args);
 Value *core_sub(const Value *args);
+
+/* utility functions */
+bool is_truthy(const Value *v);
 
 #endif /* !CORE_H */

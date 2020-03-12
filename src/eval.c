@@ -119,33 +119,6 @@ static bool is_application(const Value *value)
     return is_list(value);
 }
 
-static bool is_true(const Value *v)
-{
-    /* we follow Clojure's lead: the only values that are considered
-     * logical false are `false` and `nil` */
-    if (!v) {
-        LOG_CRITICAL("Invalid pointer in is_true(). Returning false.");
-        return false;
-    }
-    switch(v->type) {
-    case VALUE_NIL:
-        return false;
-    case VALUE_ERROR:
-        return false;
-    case VALUE_BOOL:
-        return v->value.bool_ == true;
-    case VALUE_INT:
-    case VALUE_FLOAT:
-    case VALUE_STRING:
-    case VALUE_SYMBOL:
-    case VALUE_LIST:
-    case VALUE_FN:
-    case VALUE_MACRO_FN:
-    case VALUE_BUILTIN_FN:
-        return true;
-    }
-}
-
 static bool has_cardinality(const Value *expr, const size_t cardinality)
 {
     return expr && is_list(expr) && list_size(LIST(expr)) == cardinality;
@@ -253,7 +226,7 @@ static Value *eval_if(Value *expr, Environment *env, Value **tco_expr, Environme
         if (is_error(predicate)) {
             return predicate;
         }
-        if (is_true(predicate)) {
+        if (is_truthy(predicate)) {
             *tco_expr = list_nth(LIST(expr), 2);
         } else {
             *tco_expr = list_nth(LIST(expr), 3);

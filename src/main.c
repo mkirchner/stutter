@@ -90,6 +90,8 @@ Environment *global_env()
     env_set(env, "map", value_new_builtin_fn(core_map));
     env_set(env, "apply", value_new_builtin_fn(core_apply));
 
+    env_set(env, "assert", value_new_builtin_fn(core_assert));
+
     // add stutter basics
     size_t N_EXPRS = 1;
     const char *exprs[N_EXPRS];
