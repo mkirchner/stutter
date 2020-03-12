@@ -39,7 +39,6 @@ This should work on a Mac with a recent `clang`. No efforts to make it portable
 ### Next steps
 
 - [ ] Create `stutter` test suite
-  - [ ] implement `(assert ...)` or `(is ...)`
   - [ ] write tests
 - [ ] Better error reporting
   - [ ] Surface lexer token line/col info in the reader
@@ -48,12 +47,10 @@ This should work on a Mac with a recent `clang`. No efforts to make it portable
   - [ ] Implement
 - [ ] Language document
   - [ ] define core language
-- [ ] Missing core functions
-  - [ ] ... tbd ...
 - [ ] Refactor AST/IR to a single representation (this is an artifact)
 - [ ] Core capabilities
   - [ ] `keyword` support
   - [ ] `vector` support (`Array` C type is implemented but not surfaced)
   - [ ] `hash-map` support (`Map` C type is available but not surfaced)
-- [ ] Create a type system
+- [ ] Add a type system
 
