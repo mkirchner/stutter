@@ -1,0 +1,25 @@
+name: C/C++ CI
+
+on: [push]
+
+jobs:
+  build:
+    name: ${{ matrix.os }} | ${{ matrix.compiler }} 
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest]
+        compiler: [clang]
+    steps:
+    - uses: actions/checkout@v1
+    - name: Checkout submodules using a PAT
+      run: |
+        git config --file .gitmodules --get-regexp url | while read url; do
+           git config --file=.gitmodules $(echo "$url" | sed -E "s/git@github.com:|https:\/\/github.com\//https:\/\/${{ secrets.CI_PAT }}:${{ secrets.CI_PAT }}@github.com\//")
+        done
+        git submodule sync
+        git submodule update --init --recursive
+    - name: make (${{ matrix.compiler }})
+      run: make CC=${{ matrix.compiler }}
+    - name: make test (${{ matrix.compiler }})
+      run: make test CC=${{ matrix.compiler }}
