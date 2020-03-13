@@ -1,0 +1,20 @@
+name: C/C++ CI
+
+on: [push]
+
+jobs:
+  build:
+    name: ${{ matrix.os }} | ${{ matrix.compiler }} 
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        compiler: [clang, gcc]
+    steps:
+    - uses: actions/checkout@v2      
+      with:
+        submodules: 'recursive'
+    - name: make (${{ matrix.compiler }})
+      run: make CC=${{ matrix.compiler }}
+    - name: make test (${{ matrix.compiler }})
+      run: make test CC=${{ matrix.compiler }}
