@@ -54,6 +54,7 @@
       (check (= (fib 4) 5))
       (check (= (if true 1 2) 1))
       (check (= (if false 1 2) 2))
+      (check (= (if "" 1 2) 1))
       (check (= (if false 1 false) false))
       (check (= (if true (+ 1 2) (+ 2 2)) 3))
       (check (= (if false (+ 1 2) (+ 2 2)) 4))
@@ -62,6 +63,16 @@
       (check (= (if (list) 1 2) 1))
       (check (= (if (list 0 1 2) 1 2) 1))
       (check (= (= (list) nil) false)))))
+
+(define test-variadic-args
+  (lambda ()
+    (do
+      (check (= true ((lambda (a & more) (list? more)) 1 2 3)))
+      (check (= true ((lambda (a & more) (list? more)) 1)))
+      (check (= true ((lambda (& more) (list? more)))))
+      (check (= 0 ((lambda (& more) (count more)))))
+      (check (= 0 ((lambda (a b c & more) (count more)) 1 2 3)))
+      (check (= 3 ((lambda (& more) (count more)) 1 2 3))))))
 
 
 (define test-equality
@@ -86,6 +97,11 @@
       (check (= ((lambda () 2)) 2))
       (check (= ((lambda (f x) (f x)) (lambda (a) (+ 1 a)) 7) 8)))))
 
+(define test-closures
+  (lambda ()
+    (do
+      (check (= (((lambda (a) (lambda (b) (+ a b))) 5) 7) 12)))))
+
 (define sum2 (lambda (n acc) (if (= n 0) acc (sum2 (- n 1) (+ n acc)))))
 (define foo (lambda (n) (if (= n 0) 0 (bar (- n 1)))))
 (define bar (lambda (n) (if (= n 0) 0 (foo (- n 1)))))
@@ -101,6 +117,8 @@
 (test-env)
 (test-list)
 (test-conditionals)
+(test-variadic-args)
 (test-equality)
 (test-user-fns)
+(test-closures)
 (test-tco)

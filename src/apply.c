@@ -42,21 +42,20 @@ static Value *apply_compound_fn(Value *fn, Value *args,
         // top of the closure of f
         const List *arg_names = fn->value.fn->args->value.list;
         const List *arg_values = args->value.list;
-        if (list_size(arg_names) != list_size(arg_values)) {
-            return value_make_error("Invalid number of arguments for compound fn");
-        }
         // bind arguments
         Environment *env = env_new(fn->value.fn->env);
         Value *arg_name = list_head(arg_names);
         Value *arg_value = list_head(arg_values);
-        while(arg_name != NULL && arg_value != NULL) {
+        bool more = false;
+        while(arg_name) {
             if (!is_symbol(arg_name)) {
                 return value_make_error("Parameter names must be symbols");
             }
             if (strcmp(SYMBOL(arg_name), "&") == 0) {
-                Value* rest_name = list_head(list_tail(arg_names));
-                Value* rest_value = value_new_list(arg_values);
-                env_set(env, SYMBOL(rest_name), rest_value);
+                more = true;
+                break;
+            }
+            if (!arg_value) {
                 break;
             }
             env_set(env, arg_name->value.str, arg_value);
@@ -64,6 +63,19 @@ static Value *apply_compound_fn(Value *fn, Value *args,
             arg_values = list_tail(arg_values);
             arg_name = list_head(arg_names);
             arg_value = list_head(arg_values);
+        }
+        if (more) {
+            Value* rest_name = list_head(list_tail(arg_names));
+            if (!rest_name) {
+                return value_make_error("Variadic arg list requires a name");
+            }
+            Value* rest_value = value_new_list(arg_values);
+            env_set(env, SYMBOL(rest_name), rest_value);
+            arg_name = list_head(arg_names);
+            arg_name = arg_value = NULL;
+        }
+        if (arg_name != arg_value) {
+            return value_make_error("Invalid number of arguments for compound fn");
         }
         // eval via TCO: don't call eval here, return the pointers
         *tco_expr = fn->value.fn->body;
