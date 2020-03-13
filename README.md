@@ -1,5 +1,9 @@
-Stutter - a Lisp in C
-=====================
+![Build Status](https://github.com/mkirchner/stutter/workflows/C/C++%20CI/badge.svg)
+
+Stutter - Lisp, from scratch, in C
+==================================
+
+![screenshot](doc/screenshot.png)
 
 `stutter` is an educational Lisp implementation in C that follows a strict
 DIY and *do it from scratch* ideology. As such it is also a very elegant
@@ -10,8 +14,7 @@ functions, automatic memory management (mark & sweep garbage collection), all
 wrapped into a thick educational, down-to-earth package.
 
 I created this since *writing my own Lisp* was high on my bucket list. It has
-been (and still is) an immensely satisfying fun ride that made me significantly
-more competent. Come along!
+been (and still is) an immensely satisfying fun ride... come along!
 
 
 ### Rules
@@ -21,7 +24,7 @@ more competent. Come along!
 
 ### Getting started
 
-Clone the repo and its submodules.
+Clone the repo and its submodules (submodules because the garbarge collector is in a [separate repo](https://github.com/mkirchner/gc)).
 
 ```bash
 $ git clone --recursive git@github.com:mkirchner/stutter.git
@@ -32,21 +35,17 @@ $ make && make test
 This should work on a Mac with a recent `clang`. No efforts to make it portable
 (yet).
 
-### Screenshot
-
-![screenshot](doc/screenshot.png)
 
 ### Next steps
 
 - [ ] Create `stutter` test suite
   - [ ] write tests
-- [ ] Better error reporting
-  - [ ] Surface lexer token line/col info in the reader
 - [ ] Support `try/catch`
   - [ ] Concept that avoids global error state
   - [ ] Implement
-- [ ] Language document
-  - [ ] define core language
+- [ ] Document core language
+- [ ] Better error reporting
+  - [ ] Surface lexer token line/col info in the reader
 - [ ] Refactor AST/IR to a single representation (this is an artifact)
 - [ ] Core capabilities
   - [ ] `keyword` support
