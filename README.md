@@ -16,7 +16,7 @@ wrapped into a thick educational, down-to-earth package.
 I created this since *writing my own Lisp* was high on my bucket list. It has
 been (and still is) an immensely satisfying fun ride... come along!
 
-See [the tests](https://github.com/mkirchner/stutter/blob/867b6c1f5137cc16f0492003f270514cfcea29c7/test/test.stt#L1) to get an idea of what `stutter` already is capable of.
+See [the tests](test/lang/) to get an idea of what `stutter` already is capable of.
 
 ### Rules
 
