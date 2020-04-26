@@ -5,25 +5,48 @@ Stutter - Lisp, from scratch, in C
 
 ![screenshot](doc/screenshot.png)
 
-`stutter` is an educational Lisp implementation in C that follows a pretty strict
-*do it from scratch* ideology. It is also a very elegant
-form of a CS101 practical since it touches a wide array of topics: formal languages
-(lexing, parsing, abstract syntax trees), metalinguistic evaluation
-(eval/apply, macros), data structures (lists, trees, maps, arrays), hashing
-functions, automatic memory management (mark & sweep garbage collection), all
-wrapped into a thick educational, down-to-earth package.
+`stutter` is an educational Lisp interpreter implementation in C, written
+entirely from scratch, not using any libraries (with the notable exception of
+`editline` to maintain my sanity).
 
-I created this since *writing my own Lisp* was high on my bucket list. It has
-been (and still is) an immensely satisfying fun ride... come along!
+It is quite reasonable to think of `stutter` as a practical exercise that
+touches a broad set of CS topics:
 
-See [the tests](test/lang/) to get an idea of what `stutter` already is capable of.
+* formal languages (lexing, parsing, abstract syntax trees)
+* metalinguistic evaluation (eval/apply, macros)
+* data structures (lists, trees, maps, arrays)
+* hashing functions (for O(1) maps)
+* automatic memory management (mark & sweep garbage collection)
 
-### Rules
+All this is wrapped into a thick educational, down-to-earth package that is
+implemented in one of the most bare-bones, unforgiving languages out there:
+C99.
+
+`stutter` is a work in progress (and will be, for the forseeable future). See [the tests](test/lang/) to get an idea of what the language is already capable of.
+
+
+Rationale
+---------
+
+`stutter` is my shot at the ultimate rite of passage in computer science:
+writing your own lisp. It is hard to describe the Zen that flows from creating
+a language as abstract as Lisp out of thin air, using the bare-bones
+programming model that is C99.
+
+Obviously, in modern our modern times, writing a Lisp interpreter is not
+as challenging as it used to be since there are a lot of libraries that can
+help us to achieve that goal. So, we need a few rules.
+
+
+The Rules
+---------
 
 1. Write everything from scratch.
 2. Do not question the rules.
 
-### Getting started
+
+Getting started
+---------------
 
 Clone the repo and its submodules (submodules because the garbarge collector is in a [separate repo](https://github.com/mkirchner/gc)).
 
