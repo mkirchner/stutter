@@ -179,8 +179,8 @@ void show_help()
 
 int main(int argc, char *argv[])
 {
-    // set up garbage collection
-    gc_start(&gc, &argc);
+    // set up garbage collection, use extended setup for bigger mem limits
+    gc_start_ext(&gc, &argc, 16384, 16384, 0.2, 0.8, 0.5);
     // create env and tell GC to never collect it
     ENV = global_env();
     gc_make_static(&gc, ENV);
