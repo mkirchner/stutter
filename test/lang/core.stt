@@ -65,8 +65,19 @@
       (check (= (if (list 0 1 2) 1 2) 1))
       (check (= (= (list) nil) false)))))
 
+(define test-apply
+  (lambda ()
+    (do
+      (check (= 5 (apply + (list 2 3))))
+      (check (= 9 (apply + 4 (list 5))))
+      (check (= (list) (apply list (list))))
+      (check (= true (apply symbol? (list (quote two)))))
+      (check (= 5 (apply (lambda (a b) (+ a b)) (list 2 3))))
+      (check (= 9 (apply (lambda (a b) (+ a b)) 4 (list 5)))))))
+
 (test-basics)
 (test-arithmetic)
 (test-env)
 (test-list)
 (test-conditionals)
+(test-apply)
