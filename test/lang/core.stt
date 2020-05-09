@@ -75,9 +75,15 @@
       (check (= 5 (apply (lambda (a b) (+ a b)) (list 2 3))))
       (check (= 9 (apply (lambda (a b) (+ a b)) 4 (list 5)))))))
 
+(define test-map
+  (lambda ()
+    (do
+      (check (= (list 2 3 4) (map (lambda (x) (+ x 1)) (list 1 2 3)))))))
+
 (test-basics)
 (test-arithmetic)
 (test-env)
 (test-list)
 (test-conditionals)
 (test-apply)
+(test-map)

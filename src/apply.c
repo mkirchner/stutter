@@ -88,7 +88,10 @@ static Value *apply_compound_fn(Value *fn, Value *args,
 
 Value *apply(Value *fn, Value *args, Value **tco_expr, Environment **tco_env)
 {
-    if (!fn) return NULL;
+    if (!fn) {
+        LOG_CRITICAL("Apply requires a valid fn to apply");
+        return NULL;
+    }
     *tco_expr = NULL;
     *tco_env = NULL;
     if (is_builtin_fn(fn)) {

@@ -641,10 +641,17 @@ Value *core_map(const Value *args)
     for (size_t i = 0; i < list_size(LIST(fn_args)); ++i) {
         Value *result = apply(fn, value_make_list(list_nth(LIST(fn_args), i)),
                               &tco_expr, &tco_env);
+        /* apply() may defer to eval() because of TCO support, we
+         * need to catch that and eval the expression */
+        if (!result) {
+            if (!tco_expr) {
+                LOG_CRITICAL("No result and no TCO deferral from apply()");
+                return NULL;
+            }
+            result = eval(tco_expr, tco_env);
+        }
         if (is_error(result)) return result;
-        /* need to call eval since apply defers to eval for TCO support */
-        // FIXME: error management
-        mapped = list_conj(mapped, tco_expr ? eval(tco_expr, tco_env) : result);
+        mapped = list_conj(mapped, result);
     }
     return value_new_list(mapped);
 }
