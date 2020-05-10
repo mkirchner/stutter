@@ -79,6 +79,7 @@ Environment *global_env()
     env_set(env, "empty?", value_new_builtin_fn(core_is_empty));
     env_set(env, "count", value_new_builtin_fn(core_count));
 
+    env_set(env, "symbol", value_new_builtin_fn(core_symbol));
     env_set(env, "str", value_new_builtin_fn(core_str));
     env_set(env, "slurp", value_new_builtin_fn(core_slurp));
     env_set(env, "eval", value_new_builtin_fn(core_eval));

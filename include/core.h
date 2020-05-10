@@ -45,6 +45,7 @@ Value *core_prn(const Value *args);
 Value *core_slurp(const Value *args);
 Value *core_str(const Value *args);
 Value *core_sub(const Value *args);
+Value *core_symbol(const Value *args);
 
 /* utility functions */
 bool is_truthy(const Value *v);

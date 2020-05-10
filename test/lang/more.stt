@@ -63,9 +63,16 @@
       (check (= (sum2 10 0) 55))
       (check (= 2 (do (do 1 2)))))))
 
+(define test-builtins
+  (lambda ()
+    (do
+      (check (= true (symbol? (symbol "asdf"))))
+      (check (= true (= 'asdf (symbol "asdf")))))))
+
 ;; (test-not)
 (test-variadic-args)
 (test-equality)
 (test-user-fns)
 (test-closures)
 (test-tco)
+(test-builtins)

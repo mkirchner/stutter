@@ -717,6 +717,14 @@ Value *core_is_symbol(const Value *args)
     return value_new_bool(is_symbol(expr));
 }
 
+Value *core_symbol(const Value *args)
+{
+    CHECK_ARGLIST(args);
+    REQUIRE_LIST_CARDINALITY(args, 1ul, "SYMBOL takes exactly one argument");
+    Value *expr = list_head(LIST(args));
+    return value_new_symbol(STRING(expr));
+}
+
 Value *core_assert(const Value *args)
 {
     CHECK_ARGLIST(args);
