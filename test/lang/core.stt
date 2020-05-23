@@ -1,4 +1,4 @@
-(define report-result
+(defin report-result
   (lambda (result form)
     (prn (if result "pass" "FAIL") " ... " form)))
 

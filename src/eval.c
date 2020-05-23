@@ -7,13 +7,14 @@
 
 #include "eval.h"
 
+#include <assert.h>
 #include <string.h>
 #include <stdbool.h>
 #include "apply.h"
 #include "list.h"
 #include "log.h"
 #include "core.h"
-
+#include "exc.h"
 
 static bool is_self_evaluating(const Value *value)
 {
@@ -91,12 +92,18 @@ static bool is_do(const Value *value)
     return is_list_that_starts_with(value, "do", 2);
 }
 
+static bool is_try(const Value *value)
+{
+    return is_list_that_starts_with(value, "try", 3);
+}
+
 static Value *get_macro_fn(const Value *form, Environment *env)
 {
     /*
      * Takes a list, extracts the first element, checks if it is
      * a symbol and if that symbol resolves into a macro function.
      */
+    assert(form && env);
     if (is_list(form)) {
         Value *first = list_head(LIST(form));
         if (first && is_symbol(first)) {
@@ -128,8 +135,8 @@ static Value *lookup_variable_value(Value *expr, Environment *env)
 {
     Value *sym = NULL;
     if ((sym = env_get(env, SYMBOL(expr))) == NULL) {
-        // LOG_CRITICAL("Unknown name: %s", SYMBOL(expr));
-        return value_make_error("Unknown name: %s", SYMBOL(expr));
+        exc_set(value_make_exception("Unknown name: %s", SYMBOL(expr)));
+        return NULL;
     }
     return sym;
 }
@@ -140,8 +147,8 @@ static Value *eval_quote(Value *expr)
     if (expr && has_cardinality(expr, 2)) {
         return list_nth(LIST(expr), 1);
     }
-    LOG_CRITICAL("Invalid parameter to built-in quote");
-    return value_make_error("Invalid parameter to built-in quote");
+    exc_set(value_make_exception("Invalid parameter to built-in quote"));
+    return NULL;
 }
 
 static Value *eval_assignment(Value *expr, Environment *env)
@@ -152,27 +159,36 @@ static Value *eval_assignment(Value *expr, Environment *env)
         if (env_contains(env, SYMBOL(name))) {
             Value *value = list_nth(LIST(expr), 2);
             value = eval(value, env);
-            if (!is_error(value)) {
-                env_set(env, SYMBOL(name), value);
+            if (!value) {
+                assert(exc_is_pending());
+                return NULL;
             }
+            env_set(env, SYMBOL(name), value);
             return value;
         }
-        LOG_CRITICAL("Could not find symbol %s.", SYMBOL(name));
-        value_make_error("Could not find symbol %s.", SYMBOL(name));
+        exc_set(value_make_exception("Could not find symbol %s.", SYMBOL(name)));
+        return NULL;
     }
-    return value_make_error("set! requires 2 parameters");
+    exc_set(value_make_exception("set! requires 2 args"));
+    return NULL;
 }
 
 static Value *eval_definition(Value *expr, Environment *env)
 {
     // (def name value)
+    assert(expr);
     if (has_cardinality(expr, 3)) {
         Value *name = list_nth(LIST(expr), 1);
         Value *value = list_nth(LIST(expr), 2);
-        // FIXME: error management
         value = eval(value, env);
+        if (!value) {
+            assert(exc_is_pending());
+            return NULL;
+        }
         env_set(env, SYMBOL(name), value);
+        return value;
     }
+    exc_set(value_make_exception("def requires 2 args"));
     return NULL;
 }
 
@@ -185,9 +201,9 @@ static Value *eval_macro_definition(Value *expr, Environment *env)
         Value *body = list_nth(LIST(expr), 3);
         Value *macro = value_new_macro(args, body, env);
         env_set(env, SYMBOL(name), macro);
-        return NULL;
+        return macro;
     }
-    LOG_CRITICAL("Invalid macro declaration");
+    exc_set(value_make_exception("Invalid macro declaration"));
     return NULL;
 }
 
@@ -198,15 +214,20 @@ static Value *eval_let(Value *expr, Environment *env, Value **tco_expr, Environm
         Environment *inner = env_new(env);
         Value *assignments = list_nth(LIST(expr), 1);
         if (!is_list(assignments) || list_size(LIST(assignments)) % 2 != 0) {
-            LOG_CRITICAL("Invalid assignment list in let");
+            exc_set(value_make_exception("Invalid assignment list in let"));
             return NULL;
         }
         const List *list = LIST(assignments);
         Value *name = list_head(list);
         Value *value = list_head(list_tail(list));
+        Value *evaluated_value;
         while (name) {
-            // FIXME: error management
-            env_set(inner, SYMBOL(name), eval(value, inner));
+            evaluated_value = eval(value, inner);
+            if (!evaluated_value) {
+                assert(exc_is_pending());
+                return NULL;
+            }
+            env_set(inner, SYMBOL(name), evaluated_value);
             list = list_tail(list_tail(list)); // +2
             name = list_head(list);
             value = name ? list_head(list_tail(list)) : NULL;
@@ -214,7 +235,9 @@ static Value *eval_let(Value *expr, Environment *env, Value **tco_expr, Environm
         // TCO
         *tco_expr = list_nth(LIST(expr), 2);
         *tco_env = inner;
+        return NULL; // tco must return NULL
     }
+    exc_set(value_make_exception("Invalid let declaration, require 2 args"));
     return NULL;
 }
 
@@ -223,8 +246,9 @@ static Value *eval_if(Value *expr, Environment *env, Value **tco_expr, Environme
     // (if predicate consequent alternative)
     if (has_cardinality(expr, 4)) {
         Value *predicate = eval(list_nth(LIST(expr), 1), env);
-        if (is_error(predicate)) {
-            return predicate;
+        if (!predicate) {
+            assert(exc_is_pending());
+            return NULL;
         }
         if (is_truthy(predicate)) {
             *tco_expr = list_nth(LIST(expr), 2);
@@ -232,7 +256,39 @@ static Value *eval_if(Value *expr, Environment *env, Value **tco_expr, Environme
             *tco_expr = list_nth(LIST(expr), 3);
         }
         *tco_env = env;
+        return NULL; // tco must return NULL
     }
+    exc_set(value_make_exception("Invalid if declaration, require 3 args"));
+    return NULL;
+}
+
+static Value *eval_try(Value *expr, Environment *env)
+{
+    // (try sexpr (catch ex sexpr))
+    if (has_cardinality(expr, 3)) {
+        Value* catch_form = list_nth(LIST(expr), 2);
+        if (!has_cardinality(catch_form, 3)) {
+            exc_set(value_make_exception("Invalid catch declaration, require 2 arguments"));
+            return NULL;
+        }
+        Value *result = eval(list_nth(LIST(expr), 1), env);
+        if (!result) {
+            assert(exc_is_pending());
+            // LOG_CRITICAL("Caught exception: %s", EXCEPTION(exc_get()));
+            Environment* ex_env = env_new(env);
+            Value* name = list_nth(LIST(catch_form), 1);
+            env_set(ex_env, STRING(name), exc_get());
+            exc_clear();
+            result = eval(list_nth(LIST(catch_form), 2), ex_env);
+            if (!result) {
+                // catch threw an exception
+                assert(exc_is_pending());
+                return NULL;
+            }
+        }
+        return result;
+    }
+    exc_set(value_make_exception("Invalid try declaration, require 2 arguments"));
     return NULL;
 }
 
@@ -245,7 +301,7 @@ static Value *declare_fn(Value *expr, Environment *env)
         Value *fn = value_new_fn(args, body, env);
         return fn;
     }
-    LOG_CRITICAL("Invalid lambda declaration");
+    exc_set(value_make_exception("Invalid lambda declaration, require 2 arguments"));
     return NULL;
 }
 
@@ -261,12 +317,13 @@ static Value *eval_do(Value *expr, Environment *env, Value **tco_expr, Environme
             *tco_env = env;
             return NULL;
         }
-        // FIXME: error checking
         Value* result = eval(head, env);
-        if (result && is_error(result)) {
-            return result;
+        if (!result) {
+            assert(exc_is_pending());
+            return NULL;
         }
     }
+    assert(0); // unreachable
     return NULL;
 }
 
@@ -306,7 +363,8 @@ static Value *_quasiquote(Value *arg)
     Value *arg0 = list_head(LIST(arg));
     if (arg0->type == VALUE_SYMBOL && strncmp(STRING(arg0), "unquote", 7) == 0) {
         if (list_size(LIST(arg)) != 2) {
-            LOG_CRITICAL("unquote takes a single parameter");
+            exc_set(value_make_exception(
+                        "Invalid unquote declaration, require 1 argument"));
             return NULL;
         }
         Value *arg1 = list_nth(LIST(arg), 1);
@@ -316,7 +374,7 @@ static Value *_quasiquote(Value *arg)
         Value *arg00 = list_head(LIST(arg0));
         if (is_symbol(arg00) && strncmp(SYMBOL(arg00), "splice-unquote", 14) == 0) {
             if (list_size(LIST(arg0)) != 2) {
-                LOG_CRITICAL("splice-unquote takes a single parameter");
+                exc_set(value_make_exception("splice-unquote takes a single parameter"));
                 return NULL;
             }
             Value *arg01 = list_nth(LIST(arg0), 1);
@@ -337,7 +395,7 @@ static Value *eval_quasiquote(Value *expr, Environment *env,
 {
     /* (quasiquote expr) */
     if (!(is_list(expr) && list_size(LIST(expr)) == 2)) {
-        LOG_CRITICAL("quasiquote requires a single list as parameter");
+        exc_set(value_make_exception("quasiquote requires a single list as parameter"));
         return NULL;
     }
     Value *args = list_nth(LIST(expr), 1);
@@ -352,7 +410,8 @@ static Value *operator(Value *expr)
     if (expr && is_list(expr)) {
         op = list_head(LIST(expr));
         if (!op) {
-            LOG_CRITICAL("Could not find operator in list");
+            exc_set(value_make_exception("Could not find operator in list"));
+            return NULL;
         }
     }
     return op;
@@ -369,7 +428,7 @@ static Value *operands(Value *expr)
 
 static Value *macroexpand(Value *form, Environment *env)
 {
-    if (!(form && env)) return NULL;
+    assert(form && env);
     Value *fn;
     Value *args;
     Value *expr = form;
@@ -378,7 +437,10 @@ static Value *macroexpand(Value *form, Environment *env)
         args = value_new_list(list_tail(LIST(expr)));
         apply(fn, args, &expr, &new_env);
         expr = eval(expr, new_env);
-        // FIXME: error management?
+        if (!expr) {
+            assert(exc_is_pending());
+            return NULL;
+        }
     }
     return expr;
 }
@@ -386,7 +448,8 @@ static Value *macroexpand(Value *form, Environment *env)
 static Value *macroexpand_1(Value *expr, Environment *env)
 {
     if (!is_list(expr)) { // FIXME: this is checking the outer list
-        return value_make_error("Require macro call for expansion");
+        exc_set(value_make_exception("Require macro call for expansion"));
+        return NULL;
     }
     Value *args = list_head(list_tail(LIST(expr)));
     return macroexpand(args, env);
@@ -402,11 +465,8 @@ static Value *eval_all(Value *expr, Environment *env)
     while ((head = list_head(list)) != NULL) {
         evaluated_head = eval(head, env);
         if (!evaluated_head) {
-            LOG_CRITICAL("Eval failed.");
+            assert(exc_is_pending());
             return NULL;
-        }
-        if (is_error(evaluated_head)) {
-            return evaluated_head;
         }
         evaluated_list = list_conj(evaluated_list, evaluated_head);
         list = list_tail(list);
@@ -423,11 +483,8 @@ Value *eval(Value *expr, Environment *env)
     Environment *tco_env = NULL;
 tco:
     if (!expr) {
-        LOG_CRITICAL("Passed NULL ptr to eval");
+        assert(exc_is_pending());
         return NULL;
-    }
-    if (is_error(expr)) {
-        return expr;
     }
     if (is_self_evaluating(expr)) {
         return expr;
@@ -436,8 +493,9 @@ tco:
         return ret;
     }
     expr = macroexpand(expr, env);
-    if (is_error(expr)) {
+    if (!expr) {
         LOG_CRITICAL("Macro expansion failed.");
+        assert(exc_is_pending());
         return expr;
     }
     if (!is_list(expr)) goto tco;
@@ -451,6 +509,10 @@ tco:
             expr = tco_expr;
             env = tco_env;
             goto tco;
+        }
+        if (!result) {
+            assert(exc_is_pending());
+            return NULL;
         }
         return result;
     } else if (is_assignment(expr)) {
@@ -468,6 +530,10 @@ tco:
             env = tco_env;
             goto tco;
         }
+        if (!result) {
+            assert(exc_is_pending());
+            return NULL;
+        }
         return result;
     } else if (is_if(expr)) {
         tco_expr = NULL;
@@ -477,6 +543,10 @@ tco:
             expr = tco_expr;
             env = tco_env;
             goto tco;
+        }
+        if (!result) {
+            assert(exc_is_pending());
+            return NULL;
         }
         return result;
     } else if (is_do(expr)) {
@@ -488,7 +558,13 @@ tco:
             env = tco_env;
             goto tco;
         }
+        if (!result) {
+            assert(exc_is_pending());
+            return NULL;
+        }
         return result;
+    } else if (is_try(expr)) {
+        return eval_try(expr, env);
     } else if (is_lambda(expr)) {
         return declare_fn(expr, env);
     } else if (is_macro_expansion(expr)) {
@@ -497,18 +573,28 @@ tco:
         tco_expr = NULL;
         tco_env = NULL;
         Value *fn = eval(operator(expr), env);
-        if (is_error(fn)) return fn;
+        if (!fn) {
+            assert(exc_is_pending());
+            return NULL;
+        }
         Value *args = eval_all(operands(expr), env);
-        if (!args) return NULL;
-        if (is_error(args)) return args;
+        if (!args) {
+            assert(exc_is_pending());
+            return NULL;
+        }
         ret = apply(fn, args, &tco_expr, &tco_env);
         if (tco_expr && tco_env) {
             expr = tco_expr;
             env = tco_env;
             goto tco;
         }
+        if (!ret) {
+            assert(exc_is_pending());
+            return NULL;
+        }
         return ret;
     }
     LOG_CRITICAL("Unknown expression: %d", expr->type);
-    return value_new_error("Unknown expression");
+    exc_set(value_new_exception("Unknown expression"));
+    return NULL;
 }

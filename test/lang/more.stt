@@ -69,6 +69,12 @@
       (check (= true (symbol? (symbol "asdf"))))
       (check (= true (= 'asdf (symbol "asdf")))))))
 
+(define test-exceptions
+  (lambda ()
+    (do
+      (check (= "c2" (try (try (throw "e1") (catch e (throw "e2"))) (catch e "c2"))))
+      (check (= "c2" (try (do (try "t1" (catch e "c1")) (throw "e1")) (catch e "c2")))))))
+
 ;; (test-not)
 (test-variadic-args)
 (test-equality)
@@ -76,3 +82,4 @@
 (test-closures)
 (test-tco)
 (test-builtins)
+(test-exceptions)

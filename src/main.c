@@ -16,6 +16,7 @@
 #include "core.h"
 #include "env.h"
 #include "eval.h"
+#include "exc.h"
 #include "gc.h"
 #include "ir.h"
 #include "list.h"
@@ -92,6 +93,7 @@ Environment *global_env()
     env_set(env, "apply", value_new_builtin_fn(core_apply));
 
     env_set(env, "assert", value_new_builtin_fn(core_assert));
+    env_set(env, "throw", value_new_builtin_fn(core_throw));
 
     // add stutter basics
     size_t N_EXPRS = 1;
@@ -203,8 +205,15 @@ int main(int argc, char *argv[])
         Value *eval_result = eval(src, ENV);
         if (eval_result) {
             core_prn(value_make_list(eval_result));
+        } else {
+            if (exc_is_pending()) {
+                core_prn(exc_get());
+                exc_clear();
+            } else {
+                LOG_CRITICAL("Eval returned NULL.");
+            }
         }
-        if (!eval_result || is_error(eval_result)) {
+        if (!eval_result) {
             return 1;
         } else {
             return 0;
@@ -229,6 +238,13 @@ int main(int argc, char *argv[])
             Value *eval_result = eval(expr, ENV);
             if (eval_result) {
                 core_prn(value_make_list(eval_result));
+            } else {
+                if (exc_is_pending()) {
+                    core_prn(exc_get());
+                    exc_clear();
+                } else {
+                    LOG_CRITICAL("Eval returned NULL.");
+                }
             }
         }
         free(input);

@@ -15,7 +15,7 @@
 const char *value_type_names[] = {
     "VALUE_BOOL",
     "VALUE_BUILTIN_FN",
-    "VALUE_ERROR",
+    "VALUE_EXCEPTION",
     "VALUE_FLOAT",
     "VALUE_FN",
     "VALUE_INT",
@@ -40,9 +40,9 @@ Value *VALUE_CONST_NIL = &((Value)
     .type = VALUE_NIL, .value = { .float_ = 0.0 }
 });
 
-bool is_error(const Value *value)
+bool is_exception(const Value *value)
 {
-    return value->type == VALUE_ERROR;
+    return value->type == VALUE_EXCEPTION;
 }
 
 bool is_symbol(const Value *value)
@@ -128,23 +128,23 @@ Value *value_new_string(const char *str)
     return v;
 }
 
-Value *value_new_error(const char *str)
+Value *value_new_exception(const char *str)
 {
-    Value *v = value_new(VALUE_ERROR);
+    Value *v = value_new(VALUE_EXCEPTION);
     v->value.str = gc_strdup(&gc, str);
     return v;
 }
 
-Value *value_make_error(const char* fmt, ...)
+Value *value_make_exception(const char* fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
     char *message = NULL;
     vasprintf(&message, fmt, args);
     va_end(args);
-    Value *error = value_new_error(message);
+    Value *ex = value_new_exception(message);
     free(message);
-    return error;
+    return ex;
 }
 
 Value *value_new_symbol(const char *str)
@@ -188,7 +188,7 @@ void value_print(const Value *v)
     case VALUE_FLOAT:
         fprintf(stderr, "%f", v->value.float_);
         break;
-    case VALUE_ERROR:
+    case VALUE_EXCEPTION:
     case VALUE_STRING:
     case VALUE_SYMBOL:
         fprintf(stderr, "%s", v->value.str);
