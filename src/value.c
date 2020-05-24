@@ -135,7 +135,7 @@ Value *value_new_exception(const char *str)
     return v;
 }
 
-Value *value_make_exception(const char* fmt, ...)
+Value *value_make_exception(const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);

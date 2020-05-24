@@ -11,12 +11,12 @@
 
 #include "../src/ast.c"
 
-static char* test_ast()
+static char *test_ast()
 {
     // (add 5 7)
-    char* add = malloc(4 * sizeof(char));
+    char *add = malloc(4 * sizeof(char));
     strcpy(add, "add");
-    AstSexpr* ast =
+    AstSexpr *ast =
         ast_sexpr_from_list(
             ast_list_from_compound_list(
                 ast_sexpr_from_atom(
@@ -51,7 +51,7 @@ static char* test_ast()
 
 int tests_run = 0;
 
-static char* test_suite()
+static char *test_suite()
 {
     mu_run_test(test_ast);
     return 0;

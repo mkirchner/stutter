@@ -10,7 +10,7 @@
 
 #include "value.h"
 
-void exc_set(const Value* error);
+void exc_set(const Value *error);
 const Value *exc_get();
 void exc_clear();
 bool exc_is_pending();

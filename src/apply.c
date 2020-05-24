@@ -67,12 +67,12 @@ static Value *apply_compound_fn(Value *fn, Value *args,
             arg_value = list_head(arg_values);
         }
         if (more) {
-            Value* rest_name = list_head(list_tail(arg_names));
+            Value *rest_name = list_head(list_tail(arg_names));
             if (!rest_name) {
                 exc_set(value_make_exception("Variadic arg list requires a name"));
                 return NULL;
             }
-            Value* rest_value = value_new_list(arg_values);
+            Value *rest_value = value_new_list(arg_values);
             env_set(env, SYMBOL(rest_name), rest_value);
             arg_name = list_head(arg_names);
             arg_name = arg_value = NULL;

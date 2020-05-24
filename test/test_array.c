@@ -12,10 +12,10 @@
 
 #include "../src/array.c"
 
-static char* test_array()
+static char *test_array()
 {
     // creation
-    Array* a = array_new(sizeof(int));
+    Array *a = array_new(sizeof(int));
     mu_assert(a != NULL, "New array should not be NULL");
 
     // get/set
@@ -108,7 +108,7 @@ static char* test_array()
 
 int tests_run = 0;
 
-static char* test_suite()
+static char *test_suite()
 {
     mu_run_test(test_array);
     return 0;

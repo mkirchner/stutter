@@ -11,7 +11,7 @@
 #include "../src/djb2.c"
 
 
-static char* test_djb2()
+static char *test_djb2()
 {
     /* Basic testing for the djb2 hash: can we call it and
      * does it return a reasonable result?
@@ -25,7 +25,7 @@ static char* test_djb2()
 
 int tests_run = 0;
 
-static char* test_suite()
+static char *test_suite()
 {
     mu_run_test(test_djb2);
     return 0;

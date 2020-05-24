@@ -30,7 +30,7 @@ extern const char *token_type_names[];
 typedef struct {
     TokenType type;
     union {
-        char* str;
+        char *str;
         int int_;
         double double_;
     } value;

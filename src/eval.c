@@ -266,7 +266,7 @@ static Value *eval_try(Value *expr, Environment *env)
 {
     // (try sexpr (catch ex sexpr))
     if (has_cardinality(expr, 3)) {
-        Value* catch_form = list_nth(LIST(expr), 2);
+        Value *catch_form = list_nth(LIST(expr), 2);
         if (!has_cardinality(catch_form, 3)) {
             exc_set(value_make_exception("Invalid catch declaration, require 2 arguments"));
             return NULL;
@@ -275,8 +275,8 @@ static Value *eval_try(Value *expr, Environment *env)
         if (!result) {
             assert(exc_is_pending());
             // LOG_CRITICAL("Caught exception: %s", EXCEPTION(exc_get()));
-            Environment* ex_env = env_new(env);
-            Value* name = list_nth(LIST(catch_form), 1);
+            Environment *ex_env = env_new(env);
+            Value *name = list_nth(LIST(catch_form), 1);
             env_set(ex_env, STRING(name), exc_get());
             exc_clear();
             result = eval(list_nth(LIST(catch_form), 2), ex_env);
@@ -317,7 +317,7 @@ static Value *eval_do(Value *expr, Environment *env, Value **tco_expr, Environme
             *tco_env = env;
             return NULL;
         }
-        Value* result = eval(head, env);
+        Value *result = eval(head, env);
         if (!result) {
             assert(exc_is_pending());
             return NULL;

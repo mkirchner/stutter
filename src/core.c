@@ -607,13 +607,13 @@ Value *core_slurp(const Value *args)
     int ret;
     if ((ret = fseek(f, 0L, SEEK_END)) != 0) {
         exc_set(value_make_exception("Failed to determine file size for %s: %s",
-                                  STRING(v), strerror(errno)));
+                                     STRING(v), strerror(errno)));
         goto out_file;
     }
     long fsize;
     if ((fsize = ftell(f)) < 0) {
         exc_set(value_make_exception("Failed to determine file size for %s: %s",
-                                  STRING(v), strerror(errno)));
+                                     STRING(v), strerror(errno)));
         goto out_file;
     }
     char *buf = malloc(fsize + 1);
@@ -701,8 +701,8 @@ Value *core_apply(const Value *args)
 
     /* Merge the arguments w/ a potential list of arguments at the end of
      * the argument list */
-    if (is_list(ARG(fn_args, n_args-1))) {
-        const List* concat = list_new();
+    if (is_list(ARG(fn_args, n_args - 1))) {
+        const List *concat = list_new();
         for (const ListItem *j = LIST(fn_args)->begin; j != LIST(fn_args)->end; j = j->next) {
             concat = list_conj(concat, j->p);
         }
@@ -771,22 +771,22 @@ Value *core_assert(const Value *args)
     size_t nargs = NARGS(args);
     if (nargs < 1 || nargs > 2) {
         exc_set(value_make_exception("Invalid argument list in core function: "
-                     "core_assert takes 1 or 2 arguments."));
+                                     "core_assert takes 1 or 2 arguments."));
         return NULL;
     }
-    const Value* arg0 = ARG(args, 0);
-    const Value* arg1 = NULL;
+    const Value *arg0 = ARG(args, 0);
+    const Value *arg1 = NULL;
     if (nargs == 2) {
         arg1 = ARG(args, 1);
         REQUIRE_VALUE_TYPE(arg1, VALUE_STRING,
-                "Second argument to assert must be a string");
+                           "Second argument to assert must be a string");
     }
     if (is_truthy(arg0)) {
         return VALUE_CONST_NIL;
     }
     if (nargs == 1) {
         exc_set(value_make_exception("Assert failed: %s is not true.",
-                core_pr_str(arg0)->value.str));
+                                     core_pr_str(arg0)->value.str));
     } else {
         exc_set(value_make_exception("Assert failed: %s", STRING(arg1)));
     }

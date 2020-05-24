@@ -14,26 +14,26 @@
 #include "../src/map.c"
 
 
-static char* test_map()
+static char *test_map()
 {
-    Map* ht = map_new(3);
+    Map *ht = map_new(3);
     LOG_DEBUG("Capacity: %lu", ht->capacity);
     mu_assert(ht->capacity == 3, "Capacity sizing failure");
     map_put(ht, "key", "value", strlen("value") + 1);
     // set/get item
-    char* value = (char*) map_get(ht, "key");
+    char *value = (char *) map_get(ht, "key");
     mu_assert(value != NULL, "Query must find inserted key");
     mu_assert(strcmp(value, "value") == 0, "Query must return inserted value");
 
     // update item
     map_put(ht, "key", "other", strlen("other") + 1);
-    value = (char*) map_get(ht, "key");
+    value = (char *) map_get(ht, "key");
     mu_assert(value != NULL, "Query must find key");
     mu_assert(strcmp(value, "other") == 0, "Query must return updated value");
 
     // delete item
     map_remove(ht, "key");
-    value = (char*) map_get(ht, "key");
+    value = (char *) map_get(ht, "key");
     mu_assert(value == NULL, "Query must NOT find deleted key");
 
     map_delete(ht);
@@ -42,9 +42,9 @@ static char* test_map()
 
 int tests_run = 0;
 
-static char* test_suite()
+static char *test_suite()
 {
-    void* bos = NULL;
+    void *bos = NULL;
     gc_start(&gc, &bos);
     mu_run_test(test_map);
     gc_stop(&gc);

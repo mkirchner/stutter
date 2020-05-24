@@ -10,9 +10,9 @@
 
 #include <assert.h>
 
-static const Value* exc_current = NULL;
+static const Value *exc_current = NULL;
 
-void exc_set(const Value* error)
+void exc_set(const Value *error)
 {
     if (exc_is_pending()) {
         LOG_CRITICAL("Cannot raise without handling existing exception: %s", STRING(exc_current));

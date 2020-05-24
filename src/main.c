@@ -153,20 +153,20 @@ Value *core_eval(const Value *args)
 #define BOLD         "\033[1m"
 #define NO_BOLD      "\033[22m"
 
-const char* banner()
+const char *banner()
 {
-    const char* banner =
-    "         __        __  __\n"
-    "   _____/ /___  __/ /_/ /____  _____\n"
-    "  / ___/ __/ / / / __/ __/ _ \\/ ___/\n"
-    " (__  ) /_/ /_/ / /_/ /_/  __/ /\n"
-    "/____/\\__/\\__,_/\\__/\\__/\\___/_/";
+    const char *banner =
+        "         __        __  __\n"
+        "   _____/ /___  __/ /_/ /____  _____\n"
+        "  / ___/ __/ / / / __/ __/ _ \\/ ___/\n"
+        " (__  ) /_/ /_/ / /_/ /_/  __/ /\n"
+        "/____/\\__/\\__,_/\\__/\\__/\\___/_/";
     return banner;
 }
 
 void show_help()
 {
-    char* help =
+    char *help =
         " %s\n\n"
         BOLD "USAGE\n" NO_BOLD
         "  stutter [-h] [file]\n"
@@ -191,10 +191,10 @@ int main(int argc, char *argv[])
     int c;
     while ((c = getopt(argc, argv, "h")) != -1) {
         switch(c) {
-            case 'h':
-            default:
-                show_help();
-                exit(0);
+        case 'h':
+        default:
+            show_help();
+            exit(0);
         }
     }
     if (argc > 1) {

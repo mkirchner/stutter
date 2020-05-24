@@ -68,7 +68,7 @@ void lexer_delete_token(LexerToken *t)
     free(t);
 }
 
-static LexerToken *lexer_make_token(const Lexer* l,
+static LexerToken *lexer_make_token(const Lexer *l,
                                     const TokenType token_type,
                                     const char *buf)
 {
@@ -103,11 +103,13 @@ static LexerToken *lexer_make_token(const Lexer* l,
     return tok;
 }
 
-static void lexer_advance_next_char(Lexer* l) {
+static void lexer_advance_next_char(Lexer *l)
+{
     l->char_no++;
 }
 
-static void lexer_advance_next_line(Lexer* l) {
+static void lexer_advance_next_line(Lexer *l)
+{
     l->line_no++;
     l->char_no = 0;
 }
@@ -339,20 +341,20 @@ LexerToken *lexer_get_token(Lexer *l)
     }
     /* acceptance states */
     switch(l->state) {
-        case LEXER_STATE_ZERO:
-        case LEXER_STATE_COMMENT:
-            return lexer_make_token(l, LEXER_TOK_EOF, NULL);
-        case LEXER_STATE_NUMBER:
-            l->state = LEXER_STATE_ZERO;
-            return lexer_make_token(l, LEXER_TOK_INT, buf);
-        case LEXER_STATE_FLOAT:
-            l->state = LEXER_STATE_ZERO;
-            return lexer_make_token(l, LEXER_TOK_FLOAT, buf);
-        case LEXER_STATE_SYMBOL:
-            l->state = LEXER_STATE_ZERO;
-            return lexer_make_token(l, LEXER_TOK_SYMBOL, buf);
-        default:
-            return lexer_make_token(l, LEXER_TOK_ERROR, buf);
+    case LEXER_STATE_ZERO:
+    case LEXER_STATE_COMMENT:
+        return lexer_make_token(l, LEXER_TOK_EOF, NULL);
+    case LEXER_STATE_NUMBER:
+        l->state = LEXER_STATE_ZERO;
+        return lexer_make_token(l, LEXER_TOK_INT, buf);
+    case LEXER_STATE_FLOAT:
+        l->state = LEXER_STATE_ZERO;
+        return lexer_make_token(l, LEXER_TOK_FLOAT, buf);
+    case LEXER_STATE_SYMBOL:
+        l->state = LEXER_STATE_ZERO;
+        return lexer_make_token(l, LEXER_TOK_SYMBOL, buf);
+    default:
+        return lexer_make_token(l, LEXER_TOK_ERROR, buf);
     }
 }
 
