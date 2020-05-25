@@ -39,6 +39,7 @@ Value *core_list(const Value *args);
 Value *core_lt(const Value *args);
 Value *core_map(const Value *args);
 Value *core_mul(const Value *args);
+Value *core_nth(const Value *args);
 Value *core_pr(const Value *args);
 Value *core_pr_str(const Value *args);
 Value *core_prn(const Value *args);

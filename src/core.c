@@ -800,3 +800,19 @@ Value *core_throw(const Value *args)
     exc_set(value); // FIXME: we expect .string to be valid...
     return NULL;
 }
+
+Value *core_nth(const Value *args)
+{
+    // (nth collection index)
+    CHECK_ARGLIST(args);
+    REQUIRE_LIST_CARDINALITY(args, 2ul, "NTH takes exactly two arguments");
+    Value *coll = ARG(args, 0);
+    REQUIRE_VALUE_TYPE(coll, VALUE_LIST, "First argument to nth must be a collection");
+    Value *pos = ARG(args, 1);
+    REQUIRE_VALUE_TYPE(pos, VALUE_INT, "Second argument to nth must be an integer");
+    if (INT(pos) < 0 || (unsigned) INT(pos) >= NARGS(coll)) {
+        exc_set(value_make_exception("Index error"));
+        return NULL;
+    }
+    return ARG(coll, (unsigned) INT(pos));
+}
