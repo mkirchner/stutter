@@ -75,6 +75,25 @@
       (check (= "c2" (try (try (throw "e1") (catch e (throw "e2"))) (catch e "c2"))))
       (check (= "c2" (try (do (try "t1" (catch e "c1")) (throw "e1")) (catch e "c2")))))))
 
+(define test-seq-fns
+  (lambda ()
+    (do
+      (check (= 1 (nth (list 1) 0)))
+      (check (= 2 (nth (list 1 2) 1)))
+      (check (= nil (nth (list 1 2 nil) 2)))
+
+      (check (= nil (first '())))
+      (check (= nil (first nil)))
+      (check (= nil (first (list))))
+      (check (= 6 (first (list 6))))
+      (check (= 7 (first (list 7 8 9))))
+
+      (check (= '() (rest '())))
+      (check (= '() (rest nil)))
+      (check (= '() (rest (list))))
+      (check (= '() (rest (list 6))))
+      (check (= '(8 9) (rest (list 7 8 9)))))))
+
 ;; (test-not)
 (test-variadic-args)
 (test-equality)
@@ -83,3 +102,4 @@
 (test-tco)
 (test-builtins)
 (test-exceptions)
+(test-seq-fns)

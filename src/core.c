@@ -811,8 +811,34 @@ Value *core_nth(const Value *args)
     Value *pos = ARG(args, 1);
     REQUIRE_VALUE_TYPE(pos, VALUE_INT, "Second argument to nth must be an integer");
     if (INT(pos) < 0 || (unsigned) INT(pos) >= NARGS(coll)) {
-        exc_set(value_make_exception("Index error"));
+       exc_set(value_make_exception("Index error"));
         return NULL;
     }
     return ARG(coll, (unsigned) INT(pos));
+}
+
+Value *core_first(const Value *args)
+{
+    // (first coll)
+    CHECK_ARGLIST(args);
+    REQUIRE_LIST_CARDINALITY(args, 1ul, "FIRST takes exactly one argument");
+    Value *coll = ARG(args, 0);
+    if (is_nil(coll) || NARGS(coll) == 0) {
+        return VALUE_CONST_NIL;
+    }
+    REQUIRE_VALUE_TYPE(coll, VALUE_LIST, "Argument to FIRST must be a collection or NIL");
+    return ARG(coll, 0);
+}
+
+Value *core_rest(const Value *args)
+{
+    // (rest coll)
+    CHECK_ARGLIST(args);
+    REQUIRE_LIST_CARDINALITY(args, 1ul, "REST takes exactly one argument");
+    Value *coll = ARG(args, 0);
+    if (is_nil(coll) || NARGS(coll) <= 1) {
+        return value_new_list(NULL);
+    }
+    REQUIRE_VALUE_TYPE(coll, VALUE_LIST, "Argument to REST must be a collection or NIL");
+    return value_new_list(list_tail(LIST(coll)));
 }
