@@ -1,10 +1,4 @@
 /*
- * ht.h
- *
- * Copyright (C) 2019 Marc Kirchner
- *
- * Distributed under terms of the MIT license.
- *
  * A simple hashtable implementation for string keys, using separate chaining.
  */
 

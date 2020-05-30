@@ -1,10 +1,3 @@
-/*
- * primes.h
- * Copyright (C) 2019 Marc Kirchner
- *
- * Distributed under terms of the MIT license.
- */
-
 #ifndef __PRIMES_H__
 #define __PRIMES_H__
 

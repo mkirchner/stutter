@@ -1,10 +1,3 @@
-/*
- * lexer.h
- * Copyright (C) 2019 Marc Kirchner
- *
- * Distributed under terms of the MIT license.
- */
-
 #ifndef __LEXER_H__
 #define __LEXER_H__
 

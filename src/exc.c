@@ -1,10 +1,3 @@
-/*
- * exc.c
- * Copyright (C) 2020 Marc Kirchner <Marc Kirchner@marvin>
- *
- * Distributed under terms of the MIT license.
- */
-
 #include "exc.h"
 #include "log.h"
 

@@ -1,10 +1,3 @@
-/*
- * core.h
- * Copyright (C) 2019 Marc Kirchner
- *
- * Distributed under terms of the MIT license.
- */
-
 #ifndef __CORE_H__
 #define __CORE_H__
 

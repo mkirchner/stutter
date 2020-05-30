@@ -1,10 +1,3 @@
-/*
- * exc.h
- * Copyright (C) 2020 Marc Kirchner
- *
- * Distributed under terms of the MIT license.
- */
-
 #ifndef __EXC_H__
 #define __EXC_H__
 

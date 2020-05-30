@@ -1,10 +1,3 @@
-/*
- * test_ir.c
- * Copyright (C) 2019 Marc Kirchner <Marc Kirchner@marvin>
- *
- * Distributed under terms of the MIT license.
- */
-
 #include <stdio.h>
 #include <string.h>
 #include "minunit.h"

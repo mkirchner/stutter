@@ -1,11 +1,3 @@
-/*
- * test_lexer.c
- * Copyright (C) 2019 Marc Kirchner
- *
- * Distributed under terms of the MIT license.
- */
-
-
 #include <stdio.h>
 #include <string.h>
 #include "minunit.h"

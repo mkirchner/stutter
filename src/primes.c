@@ -1,10 +1,3 @@
-/*
- * primes.c
- * Copyright (C) 2019 Marc Kirchner <Marc Kirchner@marvin>
- *
- * Distributed under terms of the MIT license.
- */
-
 #include "primes.h"
 
 

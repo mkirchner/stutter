@@ -1,10 +1,3 @@
-/*
- * list.h
- * Copyright (C) 2019 Marc Kirchner
- *
- * Distributed under terms of the MIT license.
- */
-
 #ifndef __LIST_H__
 #define __LIST_H__
 
