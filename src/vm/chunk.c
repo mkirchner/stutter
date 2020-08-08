@@ -4,9 +4,9 @@
 #include <stdarg.h>
 #include "vm/mem.h"
 
-Chunk* chunk_new()
+Chunk *chunk_new()
 {
-    Chunk* chunk = mem_reallocate(NULL, sizeof(Chunk));
+    Chunk *chunk = mem_reallocate(NULL, sizeof(Chunk));
     chunk->code = bytecode_new();
     chunk->instructions = bytecode_index_new();
     chunk->locations = locations_new();
@@ -14,7 +14,7 @@ Chunk* chunk_new()
     return chunk;
 }
 
-void chunk_delete(Chunk* chunk)
+void chunk_delete(Chunk *chunk)
 {
     mem_reallocate(chunk->constants, 0);
     mem_reallocate(chunk->locations, 0);
@@ -22,14 +22,14 @@ void chunk_delete(Chunk* chunk)
     mem_reallocate(chunk, 0);
 }
 
-size_t chunk_add_constant(Chunk* chunk, Value val)
+size_t chunk_add_constant(Chunk *chunk, Value val)
 {
     values_append(chunk->constants, val);
     return values_size(chunk->constants) - 1;
 }
 
 void chunk_add_instruction(Chunk *chunk, size_t row, size_t col,
-        Bytecode opcode, Arity arity, ... /* operands */)
+                           Bytecode opcode, Arity arity, ... /* operands */)
 {
     Location l = { .row = row, .col = col };
     locations_append(chunk->locations, l);
@@ -43,7 +43,7 @@ void chunk_add_instruction(Chunk *chunk, size_t row, size_t col,
     va_end(args);
 }
 
-void chunk_disassemble(const Chunk* chunk, const char* title)
+void chunk_disassemble(const Chunk *chunk, const char *title)
 {
     printf("; === %s ===\n", title);
     size_t n = bytecode_index_size(chunk->instructions);
@@ -52,14 +52,14 @@ void chunk_disassemble(const Chunk* chunk, const char* title)
     }
 }
 
-static void chunk_disassemble_single_byte(const char* mnemonic)
+static void chunk_disassemble_single_byte(const char *mnemonic)
 {
     printf("%s\n", mnemonic);
 }
 
-static void chunk_disassemble_constant(const char* mnemonic,
-                                                const Chunk* chunk,
-                                                const size_t pos)
+static void chunk_disassemble_constant(const char *mnemonic,
+                                       const Chunk *chunk,
+                                       const size_t pos)
 {
     // LOAD_CONST <addr>
     // FIXME: error management?
@@ -69,7 +69,7 @@ static void chunk_disassemble_constant(const char* mnemonic,
     printf("]\n");
 }
 
-void chunk_disassemble_instruction(const Chunk* chunk, const size_t n)
+void chunk_disassemble_instruction(const Chunk *chunk, const size_t n)
 {
     // code location of the instruction
     const Location *cur_loc = locations_at(chunk->locations, n);
@@ -88,14 +88,14 @@ void chunk_disassemble_instruction(const Chunk* chunk, const size_t n)
     }
     Bytecode opcode = chunk->code->bytecode[byte_pos]; // FIXME: wrap access in fn
     switch(opcode) {
-        case OP_RETURN:
-            chunk_disassemble_single_byte("RETURN");
-            break;
-        case OP_LOAD_CONST:
-            chunk_disassemble_constant("OP_LOAD_CONST", chunk, byte_pos);
-            break;
-        default:
-            LOG_WARNING("Unknown opcode: %u", opcode);
+    case OP_RETURN:
+        chunk_disassemble_single_byte("RETURN");
+        break;
+    case OP_LOAD_CONST:
+        chunk_disassemble_constant("OP_LOAD_CONST", chunk, byte_pos);
+        break;
+    default:
+        LOG_WARNING("Unknown opcode: %u", opcode);
     }
 }
 

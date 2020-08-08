@@ -2,9 +2,10 @@
 #include "log.h"
 #include <assert.h>
 
-int main(void) {
+int main(void)
+{
     BytecodeIndex indexes[8] = {0, 1, 4, 6, 7, 10, 11, 14};
-    BytecodeIndexArray* bia = bytecode_index_new();
+    BytecodeIndexArray *bia = bytecode_index_new();
     for (int i = 0; i < 8; ++i) {
         bytecode_index_append(bia, indexes[i]);
     }

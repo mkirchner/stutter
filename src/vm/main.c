@@ -1,8 +1,9 @@
 #include "vm/common.h"
 #include "vm/chunk.h"
 
-int main(int argc, const char* argv[]) {
-    Chunk* chunk = chunk_new();
+int main(int argc, const char *argv[])
+{
+    Chunk *chunk = chunk_new();
     chunk_add_instruction(chunk, 0, 0,
                           OP_LOAD_CONST, 1,
                           chunk_add_constant(chunk, 42.0));

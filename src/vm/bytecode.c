@@ -4,32 +4,32 @@
 #include "vm/mem.h"
 
 
-BytecodeArray* bytecode_new()
+BytecodeArray *bytecode_new()
 {
-    BytecodeArray* ins = mem_reallocate(NULL, sizeof(BytecodeArray));
+    BytecodeArray *ins = mem_reallocate(NULL, sizeof(BytecodeArray));
     ins->size = 0;
     ins->capacity = 0;
-    ins->bytecode= NULL;
+    ins->bytecode = NULL;
     return ins;
 }
 
-void bytecode_delete(BytecodeArray* ins)
+void bytecode_delete(BytecodeArray *ins)
 {
     mem_reallocate(ins->bytecode, 0);
     mem_reallocate(ins, 0);
 }
 
-size_t bytecode_size(const BytecodeArray* bc)
+size_t bytecode_size(const BytecodeArray *bc)
 {
     return bc->size;
 }
 
-static void bytecode_upsize(BytecodeArray* ins)
+static void bytecode_upsize(BytecodeArray *ins)
 {
-   // up-size in powers of 2
-   size_t capacity = ins->capacity < 16 ? 16 : ins->capacity * 2;
-   ins->bytecode= mem_reallocate(ins->bytecode, capacity * sizeof(Bytecode));
-   ins->capacity = capacity;
+    // up-size in powers of 2
+    size_t capacity = ins->capacity < 16 ? 16 : ins->capacity * 2;
+    ins->bytecode = mem_reallocate(ins->bytecode, capacity * sizeof(Bytecode));
+    ins->capacity = capacity;
 }
 
 void bytecode_append(BytecodeArray *ins, Bytecode byte)

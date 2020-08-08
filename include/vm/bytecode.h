@@ -20,9 +20,9 @@ typedef struct {
     Bytecode *bytecode;
 } BytecodeArray;
 
-BytecodeArray* bytecode_new();
-size_t bytecode_size(const BytecodeArray*);
-void bytecode_delete(BytecodeArray*);
-void bytecode_append(BytecodeArray*, Bytecode);
+BytecodeArray *bytecode_new();
+size_t bytecode_size(const BytecodeArray *);
+void bytecode_delete(BytecodeArray *);
+void bytecode_append(BytecodeArray *, Bytecode);
 
 #endif

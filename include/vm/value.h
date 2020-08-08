@@ -11,10 +11,10 @@ typedef struct {
     Value *values;
 } ValueArray;
 
-ValueArray* values_new();
-void values_delete(ValueArray*);
-void values_append(ValueArray*, Value);
-size_t values_size(ValueArray*);
+ValueArray *values_new();
+void values_delete(ValueArray *);
+void values_append(ValueArray *, Value);
+size_t values_size(ValueArray *);
 void value_print(Value);
 
 #endif /* !__VALUE_H__ */
