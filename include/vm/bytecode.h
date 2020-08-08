@@ -1,5 +1,5 @@
-#ifndef __INSTRUCTION_H__
-#define __INSTRUCTION_H__
+#ifndef __BYTECODE_H__
+#define __BYTECODE_H__
 
 #include "vm/common.h"
 #include "vm/value.h"
@@ -18,10 +18,11 @@ typedef struct {
     size_t size;
     size_t capacity;
     Bytecode *bytecode;
-} InstructionArray;
+} BytecodeArray;
 
-InstructionArray* instructions_new();
-void instructions_delete(InstructionArray*);
-void instructions_append(InstructionArray*, Bytecode);
+BytecodeArray* bytecode_new();
+size_t bytecode_size(const BytecodeArray*);
+void bytecode_delete(BytecodeArray*);
+void bytecode_append(BytecodeArray*, Bytecode);
 
-#endif /* !__INSTRUCTION_H__ */
+#endif

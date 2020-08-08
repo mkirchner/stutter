@@ -38,4 +38,11 @@ void locations_append(LocationArray *ls, Location loc)
     ls->size++;
 }
 
+const Location* locations_at(LocationArray* ls, size_t n)
+{
+    if (n <= ls->size) {
+        return &ls->locs[n];
+    }
+    return NULL;
+}
 

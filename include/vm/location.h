@@ -17,5 +17,6 @@ typedef struct {
 LocationArray* locations_new();
 void locations_delete(LocationArray*);
 void locations_append(LocationArray*, Location);
+const Location* locations_at(LocationArray*, size_t n);
 
 #endif /* !__LOCATION_H__ */
