@@ -11,6 +11,7 @@
  */
 #define OP_RETURN     0
 #define OP_LOAD_CONST 1
+#define OP_NEGATE     2
 
 typedef uint8_t Bytecode;
 
