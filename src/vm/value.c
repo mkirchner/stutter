@@ -42,5 +42,17 @@ size_t values_size(ValueArray *vals)
 
 void value_print(Value value)
 {
-    printf("%g", value);
+    switch(value.type) {
+        case VM_VALUE_NIL:
+            printf("NIL");
+            break;
+        case VM_VALUE_BOOL:
+            printf(VM_AS_BOOL(value) ? "True" : "False");
+            break;
+        case VM_VALUE_NUMBER:
+            printf("%g", VM_AS_NUMBER(value));
+            break;
+        case VM_VALUE_OBJ:
+            printf("Object@%p", VM_AS_OBJ(value));
+    }
 }

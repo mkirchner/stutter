@@ -75,7 +75,7 @@ static VMError vm_run(VM *vm)
             break;
         }
         case OP_NEGATE:
-            vm_stack_push(vm, -vm_stack_pop(vm));
+            vm_stack_push(vm, VM_NUMBER_VAL(-VM_AS_NUMBER(vm_stack_pop(vm))));
             break;
         default:
             LOG_WARNING("Unknown bytecode instruction: %u", op);
