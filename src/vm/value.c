@@ -20,11 +20,11 @@ static void values_upsize(ValueArray *vals)
 {
     // up-size in powers of 2
     size_t capacity = vals->capacity < 16 ? 16 : vals->capacity * 2;
-    vals->values = mem_reallocate(vals->values, capacity * sizeof(Value));
+    vals->values = mem_reallocate(vals->values, capacity * sizeof(VmValue));
     vals->capacity = capacity;
 }
 
-void values_append(ValueArray *vals, Value byte)
+void values_append(ValueArray *vals, VmValue byte)
 {
     // Check if the array is large enough to hold the next byte,
     // up-size if required
@@ -40,7 +40,7 @@ size_t values_size(ValueArray *vals)
     return vals->size;
 }
 
-void value_print(Value value)
+void value_print(VmValue value)
 {
     switch(value.type) {
         case VM_VALUE_NIL:
@@ -53,6 +53,6 @@ void value_print(Value value)
             printf("%g", VM_AS_NUMBER(value));
             break;
         case VM_VALUE_OBJ:
-            printf("Object@%p", VM_AS_OBJ(value));
+            obj_print(VM_AS_OBJ(value));
     }
 }

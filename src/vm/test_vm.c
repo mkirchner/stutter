@@ -6,16 +6,25 @@ int main() {
     VM* vm = vm_new();
 
     LOG_INFO("Testing VM stack");
-    Value val = 42.0;
+    VmValue val = VM_NUMBER_VAL(1.0);
     vm_stack_push(vm, val);
-    assert(vm_stack_peek(vm) == val && "Peeked value is not correct");
-    assert(vm_stack_pop(vm) == val && "Popped value is not correct");
-    Value vals[] = {1., 2., 3., 4., 5.};
+    assert(VM_AS_NUMBER(vm_stack_peek(vm)) == VM_AS_NUMBER(val)
+            && "Peeked value is not correct");
+    assert(VM_AS_NUMBER(vm_stack_pop(vm)) == VM_AS_NUMBER(val)
+            && "Popped value is not correct");
+    VmValue vals[] = {
+        VM_NUMBER_VAL(1.),
+        VM_NUMBER_VAL(2.),
+        VM_NUMBER_VAL(3.),
+        VM_NUMBER_VAL(4.),
+        VM_NUMBER_VAL(5.)
+    };
     for (size_t i = 0; i < 5; ++i) {
         vm_stack_push(vm, vals[i]);
     }
     for (int j = 4; j >= 0; --j) {
-        assert(vm_stack_pop(vm) == vals[j] && "push/pop mismatch");
+        assert(VM_AS_NUMBER(vm_stack_pop(vm)) == VM_AS_NUMBER(vals[j])
+                && "push/pop mismatch");
     }
     LOG_INFO("Testing VM stack: SUCCESS");
 

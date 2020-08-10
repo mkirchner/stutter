@@ -19,7 +19,7 @@ typedef int Arity;
 Chunk *chunk_new();
 void chunk_delete(Chunk *ptr);
 
-size_t chunk_add_constant(Chunk *, Value);
+size_t chunk_add_constant(Chunk *chunk, VmValue value);
 void chunk_add_instruction(Chunk *chunk, size_t row, size_t col,
                            Bytecode opcode, Arity arity, ... /* operands */);
 

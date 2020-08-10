@@ -1,13 +1,15 @@
 #include "vm/common.h"
 #include "vm/chunk.h"
 #include "vm/vm.h"
+#include "vm/object.h"
 
 int main(int argc, const char *argv[])
 {
     Chunk *chunk = chunk_new();
     chunk_add_instruction(chunk, 0, 0,
                           OP_LOAD_CONST, 1,
-                          chunk_add_constant(chunk, VM_NUMBER_VAL(42.0)));
+                          chunk_add_constant(chunk,
+                              VM_OBJ_VAL(obj_string_new(6, "Hello!"))));
     chunk_add_instruction(chunk, 1, 1,
                           OP_LOAD_CONST, 1,
                           chunk_add_constant(chunk, VM_NUMBER_VAL(42.0)));

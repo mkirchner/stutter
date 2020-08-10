@@ -17,8 +17,8 @@ typedef enum {
 typedef struct {
     const Chunk *chunk;
     const Bytecode* ip;
-    Value stack[VM_STACK_SIZE];
-    Value *tos;  // top of stack
+    VmValue stack[VM_STACK_SIZE];
+    VmValue *tos;  // top of stack
 } VM;
 
 VM *vm_new();

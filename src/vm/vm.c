@@ -17,19 +17,19 @@ void vm_delete(VM *vm)
     mem_reallocate(vm, 0);
 }
 
-static void vm_stack_push(VM *vm, Value value)
+static void vm_stack_push(VM *vm, VmValue value)
 {
     *vm->tos = value;
     vm->tos++;
 }
 
-static Value vm_stack_pop(VM *vm)
+static VmValue vm_stack_pop(VM *vm)
 {
     vm->tos--;
     return *vm->tos;
 }
 
-static Value vm_stack_peek(VM *vm)
+static VmValue vm_stack_peek(VM *vm)
 {
     return *(vm->tos - 1);
 }
@@ -37,7 +37,7 @@ static Value vm_stack_peek(VM *vm)
 static void vm_stack_print(VM *vm)
 {
     printf("STCK [");
-    for (Value *addr = vm->stack; addr < vm->tos; ++addr) {
+    for (VmValue *addr = vm->stack; addr < vm->tos; ++addr) {
         printf("[");
         value_print(*addr);
         printf("]");
@@ -70,7 +70,7 @@ static VMError vm_run(VM *vm)
         case OP_RETURN:
             return VM_OK;
         case OP_LOAD_CONST: {
-            Value val = READ_CONSTANT(vm);
+            VmValue val = READ_CONSTANT(vm);
             vm_stack_push(vm, val);
             break;
         }

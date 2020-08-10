@@ -22,7 +22,7 @@ void chunk_delete(Chunk *chunk)
     mem_reallocate(chunk, 0);
 }
 
-size_t chunk_add_constant(Chunk *chunk, Value val)
+size_t chunk_add_constant(Chunk *chunk, VmValue val)
 {
     values_append(chunk->constants, val);
     return values_size(chunk->constants) - 1;
