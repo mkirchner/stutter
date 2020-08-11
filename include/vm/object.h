@@ -3,6 +3,9 @@
 
 #include "vm/common.h"
 
+#define VM_AS_VMSTRING(obj) ((VmString*) obj)
+#define VM_AS_CSTRING(obj) (((VmString*) obj)->str)
+
 typedef enum {
     VM_OBJ_STRING
 } VmObjectType;
