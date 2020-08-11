@@ -53,13 +53,12 @@ This should work on a Mac with a recent `clang`. No efforts to make it portable
 
 ### Next steps
 
+- [ ] Add a VM and support to compile to bytecode
 - [ ] Document core language
 - [ ] Better error reporting
   - [ ] Surface lexer token line/col info in the reader
-- [ ] Refactor AST/IR to a single representation (this is an artifact)
 - [ ] Core capabilities
   - [ ] `keyword` support
   - [ ] `vector` support (`Array` C type is implemented but not surfaced)
   - [ ] `hash-map` support (`Map` C type is available but not surfaced)
 - [ ] Add a type system
-
