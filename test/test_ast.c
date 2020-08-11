@@ -22,21 +22,21 @@ static char *test_ast()
                             ast_atom_from_float(7.0)),
                         ast_list_empty()))));
 
-    mu_assert(strcmp(ast->ast.list
-                     ->ast.compound.sexpr
-                     ->ast.atom
-                     ->value.symbol, "add") == 0, "Wrong symbol name");
-    mu_assert(ast->ast.list
-              ->ast.compound.list
-              ->ast.compound.sexpr
-              ->ast.atom
-              ->value.int_ == 5, "Wrong LHS int");
-    mu_assert(ast->ast.list
-              ->ast.compound.list
-              ->ast.compound.list
-              ->ast.compound.sexpr
-              ->ast.atom
-              ->value.float_ == 7.0, "Wrong RHS float");
+   mu_assert(strcmp(ast->as.list
+                     ->as.compound.sexpr
+                     ->as.atom
+                     ->as.symbol, "add") == 0, "Wrong symbol name");
+    mu_assert(ast->as.list
+              ->as.compound.list
+              ->as.compound.sexpr
+              ->as.atom
+              ->as.integer == 5, "Wrong LHS int");
+    mu_assert(ast->as.list
+              ->as.compound.list
+              ->as.compound.list
+              ->as.compound.sexpr
+              ->as.atom
+              ->as.decimal== 7.0, "Wrong RHS float");
     // ast_print(ast);
     ast_delete_sexpr(ast);
     return 0;
