@@ -9,7 +9,7 @@ int main() {
     // store/retrieve single value
     VmValue val = VM_NUMBER_VAL(1.0);
     VmString *key = obj_string_new(3, "key");
-    value_map_insert(map, key, &val);
+    value_map_put(map, key, &val);
     obj_string_delete(key);
     assert(VM_AS_NUMBER(*value_map_get(map, key)) == VM_AS_NUMBER(val)
             && "Stored value is not correct");
