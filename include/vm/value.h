@@ -41,6 +41,9 @@ typedef struct {
     VmValue *values;
 } ValueArray;
 
+VmValue* vm_value_copy(const VmValue *src);
+void vm_value_delete(VmValue *val);
+
 ValueArray *values_new();
 void values_delete(ValueArray *);
 void values_append(ValueArray *, VmValue);

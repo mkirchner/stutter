@@ -1,6 +1,43 @@
 #include "vm/value.h"
 #include "vm/mem.h"
 
+VmValue* vm_value_new(VmValueType type)
+{
+    VmValue* val = mem_reallocate(NULL, sizeof(VmValue));
+    val->type = type;
+    val->as.number = 0;
+    return val;
+}
+
+VmValue* vm_value_copy(const VmValue *src)
+{
+    VmValue *copy = vm_value_new(src->type);
+    switch(src->type) {
+        case VM_VALUE_OBJ:
+            copy->as.obj = obj_copy(src->as.obj);
+            break;
+        case VM_VALUE_NIL:
+        case VM_VALUE_BOOL:
+        case VM_VALUE_NUMBER:
+            memcpy(copy, src, sizeof(VmValue));
+            break;
+    }
+    return copy;
+}
+
+void vm_value_delete(VmValue *val)
+{
+    switch(val->type) {
+        case VM_VALUE_OBJ:
+            obj_delete(val->as.obj);
+            break;
+        case VM_VALUE_NIL:
+        case VM_VALUE_BOOL:
+        case VM_VALUE_NUMBER:
+            break;
+    }
+}
+
 ValueArray *values_new()
 {
     ValueArray *vals = (ValueArray *) mem_reallocate(NULL, sizeof(ValueArray));
