@@ -15,22 +15,22 @@
  */
 
 typedef struct {
-   VmString *key;
-   VmValue *value;
+    VmString *key;
+    VmValue *value;
 } KeyValuePair;
 
 typedef struct {
     size_t size;
     size_t capacity;
-    KeyValuePair* items;
+    KeyValuePair *items;
 } ValueMap;
 
-ValueMap* value_map_new();
-void value_map_delete(ValueMap* ptr);
+ValueMap *value_map_new();
+void value_map_delete(ValueMap *ptr);
 
-void value_map_put(ValueMap* map, const VmString *key, const VmValue *value);
-const VmValue *value_map_get(const ValueMap* map, const VmString *key);
-void value_map_remove(ValueMap* map, const VmString *key);
+void value_map_put(ValueMap *map, const VmString *key, const VmValue *value);
+const VmValue *value_map_get(const ValueMap *map, const VmString *key);
+void value_map_remove(ValueMap *map, const VmString *key);
 
 
 #endif /* !__VALUE_MAP_H__ */

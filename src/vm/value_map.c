@@ -6,7 +6,7 @@
 #define VALUE_MAP_MAX_LOAD 0.75
 
 static VmString TOMBSTONE_KEY;
-static KeyValuePair TOMBSTONE = {.key=&TOMBSTONE_KEY, .value=NULL};
+static KeyValuePair TOMBSTONE = {.key = &TOMBSTONE_KEY, .value = NULL};
 #define IS_TOMBSTONE(item) ((item).key == &TOMBSTONE_KEY)
 #define IS_EMPTY(item) ((item).key == NULL)
 
@@ -68,9 +68,13 @@ static void value_map_upsize(ValueMap *map)
  */
 static KeyValuePair *value_map_find(const ValueMap *map, const VmString *key)
 {
-    KeyValuePair* tombstone = NULL;
-    size_t index = fastrangesize(key->hash, map->capacity);
-    KeyValuePair* slot = NULL;
+    if (map->capacity == 0) return NULL;  // short-circut for non-allocated map
+    KeyValuePair *tombstone = NULL;
+    KeyValuePair *slot = NULL;
+    /* Use D. Lemire's fastrange; note that SIZE_MAX is broken on OSX, hence
+     * hardcode the 32bit version. This is an attempt to get the best of both
+     * worlds: prime-sized hash maps and fast [0, capacity) range wrapping. */
+    size_t index = fastrange32(key->hash, map->capacity);
     while (1) {
         slot = &map->items[index];
         // If we hit an empty slot, return it unless we passed a
@@ -78,17 +82,22 @@ static KeyValuePair *value_map_find(const ValueMap *map, const VmString *key)
         if (IS_EMPTY(*slot)) {
             return tombstone ? tombstone : slot;
         }
-        // If we find a matching key, return the slot
-        if (slot->key->hash == key->hash) {
-            return slot;
-        }
         // Keep track of tombstones
         if (!tombstone && IS_TOMBSTONE(*slot)) {
             tombstone = slot;
         }
+        // If we find a matching key, return the slot
+        if (!IS_TOMBSTONE(*slot) && slot->key->hash == key->hash) {
+            if (slot->key->len == key->len) {
+                // FIXME: replace w/ interned strings and a pointer cmp at some point
+                if (memcmp(slot->key->str, key->str, key->len) == 0) {
+                    return slot;
+                }
+            }
+        }
         // Move forward; as long as the load factor is < 1.0
-        // we will eventually find an empty slot
-        index = fastrangesize(index + 1, map->capacity);
+        // we will eventually find an empty slot. See above comment on fastrange.
+        index = fastrange32(index + 1, map->capacity);
     }
 }
 
@@ -109,7 +118,7 @@ void value_map_put(ValueMap *map, const VmString *key, const VmValue *value)
 const VmValue *value_map_get(const ValueMap *map, const VmString *key)
 {
     KeyValuePair *p = value_map_find(map, key);
-    if (p->key && !IS_TOMBSTONE(*p)) {
+    if (p && p->key && !IS_TOMBSTONE(*p)) {
         // Return the value if the key exists.
         return p->value;
     }
@@ -122,10 +131,10 @@ size_t value_map_size(ValueMap *map)
     return map->size;
 }
 
-void value_map_remove(ValueMap* map, const VmString *key)
+void value_map_remove(ValueMap *map, const VmString *key)
 {
     KeyValuePair *p = value_map_find(map, key);
-    if (p->key) {
+    if (p && p->key && !IS_TOMBSTONE(*p)) {
         obj_string_delete(p->key);
         vm_value_delete(p->value);
         *p = TOMBSTONE;

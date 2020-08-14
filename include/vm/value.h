@@ -31,7 +31,7 @@ typedef struct {
     union {
         bool boolean;
         double number;
-        VmObject* obj;
+        VmObject *obj;
     } as;
 } VmValue;
 
@@ -41,7 +41,7 @@ typedef struct {
     VmValue *values;
 } ValueArray;
 
-VmValue* vm_value_copy(const VmValue *src);
+VmValue *vm_value_copy(const VmValue *src);
 void vm_value_delete(VmValue *val);
 
 ValueArray *values_new();

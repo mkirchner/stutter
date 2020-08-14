@@ -49,6 +49,7 @@ VmString *obj_string_new(size_t len, const char *str)
     VmString *obj = (VmString *) obj_new(sizeof(VmString), VM_OBJ_STRING);
     obj->str = mem_reallocate(NULL, len + 1);
     strncpy(obj->str, str, len);
+    obj->len = len;
     obj->str[len] = '\0';
     obj->hash = fnv1a(str, len);  // hash without terminal \0
     return obj;

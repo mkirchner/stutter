@@ -27,7 +27,7 @@ VmObject *obj_new(size_t size, VmObjectType type);
 VmObject *obj_copy(const VmObject *src);
 void obj_delete(VmObject *obj);
 
-void obj_print(VmObject* obj);
+void obj_print(VmObject *obj);
 
 VmString *obj_string_new(size_t len, const char *str);
 VmString *obj_string_copy(const VmString *src);

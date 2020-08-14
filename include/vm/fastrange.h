@@ -18,8 +18,9 @@
 * through all possible values of "word", then you will generate all
 * possible outputs as uniformly as possible.
 */
-static inline uint32_t fastrange32(uint32_t word, uint32_t p) {
-	return (uint32_t)(((uint64_t)word * (uint64_t)p) >> 32);
+static inline uint32_t fastrange32(uint32_t word, uint32_t p)
+{
+    return (uint32_t)(((uint64_t)word * (uint64_t)p) >> 32);
 }
 
 #if defined(_MSC_VER) && defined (_WIN64)
@@ -34,21 +35,22 @@ static inline uint32_t fastrange32(uint32_t word, uint32_t p) {
 * through all possible values of "word", then you will generate all
 * possible outputs as uniformly as possible.
 */
-static inline uint64_t fastrange64(uint64_t word, uint64_t p) {
+static inline uint64_t fastrange64(uint64_t word, uint64_t p)
+{
 #ifdef __SIZEOF_INT128__ // then we know we have a 128-bit int
-	return (uint64_t)(((__uint128_t)word * (__uint128_t)p) >> 64);
+    return (uint64_t)(((__uint128_t)word * (__uint128_t)p) >> 64);
 #elif defined(_MSC_VER) && defined(_WIN64)
-	// supported in Visual Studio 2005 and better
-	uint64_t highProduct;
-	_umul128(word, p, &highProduct); // ignore output
-	return highProduct;
-	unsigned __int64 _umul128(
-		unsigned __int64 Multiplier,
-		unsigned __int64 Multiplicand,
-		unsigned __int64 *HighProduct
-	);
+    // supported in Visual Studio 2005 and better
+    uint64_t highProduct;
+    _umul128(word, p, &highProduct); // ignore output
+    return highProduct;
+    unsigned __int64 _umul128(
+        unsigned __int64 Multiplier,
+        unsigned __int64 Multiplicand,
+        unsigned __int64 * HighProduct
+    );
 #else
-	return word % p; // fallback
+    return word % p; // fallback
 #endif // __SIZEOF_INT128__
 }
 
@@ -63,11 +65,12 @@ static inline uint64_t fastrange64(uint64_t word, uint64_t p) {
 * through all possible values of "word", then you will generate all
 * possible outputs as uniformly as possible.
 */
-static inline size_t fastrangesize(size_t word, size_t p) {
+static inline size_t fastrangesize(size_t word, size_t p)
+{
 #if (SIZE_MAX == UINT32_MAX)
-	return (size_t)fastrange32(word, p);
+    return (size_t)fastrange32(word, p);
 #else // assume 64-bit
-	return (size_t)fastrange64(word, p);
+    return (size_t)fastrange64(word, p);
 #endif // SIZE_MAX == UINT32_MAX
 }
 
@@ -77,11 +80,12 @@ static inline size_t fastrangesize(size_t word, size_t p) {
 * through all possible values of "word", then you will generate all
 * possible outputs as uniformly as possible.
 */
-static inline int fastrangeint(int word, int p) {
+static inline int fastrangeint(int word, int p)
+{
 #if (SIZE_MAX == UINT32_MAX)
-	return (int)fastrange32(word, p);
+    return (int)fastrange32(word, p);
 #else // assume 64-bit
-	return (int)fastrange64(word, p);
+    return (int)fastrange64(word, p);
 #endif // (SIZE_MAX == UINT32_MAX)
 }
 

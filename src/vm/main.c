@@ -9,7 +9,7 @@ int main(int argc, const char *argv[])
     chunk_add_instruction(chunk, 0, 0,
                           OP_LOAD_CONST, 1,
                           chunk_add_constant(chunk,
-                              VM_OBJ_VAL(obj_string_new(6, "Hello!"))));
+                                  VM_OBJ_VAL(obj_string_new(6, "Hello!"))));
     chunk_add_instruction(chunk, 1, 1,
                           OP_LOAD_CONST, 1,
                           chunk_add_constant(chunk, VM_NUMBER_VAL(42.0)));
@@ -22,7 +22,7 @@ int main(int argc, const char *argv[])
     // chunk_disassemble(chunk, "test");
 
     // now run
-    VM* vm = vm_new();
+    VM *vm = vm_new();
     vm_interpret(vm, chunk);
     vm_delete(vm);
     return 0;

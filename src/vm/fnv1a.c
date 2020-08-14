@@ -1,6 +1,7 @@
 #include "vm/fnv1a.h"
 
-uint32_t fnv1a(const char* str, size_t len) {
+uint32_t fnv1a(const char *str, size_t len)
+{
     /*
      * See https://en.wikipedia.org/wiki/Fowler–Noll–Vo_hash_function#FNV-1a_hash
      * for FNV-1a parameters
