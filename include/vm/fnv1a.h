@@ -1,7 +1,7 @@
 #ifndef __FNV1A_H__
 #define __FNV1A_H__
 
-#include "vm/common.h"
+#include "common.h"
 
 uint32_t fnv1a(const char *str, size_t len);
 

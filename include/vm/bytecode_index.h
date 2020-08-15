@@ -1,7 +1,7 @@
 #ifndef __BYTECODE_INDEX_H__
 #define __BYTECODE_INDEX_H__
 
-#include "vm/common.h"
+#include "common.h"
 
 // Use actual indexes instead of pointers to avoid issues w/ realloc
 // shifting around the base address of the bytecode array.

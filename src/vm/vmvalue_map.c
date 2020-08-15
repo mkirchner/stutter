@@ -1,4 +1,4 @@
-#include "vm/value_map.h"
+#include "vm/vmvalue_map.h"
 #include "vm/mem.h"
 #include "primes.h"
 #include "vm/fastrange.h"

@@ -39,7 +39,7 @@ static void vm_stack_print(VM *vm)
     printf("STCK [");
     for (VmValue *addr = vm->stack; addr < vm->tos; ++addr) {
         printf("[");
-        value_print(*addr);
+        vm_value_print(*addr);
         printf("]");
     }
     printf("]\n");

@@ -1,7 +1,7 @@
 #ifndef __LOCATION_H__
 #define __LOCATION_H__
 
-#include "vm/common.h"
+#include "common.h"
 
 typedef struct {
     size_t row;

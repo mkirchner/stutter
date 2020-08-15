@@ -1,8 +1,8 @@
 #ifndef __BYTECODE_H__
 #define __BYTECODE_H__
 
-#include "vm/common.h"
-#include "vm/value.h"
+#include "common.h"
+#include "vm/vmvalue.h"
 
 /*
  * It's cleaner not to use an enum here since enums are

@@ -1,4 +1,4 @@
-#include "vm/value.h"
+#include "vm/vmvalue.h"
 #include "vm/mem.h"
 
 VmValue *vm_value_new(VmValueType type)
@@ -77,7 +77,7 @@ size_t values_size(ValueArray *vals)
     return vals->size;
 }
 
-void value_print(VmValue value)
+void vm_value_print(VmValue value)
 {
     switch(value.type) {
     case VM_VALUE_NIL:

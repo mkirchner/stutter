@@ -1,9 +1,9 @@
 #ifndef __CHUNK_H__
 #define __CHUNK_H__
 
-#include "vm/common.h"
+#include "common.h"
 #include "vm/bytecode.h"
-#include "vm/value.h"
+#include "vm/vmvalue.h"
 #include "vm/location.h"
 #include "vm/bytecode_index.h"
 

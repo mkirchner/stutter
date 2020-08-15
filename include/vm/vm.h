@@ -1,10 +1,10 @@
 #ifndef __VM_H__
 #define __VM_H__
 
-#include "vm/common.h"
+#include "common.h"
 #include "vm/chunk.h"
 #include "vm/bytecode.h"
-#include "vm/value.h"
+#include "vm/vmvalue.h"
 
 #define VM_STACK_SIZE 512  // FIXME: pull from env or make dynamic
 

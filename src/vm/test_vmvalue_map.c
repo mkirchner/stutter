@@ -1,6 +1,6 @@
 #include <assert.h>
 
-#include "value_map.c" /* to get access to the static decls */
+#include "vmvalue_map.c" /* to get access to the static decls */
 
 int main()
 {

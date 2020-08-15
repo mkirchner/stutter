@@ -1,7 +1,7 @@
 #ifndef __OBJECT_H__
 #define __OBJECT_H__
 
-#include "vm/common.h"
+#include "common.h"
 
 #define VM_AS_VMSTRING(obj) ((VmString*) obj)
 #define VM_AS_CSTRING(obj) (((VmString*) obj)->str)

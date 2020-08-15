@@ -1,9 +1,9 @@
 #ifndef __VALUE_MAP_H__
 #define __VALUE_MAP_H__
 
-#include "vm/common.h"
+#include "common.h"
 #include "vm/object.h"
-#include "vm/value.h"
+#include "vm/vmvalue.h"
 
 /*
  * Implements a hash map that maps `VmString` to `VmValue`.

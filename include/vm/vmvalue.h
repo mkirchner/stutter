@@ -1,7 +1,7 @@
 #ifndef __VALUE_H__
 #define __VALUE_H__
 
-#include "vm/common.h"
+#include "common.h"
 #include "vm/object.h"
 
 #define VM_IS_NIL(value) ((value).type == VM_VALUE_NIL)
@@ -48,6 +48,6 @@ ValueArray *values_new();
 void values_delete(ValueArray *);
 void values_append(ValueArray *, VmValue);
 size_t values_size(ValueArray *);
-void value_print(VmValue);
+void vm_value_print(VmValue);
 
 #endif /* !__VALUE_H__ */

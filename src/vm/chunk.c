@@ -65,7 +65,7 @@ static void chunk_disassemble_constant(const char *mnemonic,
     // FIXME: error management?
     size_t index = chunk->code->bytecode[pos + 1];
     printf("%-16s %4ld [", mnemonic, index);
-    value_print(chunk->constants->values[index]);
+    vm_value_print(chunk->constants->values[index]);
     printf("]\n");
 }
 
