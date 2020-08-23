@@ -24,6 +24,9 @@ typedef struct {
 VM *vm_new();
 void vm_delete(VM *vm);
 
+/* Reset the VM */
+void vm_reset(VM *vm);
+
 VMError vm_interpret(VM *vm, const Chunk *chunk);
 
 #endif /* !__VM_H__ */

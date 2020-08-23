@@ -4,6 +4,7 @@ all:
 		-o vm \
 		../../lib/gc/src/gc.c \
 		../ast.c \
+		../eval_utils.c \
 		../ir.c \
 		../lexer.c \
 		../list.c \

@@ -1,29 +1,39 @@
-#include "vm/common.h"
+#include <editline/readline.h>
+#include <string.h>
+#include "common.h"
 #include "vm/chunk.h"
 #include "vm/vm.h"
 #include "vm/object.h"
+#include "vm/compiler.h"
+#include "gc.h"
 
 int main(int argc, const char *argv[])
 {
-    Chunk *chunk = chunk_new();
-    chunk_add_instruction(chunk, 0, 0,
-                          OP_LOAD_CONST, 1,
-                          chunk_add_constant(chunk,
-                                  VM_OBJ_VAL(obj_string_new(6, "Hello!"))));
-    chunk_add_instruction(chunk, 1, 1,
-                          OP_LOAD_CONST, 1,
-                          chunk_add_constant(chunk, VM_NUMBER_VAL(42.0)));
-    chunk_add_instruction(chunk, 1, 0, OP_NEGATE, 0);
-    chunk_add_instruction(chunk, 2, 0,
-                          OP_LOAD_CONST, 1,
-                          chunk_add_constant(chunk, VM_NUMBER_VAL(42.0)));
-    chunk_add_instruction(chunk, 3, 0,
-                          OP_RETURN, 0);
-    // chunk_disassemble(chunk, "test");
+    // set up garbage collection, use extended setup for bigger mem limits
+    // FIXME: this needs args
+    gc_start_ext(&gc, &argc, 16384, 16384, 0.2, 0.8, 0.5);
 
-    // now run
     VM *vm = vm_new();
-    vm_interpret(vm, chunk);
+    while(true) {
+        // char *input = readline("stutter> ");
+        char *input = readline("\U000003BB> ");
+        if (input == NULL) {
+            break;
+        }
+        if (strcmp(input, "") == 0) {
+            continue;
+        }
+        add_history(input);
+
+        Chunk *chunk = chunk_new();
+        if (compile(input, chunk) == OK) { // FIXME use read_()
+            vm_interpret(vm, chunk);
+        }
+        free(input);
+        vm_reset(vm);
+    }
+    fprintf(stdout, "\n");
     vm_delete(vm);
+    gc_stop(&gc);
     return 0;
 }

@@ -45,6 +45,13 @@ static void vm_stack_print(VM *vm)
     printf("]\n");
 }
 
+void vm_reset(VM *vm)
+{
+    vm->tos = vm->stack;
+    vm->chunk = NULL;
+    vm->ip = NULL;
+}
+
 static VMError vm_run(VM *vm);
 
 VMError vm_interpret(VM *vm, const Chunk *chunk)
