@@ -2,6 +2,7 @@
 #define __AST_H__
 
 #include <stdlib.h>
+#include "location.h"
 
 /*
  * stutter grammar
@@ -33,7 +34,7 @@ typedef enum {
 
 typedef struct {
     AstNodeType type;
-    // Location loc;  // FIXME
+    Location loc;
 } AstNode;
 
 typedef struct AstSexpr {

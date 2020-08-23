@@ -68,8 +68,8 @@ static LexerToken *lexer_make_token(const Lexer *l,
     LexerToken *tok = (LexerToken *) malloc(sizeof(LexerToken));
     if (tok) {
         tok->type = token_type;
-        tok->line = l->line_no;
-        tok->column = l->char_no;
+        tok->loc.line = l->line_no;
+        tok->loc.col = l->char_no;
         switch(token_type) {
         case LEXER_TOK_INT:
             tok->value.int_ = atoi(buf);

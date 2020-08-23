@@ -215,7 +215,8 @@ void ast_print(AstNode *ast)
 void ast_print_sexpr(AstSexpr *s, int indent)
 {
     if (s) {
-        printf("%*s<sexpr>\n", indent, "");
+        printf("%*s<sexpr>(%lu:%lu)\n", indent, "",
+               s->node.loc.line, s->node.loc.col);
         switch(s->node.type) {
         case AST_SEXPR_ATOM:
             ast_print_atom(s->as.atom, indent + 2);
@@ -237,7 +238,8 @@ void ast_print_sexpr(AstSexpr *s, int indent)
 void ast_print_list(AstList *l, int indent)
 {
     if (l) {
-        printf("%*s<list>\n", indent, "");
+        printf("%*s<list>(%lu:%lu)\n", indent, "",
+               l->node.loc.line, l->node.loc.col);
         switch(l->node.type) {
         case AST_LIST_COMPOUND:
             ast_print_sexpr(l->as.compound.sexpr, indent + 2);
@@ -255,16 +257,20 @@ void ast_print_atom(AstAtom *a, int indent)
     if (a) {
         switch(a->node.type) {
         case AST_ATOM_INT:
-            printf("%*s<int: %d>\n", indent, "", a->as.integer);
+            printf("%*s<int: %d>(%lu:%lu)\n", indent, "", a->as.integer,
+                   a->node.loc.line, a->node.loc.col);
             break;
         case AST_ATOM_FLOAT:
-            printf("%*s<float: %.3g>\n", indent, "", a->as.decimal);
+            printf("%*s<float: %.3g>(%lu:%lu)\n", indent, "", a->as.decimal,
+                   a->node.loc.line, a->node.loc.col);
             break;
         case AST_ATOM_STRING:
-            printf("%*s<str: %s>\n", indent, "", a->as.string);
+            printf("%*s<str: %s>(%lu:%lu)\n", indent, "", a->as.string,
+                   a->node.loc.line, a->node.loc.col);
             break;
         case AST_ATOM_SYMBOL:
-            printf("%*s<sym: %s>\n", indent, "", a->as.symbol);
+            printf("%*s<sym: %s>(%lu:%lu)\n", indent, "", a->as.symbol,
+                   a->node.loc.line, a->node.loc.col);
             break;
         }
     }
