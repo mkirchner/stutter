@@ -60,7 +60,7 @@ AstSexpr *reader_read(Reader *reader)
             } else {
                 // report error looking for tok at top of stack
                 LOG_CRITICAL("Parse error at %lu:%lu: expected=%s, found=%s)",
-                             tok->line, tok->column,
+                             tok->loc.line, tok->loc.col,
                              reader_stack_token_type_names[tos.type],
                              token_type_names[tok->type]);
                 ast_delete_sexpr(ast);
@@ -79,21 +79,25 @@ AstSexpr *reader_read(Reader *reader)
             if (tos.type == N_ATOM && tok->type == LEXER_TOK_INT) {
                 reader_stack_pop(stack, &tos);
                 tos.ast.atom->node.type = AST_ATOM_INT;
+                tos.ast.atom->node.loc = tok->loc;
                 tos.ast.atom->as.integer = LEXER_TOKEN_VAL_AS_INT(tok);
                 LOG_DEBUG("Rule: A->int (int=%d)", tos.ast.atom->as.integer);
             } else if (tos.type == N_ATOM && tok->type == LEXER_TOK_FLOAT) {
                 reader_stack_pop(stack, &tos);
                 tos.ast.atom->node.type = AST_ATOM_FLOAT;
+                tos.ast.atom->node.loc = tok->loc;
                 tos.ast.atom->as.decimal = LEXER_TOKEN_VAL_AS_FLOAT(tok);
                 LOG_DEBUG("Rule: A->float (float=%.2f)", tos.ast.atom->as.decimal);
             } else if (tos.type == N_ATOM && tok->type == LEXER_TOK_STRING) {
                 reader_stack_pop(stack, &tos);
                 tos.ast.atom->node.type = AST_ATOM_STRING;
+                tos.ast.atom->node.loc = tok->loc;
                 tos.ast.atom->as.string = strdup(LEXER_TOKEN_VAL_AS_STR(tok));
                 LOG_DEBUG("Rule: A->str (str=%s)", tos.ast.atom->as.string);
             } else if (tos.type == N_ATOM && tok->type == LEXER_TOK_SYMBOL) {
                 reader_stack_pop(stack, &tos);
                 tos.ast.atom->node.type = AST_ATOM_SYMBOL;
+                tos.ast.atom->node.loc = tok->loc;
                 tos.ast.atom->as.string = strdup(LEXER_TOKEN_VAL_AS_STR(tok));
                 LOG_DEBUG("Rule: A->sym (sym=%s)", tos.ast.atom->as.symbol);
             } else if (tos.type == N_LIST) {
@@ -110,6 +114,7 @@ AstSexpr *reader_read(Reader *reader)
                     // pop current token from stack and create nodes in the AST
                     reader_stack_pop(stack, &tos);
                     tos.ast.list->node.type = AST_LIST_COMPOUND;
+                    tos.ast.list->node.loc = tok->loc;
                     tos.ast.list->as.compound.list = ast_new_list();
                     tos.ast.list->as.compound.sexpr = ast_new_sexpr();
                     // push rule RHS onto stack in reverse order
@@ -124,11 +129,12 @@ AstSexpr *reader_read(Reader *reader)
                 } else if (tok->type == LEXER_TOK_RPAREN) {
                     reader_stack_pop(stack, &tos);
                     tos.ast.list->node.type = AST_LIST_EMPTY;
+                    tos.ast.list->node.loc = tok->loc;
                     continue; // do not advance token
                 } else {
                     // parse error
                     LOG_CRITICAL("Parse error at %lu:%lu: L->SL|eps expected=%s, found=%s)",
-                                 tok->line, tok->column,
+                                 tok->loc.line, tok->loc.col,
                                  reader_stack_token_type_names[tos.type],
                                  token_type_names[tok->type]);
                     ast_delete_sexpr(ast);
@@ -144,6 +150,7 @@ AstSexpr *reader_read(Reader *reader)
                     // pop current token from stack and create nodes in the AST
                     reader_stack_pop(stack, &tos);
                     tos.ast.sexp->node.type = AST_SEXPR_ATOM;
+                    tos.ast.sexp->node.loc = tok->loc;
                     tos.ast.sexp->as.atom = ast_new_atom();
                     ReaderStackToken token;
                     token.type = N_ATOM;
@@ -156,6 +163,7 @@ AstSexpr *reader_read(Reader *reader)
                     // pop current token from stack and create nodes in the AST
                     reader_stack_pop(stack, &tos);
                     tos.ast.sexp->node.type = AST_SEXPR_LIST;
+                    tos.ast.sexp->node.loc = tok->loc;
                     tos.ast.sexp->as.list = ast_new_list();
                     // push rule RHS onto stack in reverse order
                     ReaderStackToken token;
@@ -184,6 +192,7 @@ AstSexpr *reader_read(Reader *reader)
                     } else if (tok->type == LEXER_TOK_SPLICE_UNQUOTE) {
                         tos.ast.sexp->node.type = AST_SEXPR_SPLICE_UNQUOTE;
                     }
+                    tos.ast.sexp->node.loc = tok->loc;
                     tos.ast.sexp->as.quoted = ast_new_sexpr();
                     // push rule RHS onto stack in reverse order
                     ReaderStackToken token;
@@ -205,7 +214,7 @@ AstSexpr *reader_read(Reader *reader)
                 } else {
                     // parse error
                     LOG_CRITICAL("Parse error at %lu:%lu: S->A|(L)|'S expected=%s, found=%s)",
-                                 tok->line, tok->column,
+                                 tok->loc.line, tok->loc.col,
                                  reader_stack_token_type_names[tos.type],
                                  token_type_names[tok->type]);
                     ast_delete_sexpr(ast);
@@ -239,7 +248,7 @@ AstSexpr *reader_read(Reader *reader)
                              "top of stack.", token_type_names[tok->type],
                              reader_stack_token_type_names[tos.type]);
                 LOG_CRITICAL("Parse error at %lu:%lu: could not find rule for %s with input %s)",
-                             tok->line, tok->column,
+                             tok->loc.line, tok->loc.col,
                              reader_stack_token_type_names[tos.type],
                              token_type_names[tok->type]);
                 ast_delete_sexpr(ast);

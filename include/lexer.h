@@ -2,6 +2,7 @@
 #define __LEXER_H__
 
 #include <stdio.h>
+#include "location.h"
 
 typedef enum {
     LEXER_TOK_ERROR,
@@ -27,8 +28,7 @@ typedef struct {
         int int_;
         double double_;
     } value;
-    size_t line;
-    size_t column;
+    Location loc;
 } LexerToken;
 
 #define LEXER_TOKEN_VAL_AS_STR(t) (t->value.str)
