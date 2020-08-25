@@ -24,7 +24,7 @@ static Value *apply_builtin_fn(Value *fn, Value *args)
     if (fn && fn->type == VALUE_BUILTIN_FN && fn->value.builtin_fn) {
         return fn->value.builtin_fn(args);
     }
-    exc_set(value_make_exception("Could not apply builtin fn"));
+    exc_set(value_make_exception(fn, "Could not apply builtin fn"));
     return NULL;
 }
 
@@ -43,7 +43,7 @@ static Value *apply_compound_fn(Value *fn, Value *args,
         bool more = false;
         while(arg_name) {
             if (!is_symbol(arg_name)) {
-                exc_set(value_make_exception("Parameter names must be symbols"));
+                exc_set(value_make_exception(arg_name, "Parameter names must be symbols"));
                 return NULL;
             }
             if (strcmp(SYMBOL(arg_name), "&") == 0) {
@@ -62,7 +62,7 @@ static Value *apply_compound_fn(Value *fn, Value *args,
         if (more) {
             Value *rest_name = list_head(list_tail(arg_names));
             if (!rest_name) {
-                exc_set(value_make_exception("Variadic arg list requires a name"));
+                exc_set(value_make_exception(fn, "Variadic arg list requires a name"));
                 return NULL;
             }
             Value *rest_value = value_new_list(arg_values);
@@ -71,7 +71,7 @@ static Value *apply_compound_fn(Value *fn, Value *args,
             arg_name = arg_value = NULL;
         }
         if (arg_name != arg_value) {
-            exc_set(value_make_exception("Invalid number of arguments for compound fn"));
+            exc_set(value_make_exception(fn, "Invalid number of arguments for compound fn"));
         }
         // eval via TCO: don't call eval here, return the pointers
         *tco_expr = fn->value.fn->body;
@@ -79,7 +79,7 @@ static Value *apply_compound_fn(Value *fn, Value *args,
         return NULL;
     }
     LOG_CRITICAL("Could not apply compound fn");
-    exc_set(value_make_exception("Could not apply compound fn"));
+    exc_set(value_make_exception(fn, "Could not apply compound fn"));
     return NULL;
 }
 
@@ -96,7 +96,7 @@ Value *apply(Value *fn, Value *args, Value **tco_expr, Environment **tco_env)
     } else if (is_compound_fn(fn)) {
         return apply_compound_fn(fn, args, tco_expr, tco_env);
     } else {
-        exc_set(value_make_exception("apply: not a function"));
+        exc_set(value_make_exception(fn, "apply requires a function"));
         return NULL;
     }
 }

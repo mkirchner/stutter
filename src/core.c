@@ -15,7 +15,7 @@
 
 #define CHECK_ARGLIST(args) do  {\
     if (!(args && args->type == VALUE_LIST)) {\
-        exc_set(value_make_exception("Invalid argument list in core function"));\
+        exc_set(value_make_exception(args, "Invalid argument list in core function"));\
         return NULL;\
     }\
 } while (0)
@@ -23,7 +23,7 @@
 #define REQUIRE_VALUE_TYPE(value, t, msg) do  {\
     if (value->type != t) {\
         LOG_CRITICAL("%s: expected %s, got %s", msg, value_type_names[t], value_type_names[value->type]);\
-        exc_set(value_make_exception("%s: expected %s, got %s", msg, value_type_names[t], value_type_names[value->type]));\
+        exc_set(value_make_exception(value, "%s: expected %s, got %s", msg, value_type_names[t], value_type_names[value->type]));\
         return NULL;\
     }\
 } while (0)
@@ -32,7 +32,7 @@
 #define REQUIRE_LIST_CARDINALITY(val, n, msg) do {\
     if (list_size(val->value.list) != n) {\
         LOG_CRITICAL("%s: expected %lu, got %lu", msg, n, list_size(val->value.list));\
-        exc_set(value_make_exception("%s: expected %lu, got %lu", msg, n, list_size(val->value.list)));\
+        exc_set(value_make_exception(val, "%s: expected %lu, got %lu", msg, n, list_size(val->value.list)));\
         return NULL;\
     }\
 } while (0)
@@ -40,7 +40,7 @@
 #define REQUIRE_LIST_CARDINALITY_GE(val, n, msg) do {\
     if (list_size(val->value.list) < (size_t) n) {\
         LOG_CRITICAL("%s: expected at least %lu, got %lu", msg, n, list_size(val->value.list));\
-        exc_set(value_make_exception("%s: expected at least %lu, got %lu", msg, n, list_size(val->value.list)));\
+        exc_set(value_make_exception(val, "%s: expected at least %lu, got %lu", msg, n, list_size(val->value.list)));\
         return NULL;\
     }\
 } while (0)
@@ -147,7 +147,7 @@ static Value *core_acc(const Value *args, float (*acc_fn)(float, float))
     } else if (head->type == VALUE_INT) {
         acc = (float) head->value.int_;
     } else {
-        exc_set(value_make_exception("Non-numeric argument in accumulation"));
+        exc_set(value_make_exception(args, "Non-numeric argument in accumulation"));
         return NULL;
     }
     list = list_tail(list);
@@ -158,7 +158,7 @@ static Value *core_acc(const Value *args, float (*acc_fn)(float, float))
         } else if (head->type == VALUE_INT) {
             acc = acc_fn(acc, (float) head->value.int_);
         } else {
-            exc_set(value_make_exception("Non-numeric argument in accumulation"));
+            exc_set(value_make_exception(args, "Non-numeric argument in accumulation"));
             return NULL;
         }
         list = list_tail(list);
@@ -201,7 +201,7 @@ static Value *cmp_eq(const Value *a, const Value *b)
             return VALUE_CONST_TRUE;
         case VALUE_EXCEPTION:
             /* Errors do not support comparison */
-            exc_set(value_make_exception("Comparison of error values is not supported"));
+            exc_set(value_make_exception(a, "Comparison of error values is not supported"));
             return NULL;
         case VALUE_BOOL:
             return BOOL(a) == BOOL(b) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
@@ -251,7 +251,7 @@ static Value *cmp_eq(const Value *a, const Value *b)
          * to itself */
         return VALUE_CONST_FALSE;
     }
-    exc_set(value_make_exception("Cannot compare incompatible types"));
+    exc_set(value_make_exception(a, "Cannot compare incompatible types"));
     return NULL;
 }
 
@@ -260,13 +260,13 @@ static Value *cmp_lt(const Value *a, const Value *b)
     if (a->type == b->type) {
         switch(a->type) {
         case VALUE_NIL:
-            exc_set(value_make_exception("Cannot order NIL values"));
+            exc_set(value_make_exception(a, "Cannot order NIL values"));
             return NULL;
         case VALUE_EXCEPTION:
-            exc_set(value_make_exception("Cannot order EXCEPTION values"));
+            exc_set(value_make_exception(a, "Cannot order EXCEPTION values"));
             return NULL;
         case VALUE_BOOL:
-            exc_set(value_make_exception("Cannot order BOOLEAN values"));
+            exc_set(value_make_exception(a, "Cannot order BOOLEAN values"));
             return NULL;
         case VALUE_INT:
             return INT(a) < INT(b) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
@@ -278,10 +278,10 @@ static Value *cmp_lt(const Value *a, const Value *b)
         case VALUE_BUILTIN_FN:
         case VALUE_FN:
         case VALUE_MACRO_FN:
-            exc_set(value_make_exception("Cannot order functions"));
+            exc_set(value_make_exception(a, "Cannot order functions"));
             return NULL;
         case VALUE_LIST:
-            exc_set(value_make_exception("Cannot order lists"));
+            exc_set(value_make_exception(a, "Cannot order lists"));
             return NULL;
         }
     } else if (a->type == VALUE_INT && b->type == VALUE_FLOAT) {
@@ -289,7 +289,7 @@ static Value *cmp_lt(const Value *a, const Value *b)
     } else if (b->type == VALUE_INT && a->type == VALUE_FLOAT) {
         return FLOAT(a) < ((float) INT(b)) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
     }
-    exc_set(value_make_exception("Cannot compare incompatible types"));
+    exc_set(value_make_exception(a, "Cannot compare incompatible types"));
     return NULL;
 }
 
@@ -298,13 +298,13 @@ static Value *cmp_leq(const Value *a, const Value *b)
     if (a->type == b->type) {
         switch(a->type) {
         case VALUE_NIL:
-            exc_set(value_make_exception("Cannot order NIL values"));
+            exc_set(value_make_exception(a, "Cannot order NIL values"));
             return NULL;
         case VALUE_EXCEPTION:
-            exc_set(value_make_exception("Cannot order EXCEPTION values"));
+            exc_set(value_make_exception(a, "Cannot order EXCEPTION values"));
             return NULL;
         case VALUE_BOOL:
-            exc_set(value_make_exception("Cannot order BOOLEAN values"));
+            exc_set(value_make_exception(a, "Cannot order BOOLEAN values"));
             return NULL;
         case VALUE_INT:
             return INT(a) <= INT(b) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
@@ -316,10 +316,10 @@ static Value *cmp_leq(const Value *a, const Value *b)
         case VALUE_BUILTIN_FN:
         case VALUE_FN:
         case VALUE_MACRO_FN:
-            exc_set(value_make_exception("Cannot order functions"));
+            exc_set(value_make_exception(a, "Cannot order functions"));
             return NULL;
         case VALUE_LIST:
-            exc_set(value_make_exception("Cannot order lists"));
+            exc_set(value_make_exception(a, "Cannot order lists"));
             return NULL;
         }
     } else if (a->type == VALUE_INT && b->type == VALUE_FLOAT) {
@@ -327,7 +327,7 @@ static Value *cmp_leq(const Value *a, const Value *b)
     } else if (b->type == VALUE_INT && a->type == VALUE_FLOAT) {
         return FLOAT(a) <= ((float) INT(b)) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
     }
-    exc_set(value_make_exception("Cannot compare incompatible types"));
+    exc_set(value_make_exception(a, "Cannot compare incompatible types"));
     return NULL;
 }
 
@@ -336,13 +336,13 @@ static Value *cmp_gt(const Value *a, const Value *b)
     if (a->type == b->type) {
         switch(a->type) {
         case VALUE_NIL:
-            exc_set(value_make_exception("Cannot order NIL values"));
+            exc_set(value_make_exception(a, "Cannot order NIL values"));
             return NULL;
         case VALUE_EXCEPTION:
-            exc_set(value_make_exception("Cannot order EXCEPTION values"));
+            exc_set(value_make_exception(a, "Cannot order EXCEPTION values"));
             return NULL;
         case VALUE_BOOL:
-            exc_set(value_make_exception("Cannot order BOOLEAN values"));
+            exc_set(value_make_exception(a, "Cannot order BOOLEAN values"));
             return NULL;
         case VALUE_INT:
             return INT(a) > INT(b) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
@@ -354,10 +354,10 @@ static Value *cmp_gt(const Value *a, const Value *b)
         case VALUE_BUILTIN_FN:
         case VALUE_FN:
         case VALUE_MACRO_FN:
-            exc_set(value_make_exception("Cannot order functions"));
+            exc_set(value_make_exception(a, "Cannot order functions"));
             return NULL;
         case VALUE_LIST:
-            exc_set(value_make_exception("Cannot order lists"));
+            exc_set(value_make_exception(a, "Cannot order lists"));
             return NULL;
         }
     } else if (a->type == VALUE_INT && b->type == VALUE_FLOAT) {
@@ -365,7 +365,7 @@ static Value *cmp_gt(const Value *a, const Value *b)
     } else if (b->type == VALUE_INT && a->type == VALUE_FLOAT) {
         return FLOAT(a) > ((float) INT(b)) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
     }
-    exc_set(value_make_exception("Cannot compare incompatible types"));
+    exc_set(value_make_exception(a, "Cannot compare incompatible types"));
     return NULL;
 }
 
@@ -374,13 +374,13 @@ static Value *cmp_geq(const Value *a, const Value *b)
     if (a->type == b->type) {
         switch(a->type) {
         case VALUE_NIL:
-            exc_set(value_make_exception("Cannot order NIL values"));
+            exc_set(value_make_exception(a, "Cannot order NIL values"));
             return NULL;
         case VALUE_EXCEPTION:
-            exc_set(value_make_exception("Cannot order EXCEPTION values"));
+            exc_set(value_make_exception(a, "Cannot order EXCEPTION values"));
             return NULL;
         case VALUE_BOOL:
-            exc_set(value_make_exception("Cannot order BOOLEAN values"));
+            exc_set(value_make_exception(a, "Cannot order BOOLEAN values"));
             return NULL;
         case VALUE_INT:
             return INT(a) >= INT(b) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
@@ -392,10 +392,10 @@ static Value *cmp_geq(const Value *a, const Value *b)
         case VALUE_BUILTIN_FN:
         case VALUE_FN:
         case VALUE_MACRO_FN:
-            exc_set(value_make_exception("Cannot order functions"));
+            exc_set(value_make_exception(a, "Cannot order functions"));
             return NULL;
         case VALUE_LIST:
-            exc_set(value_make_exception("Cannot order lists"));
+            exc_set(value_make_exception(a, "Cannot order lists"));
             return NULL;
         }
     } else if (a->type == VALUE_INT && b->type == VALUE_FLOAT) {
@@ -403,7 +403,7 @@ static Value *cmp_geq(const Value *a, const Value *b)
     } else if (b->type == VALUE_INT && a->type == VALUE_FLOAT) {
         return FLOAT(a) >= ((float) INT(b)) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
     }
-    exc_set(value_make_exception("Cannot compare incompatible types"));
+    exc_set(value_make_exception(a, "Cannot compare incompatible types"));
     return NULL;
 }
 
@@ -594,29 +594,29 @@ Value *core_slurp(const Value *args)
     Value *retval = NULL;
     FILE *f = NULL;
     if (!(f = fopen(STRING(v), "r"))) {
-        exc_set(value_make_exception("Failed to open file %s: %s", STRING(v), strerror(errno)));
+        exc_set(value_make_exception(args, "Failed to open file %s: %s", STRING(v), strerror(errno)));
         goto out;
     }
     int ret;
     if ((ret = fseek(f, 0L, SEEK_END)) != 0) {
-        exc_set(value_make_exception("Failed to determine file size for %s: %s",
+        exc_set(value_make_exception(args, "Failed to determine file size for %s: %s",
                                      STRING(v), strerror(errno)));
         goto out_file;
     }
     long fsize;
     if ((fsize = ftell(f)) < 0) {
-        exc_set(value_make_exception("Failed to determine file size for %s: %s",
+        exc_set(value_make_exception(args, "Failed to determine file size for %s: %s",
                                      STRING(v), strerror(errno)));
         goto out_file;
     }
     char *buf = malloc(fsize + 1);
     if ((ret = fseek(f, 0L, SEEK_SET)) != 0) {
-        exc_set(value_make_exception("Failed to read file %s", STRING(v)));
+        exc_set(value_make_exception(args, "Failed to read file %s", STRING(v)));
         goto out_buf;
     }
     size_t n_read;
     if ((n_read = fread(buf, 1, fsize, f)) < (size_t) fsize)   {
-        exc_set(value_make_exception("Failed to read file %s", STRING(v)));
+        exc_set(value_make_exception(args, "Failed to read file %s", STRING(v)));
         goto out_buf;
     }
     buf[fsize] = '\0';
@@ -763,7 +763,8 @@ Value *core_assert(const Value *args)
     CHECK_ARGLIST(args);
     size_t nargs = NARGS(args);
     if (nargs < 1 || nargs > 2) {
-        exc_set(value_make_exception("Invalid argument list in core function: "
+        exc_set(value_make_exception(args,
+                                     "Invalid argument list in core function: "
                                      "core_assert takes 1 or 2 arguments."));
         return NULL;
     }
@@ -778,10 +779,10 @@ Value *core_assert(const Value *args)
         return VALUE_CONST_NIL;
     }
     if (nargs == 1) {
-        exc_set(value_make_exception("Assert failed: %s is not true.",
+        exc_set(value_make_exception(args, "Assert failed: %s is not true.",
                                      core_pr_str(arg0)->value.str));
     } else {
-        exc_set(value_make_exception("Assert failed: %s", STRING(arg1)));
+        exc_set(value_make_exception(args, "Assert failed: %s", STRING(arg1)));
     }
     return NULL;
 }
@@ -804,7 +805,7 @@ Value *core_nth(const Value *args)
     Value *pos = ARG(args, 1);
     REQUIRE_VALUE_TYPE(pos, VALUE_INT, "Second argument to nth must be an integer");
     if (INT(pos) < 0 || (unsigned) INT(pos) >= NARGS(coll)) {
-       exc_set(value_make_exception("Index error"));
+       exc_set(value_make_exception(args, "Index error"));
         return NULL;
     }
     return ARG(coll, (unsigned) INT(pos));

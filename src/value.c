@@ -128,13 +128,28 @@ Value *value_new_exception(const char *str)
     return v;
 }
 
-Value *value_make_exception(const char *fmt, ...)
+Value *value_make_exception(const Value* from, const char *fmt, ...)
 {
+    // construct the message from the parameters
     va_list args;
-    va_start(args, fmt);
+    char *info = NULL;
     char *message = NULL;
-    vasprintf(&message, fmt, args);
+    va_start(args, fmt);
+    vasprintf(&info, fmt, args);
     va_end(args);
+
+    // try to attach location information
+    char* loc = NULL;
+    if (from) {
+        asprintf(&loc, "%lu:%lu: ", from->loc.line, from->loc.col);
+        message = calloc(strlen(info) + strlen(loc) + 1, sizeof(char));
+        strncpy(message, loc, strlen(loc));
+        strncat(message, info, strlen(info));
+        free(loc);
+        free(info);
+    } else {
+        message = info;
+    }
     Value *ex = value_new_exception(message);
     free(message);
     return ex;

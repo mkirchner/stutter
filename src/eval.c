@@ -32,7 +32,7 @@ static Value *lookup_variable_value(Value *expr, Environment *env)
 {
     Value *sym = NULL;
     if ((sym = env_get(env, SYMBOL(expr))) == NULL) {
-        exc_set(value_make_exception("Unknown name: %s", SYMBOL(expr)));
+        exc_set(value_make_exception(expr, "Error at %lu:%lu Undefined symbol: %s"));
         return NULL;
     }
     return sym;
@@ -44,7 +44,7 @@ static Value *eval_quote(Value *expr)
     if (expr && has_cardinality(expr, 2)) {
         return list_nth(LIST(expr), 1);
     }
-    exc_set(value_make_exception("Invalid parameter to built-in quote"));
+    exc_set(value_make_exception(expr, "Invalid parameter to built-in quote"));
     return NULL;
 }
 
@@ -63,10 +63,10 @@ static Value *eval_assignment(Value *expr, Environment *env)
             env_set(env, SYMBOL(name), value);
             return value;
         }
-        exc_set(value_make_exception("Could not find symbol %s.", SYMBOL(name)));
+        exc_set(value_make_exception(expr, "Could not find symbol %s.", SYMBOL(name)));
         return NULL;
     }
-    exc_set(value_make_exception("set! requires 2 args"));
+    exc_set(value_make_exception(expr, "set! requires 2 args"));
     return NULL;
 }
 
@@ -85,7 +85,7 @@ static Value *eval_definition(Value *expr, Environment *env)
         env_set(env, SYMBOL(name), value);
         return value;
     }
-    exc_set(value_make_exception("def requires 2 args"));
+    exc_set(value_make_exception(expr, "def requires 2 args"));
     return NULL;
 }
 
@@ -100,7 +100,7 @@ static Value *eval_macro_definition(Value *expr, Environment *env)
         env_set(env, SYMBOL(name), macro);
         return macro;
     }
-    exc_set(value_make_exception("Invalid macro declaration"));
+    exc_set(value_make_exception(expr, "Invalid macro declaration"));
     return NULL;
 }
 
@@ -111,7 +111,7 @@ static Value *eval_let(Value *expr, Environment *env, Value **tco_expr, Environm
         Environment *inner = env_new(env);
         Value *assignments = list_nth(LIST(expr), 1);
         if (!is_list(assignments) || list_size(LIST(assignments)) % 2 != 0) {
-            exc_set(value_make_exception("Invalid assignment list in let"));
+            exc_set(value_make_exception(expr, "Invalid assignment list in let"));
             return NULL;
         }
         const List *list = LIST(assignments);
@@ -134,7 +134,7 @@ static Value *eval_let(Value *expr, Environment *env, Value **tco_expr, Environm
         *tco_env = inner;
         return NULL; // tco must return NULL
     }
-    exc_set(value_make_exception("Invalid let declaration, require 2 args"));
+    exc_set(value_make_exception(expr, "Invalid let declaration, require 2 args"));
     return NULL;
 }
 
@@ -155,7 +155,7 @@ static Value *eval_if(Value *expr, Environment *env, Value **tco_expr, Environme
         *tco_env = env;
         return NULL; // tco must return NULL
     }
-    exc_set(value_make_exception("Invalid if declaration, require 3 args"));
+    exc_set(value_make_exception(expr, "Invalid if declaration, require 3 args"));
     return NULL;
 }
 
@@ -165,7 +165,7 @@ static Value *eval_try(Value *expr, Environment *env)
     if (has_cardinality(expr, 3)) {
         Value *catch_form = list_nth(LIST(expr), 2);
         if (!has_cardinality(catch_form, 3)) {
-            exc_set(value_make_exception("Invalid catch declaration, require 2 arguments"));
+            exc_set(value_make_exception(expr, "Invalid catch declaration, require 2 arguments"));
             return NULL;
         }
         Value *result = eval(list_nth(LIST(expr), 1), env);
@@ -185,7 +185,7 @@ static Value *eval_try(Value *expr, Environment *env)
         }
         return result;
     }
-    exc_set(value_make_exception("Invalid try declaration, require 2 arguments"));
+    exc_set(value_make_exception(expr, "Invalid try declaration, require 2 arguments"));
     return NULL;
 }
 
@@ -198,7 +198,7 @@ static Value *declare_fn(Value *expr, Environment *env)
         Value *fn = value_new_fn(args, body, env);
         return fn;
     }
-    exc_set(value_make_exception("Invalid lambda declaration, require 2 arguments"));
+    exc_set(value_make_exception(expr, "Invalid lambda declaration, require 2 arguments"));
     return NULL;
 }
 
@@ -261,7 +261,7 @@ static Value *_quasiquote(Value *arg)
     if (arg0->type == VALUE_SYMBOL && strncmp(STRING(arg0), "unquote", 7) == 0) {
         if (list_size(LIST(arg)) != 2) {
             exc_set(value_make_exception(
-                        "Invalid unquote declaration, require 1 argument"));
+                        arg0, "Invalid unquote declaration, require 1 argument"));
             return NULL;
         }
         Value *arg1 = list_nth(LIST(arg), 1);
@@ -271,7 +271,7 @@ static Value *_quasiquote(Value *arg)
         Value *arg00 = list_head(LIST(arg0));
         if (is_symbol(arg00) && strncmp(SYMBOL(arg00), "splice-unquote", 14) == 0) {
             if (list_size(LIST(arg0)) != 2) {
-                exc_set(value_make_exception("splice-unquote takes a single parameter"));
+                exc_set(value_make_exception(arg0, "splice-unquote takes a single parameter"));
                 return NULL;
             }
             Value *arg01 = list_nth(LIST(arg0), 1);
@@ -292,7 +292,7 @@ static Value *eval_quasiquote(Value *expr, Environment *env,
 {
     /* (quasiquote expr) */
     if (!(is_list(expr) && list_size(LIST(expr)) == 2)) {
-        exc_set(value_make_exception("quasiquote requires a single list as parameter"));
+        exc_set(value_make_exception(expr, "quasiquote requires a single list as parameter"));
         return NULL;
     }
     Value *args = list_nth(LIST(expr), 1);
@@ -307,7 +307,7 @@ static Value *operator(Value *expr)
     if (expr && is_list(expr)) {
         op = list_head(LIST(expr));
         if (!op) {
-            exc_set(value_make_exception("Could not find operator in list"));
+            exc_set(value_make_exception(expr, "Could not find operator in list"));
             return NULL;
         }
     }
@@ -345,7 +345,7 @@ static Value *macroexpand(Value *form, Environment *env)
 static Value *macroexpand_1(Value *expr, Environment *env)
 {
     if (!is_list(expr)) { // FIXME: this is checking the outer list
-        exc_set(value_make_exception("Require macro call for expansion"));
+        exc_set(value_make_exception(expr, "Require macro call for expansion"));
         return NULL;
     }
     Value *args = list_head(list_tail(LIST(expr)));
