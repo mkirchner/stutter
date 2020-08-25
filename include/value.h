@@ -6,6 +6,7 @@
 #include "gc.h"
 #include "map.h"
 #include "list.h"
+#include "location.h"
 
 #define BOOL(v) (v->value.bool_)
 #define BUILTIN_FN(v) (v->value.builtin_fn)
@@ -41,6 +42,7 @@ typedef struct CompositeFunction {
 
 typedef struct Value {
     ValueType type;
+    Location loc;
     union {
         bool bool_;
         int int_;

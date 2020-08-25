@@ -24,15 +24,18 @@ Value *ir_from_ast_atom(AstAtom *atom)
         break;
     default:
         LOG_CRITICAL("Unknown AST atom type: %d", atom->node.type);
-        v = NULL;
+        return NULL;
     }
+    v->loc = atom->node.loc;
     return v;
 }
 
 Value *ir_from_ast_list(AstList *ast_list)
 {
     if (ast_list->node.type == AST_LIST_EMPTY) {
-        return value_new_list(NULL);
+        Value *v = value_new_list(NULL);
+        v->loc = ast_list->node.loc;
+        return v;
     }
     Value *sexpr = ir_from_ast_sexpr(ast_list->as.compound.sexpr);
     Value *list = ir_from_ast_list(ast_list->as.compound.list);
@@ -49,35 +52,45 @@ Value *ir_from_ast_sexpr(AstSexpr *ast)
     switch (ast->node.type) {
     case AST_SEXPR_ATOM:
         result = ir_from_ast_atom(ast->as.atom);
+        // result->loc = ast->node.loc;
         break;
     case AST_SEXPR_LIST:
-        result =  ir_from_ast_list(ast->as.list);
+        result = ir_from_ast_list(ast->as.list);
+        // result->loc = ast->node.loc;
         break;
     case AST_SEXPR_QUOTE:
         result = value_new_list(NULL);
+        result->loc = ast->node.loc;
         sexpr = ir_from_ast_sexpr(ast->as.quoted);
         quote = value_new_symbol("quote");
+        quote->loc = ast->node.loc;
         result->value.list = list_conj(result->value.list, quote);
         result->value.list = list_conj(result->value.list, sexpr);
         break;
     case AST_SEXPR_QUASIQUOTE:
         result = value_new_list(NULL);
+        result->loc = ast->node.loc;
         sexpr = ir_from_ast_sexpr(ast->as.quoted);
         quote = value_new_symbol("quasiquote");
+        quote->loc = ast->node.loc;
         result->value.list = list_conj(result->value.list, quote);
         result->value.list = list_conj(result->value.list, sexpr);
         break;
     case AST_SEXPR_UNQUOTE:
         result = value_new_list(NULL);
+        result->loc = ast->node.loc;
         sexpr = ir_from_ast_sexpr(ast->as.quoted);
         quote = value_new_symbol("unquote");
+        quote->loc = ast->node.loc;
         result->value.list = list_conj(result->value.list, quote);
         result->value.list = list_conj(result->value.list, sexpr);
         break;
     case AST_SEXPR_SPLICE_UNQUOTE:
         result = value_new_list(NULL);
+        result->loc = ast->node.loc;
         sexpr = ir_from_ast_sexpr(ast->as.quoted);
         quote = value_new_symbol("splice-unquote");
+        quote->loc = ast->node.loc;
         result->value.list = list_conj(result->value.list, quote);
         result->value.list = list_conj(result->value.list, sexpr);
         break;
