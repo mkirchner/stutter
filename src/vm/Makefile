@@ -1,10 +1,11 @@
 all:
-	gcc -I../../include \
+	gcc -g -I../../include \
 		-I../../lib/gc/src \
 		-o vm \
 		../../lib/gc/src/gc.c \
 		../ast.c \
 		../eval_utils.c \
+		../exc.c \
 		../ir.c \
 		../lexer.c \
 		../list.c \

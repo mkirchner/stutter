@@ -1,6 +1,7 @@
 #include "eval_utils.h"
 
 #include <string.h>
+#include "exc.h"
 
 bool is_self_evaluating(const Value *value)
 {
@@ -99,4 +100,25 @@ bool has_cardinality(const Value *expr, const size_t cardinality)
     return expr && is_list(expr) && list_size(LIST(expr)) == cardinality;
 }
 
+Value *operator(Value *expr)
+{
+    Value *op = NULL;
+    if (expr && is_list(expr)) {
+        op = list_head(LIST(expr));
+        if (!op) {
+            exc_set(value_make_exception(expr, "Could not find operator in list"));
+            return NULL;
+        }
+    }
+    return op;
+}
+
+Value *operands(Value *expr)
+{
+    Value *ops = NULL;
+    if (expr && is_list(expr)) {
+        ops = value_new_list(list_tail(LIST(expr)));
+    }
+    return ops;
+}
 

@@ -12,8 +12,11 @@
 #define OP_RETURN     0
 #define OP_LOAD_CONST 1
 #define OP_NEGATE     2
+#define OP_ADD2       3
+#define OP_CALL       4
 
 typedef uint8_t Bytecode;
+#define BYTECODE_MAX UINT8_MAX
 
 typedef struct {
     size_t size;

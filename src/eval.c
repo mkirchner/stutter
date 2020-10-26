@@ -301,28 +301,6 @@ static Value *eval_quasiquote(Value *expr, Environment *env,
     return NULL;
 }
 
-static Value *operator(Value *expr)
-{
-    Value *op = NULL;
-    if (expr && is_list(expr)) {
-        op = list_head(LIST(expr));
-        if (!op) {
-            exc_set(value_make_exception(expr, "Could not find operator in list"));
-            return NULL;
-        }
-    }
-    return op;
-}
-
-static Value *operands(Value *expr)
-{
-    Value *ops = NULL;
-    if (expr && is_list(expr)) {
-        ops = value_new_list(list_tail(LIST(expr)));
-    }
-    return ops;
-}
-
 static Value *macroexpand(Value *form, Environment *env)
 {
     assert(form && env);

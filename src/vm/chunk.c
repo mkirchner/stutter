@@ -97,6 +97,12 @@ void chunk_disassemble_instruction(const Chunk *chunk, const size_t n)
     case OP_NEGATE:
         chunk_disassemble_single_byte("NEGATE");
         break;
+    case OP_ADD2:
+        chunk_disassemble_single_byte("ADD2");
+        break;
+    case OP_CALL:
+        chunk_disassemble_single_byte("CALL");
+        break;
     default:
         LOG_WARNING("Unknown opcode: %u", opcode);
     }

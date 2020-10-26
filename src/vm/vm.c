@@ -63,6 +63,8 @@ VMError vm_interpret(VM *vm, const Chunk *chunk)
 
 static VMError vm_run(VM *vm)
 {
+    // chunk_disassemble(vm->chunk, "PROGRAM");
+    // return VM_OK; // FIXME
     Bytecode op;
     while(1) {
         op = READ_BYTE(vm);
@@ -84,6 +86,26 @@ static VMError vm_run(VM *vm)
         case OP_NEGATE:
             vm_stack_push(vm, VM_NUMBER_VAL(-VM_AS_NUMBER(vm_stack_pop(vm))));
             break;
+        case OP_ADD2: {
+            VmValue b = vm_stack_pop(vm);
+            VmValue a = vm_stack_pop(vm);
+            vm_stack_push(vm, VM_NUMBER_VAL(VM_AS_NUMBER(a) + VM_AS_NUMBER(b)));
+            break;
+        }
+        case OP_CALL: {
+            VmValue fn = vm_stack_pop(vm);
+            // FIXME: error checking
+            VmString* str = VM_AS_VMSTRING(VM_AS_OBJ(fn));
+            // FIXME: here we would normally dispatch to built-in ops
+            if (str->len != 1 || strncmp("+", str->str, 1) != 0) {
+                LOG_WARNING("Unknown call target in CALL");
+                break;
+            }
+            VmValue b = vm_stack_pop(vm);
+            VmValue a = vm_stack_pop(vm);
+            vm_stack_push(vm, VM_NUMBER_VAL(VM_AS_NUMBER(a) + VM_AS_NUMBER(b)));
+            break;
+        }
         default:
             LOG_WARNING("Unknown bytecode instruction: %u", op);
             break;

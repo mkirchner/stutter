@@ -20,5 +20,7 @@ bool is_do(const Value *value);
 bool is_try(const Value *value);
 bool is_macro_expansion(const Value *value);
 bool is_application(const Value *value);
+Value *operator(Value *expr);
+Value *operands(Value *expr);
 
 #endif /* !__EVAL_UTILS_H__ */
