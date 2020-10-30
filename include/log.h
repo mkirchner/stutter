@@ -1,10 +1,3 @@
-/*
- * log.h
- * Copyright (C) 2019 marc
- *
- * Distributed under terms of the MIT license.
- */
-
 #ifndef __LOG_H__
 #define __LOG_H__
 

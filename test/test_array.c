@@ -1,21 +1,13 @@
-/*
- * test_array.c
- * Copyright (C) 2019 Marc Kirchner <Marc Kirchner@marvin>
- *
- * Distributed under terms of the MIT license.
- */
-
-
 #include <stdio.h>
 #include <string.h>
 #include "minunit.h"
 
 #include "../src/array.c"
 
-static char* test_array()
+static char *test_array()
 {
     // creation
-    Array* a = array_new(sizeof(int));
+    Array *a = array_new(sizeof(int));
     mu_assert(a != NULL, "New array should not be NULL");
 
     // get/set
@@ -108,7 +100,7 @@ static char* test_array()
 
 int tests_run = 0;
 
-static char* test_suite()
+static char *test_suite()
 {
     mu_run_test(test_array);
     return 0;

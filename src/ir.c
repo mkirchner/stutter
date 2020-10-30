@@ -1,10 +1,3 @@
-/*
- * ir.c
- * Copyright (C) 2019 Marc Kirchner
- *
- * Distributed under terms of the MIT license.
- */
-
 #include "ir.h"
 #include "log.h"
 
@@ -16,21 +9,21 @@ Value *ir_from_ast(AstSexpr *ast)
 Value *ir_from_ast_atom(AstAtom *atom)
 {
     Value *v;
-    switch (atom->type) {
-    case ATOM_FLOAT:
-        v = value_new_float(atom->value.float_);
+    switch (atom->node.type) {
+    case AST_ATOM_FLOAT:
+        v = value_new_float(atom->as.decimal);
         break;
-    case ATOM_INT:
-        v = value_new_int(atom->value.int_);
+    case AST_ATOM_INT:
+        v = value_new_int(atom->as.integer);
         break;
-    case ATOM_STRING:
-        v = value_new_string(atom->value.string);
+    case AST_ATOM_STRING:
+        v = value_new_string(atom->as.string);
         break;
-    case ATOM_SYMBOL:
-        v = value_new_symbol(atom->value.string);
+    case AST_ATOM_SYMBOL:
+        v = value_new_symbol(atom->as.string);
         break;
     default:
-        LOG_CRITICAL("Unknown AST atom type: %d", atom->type);
+        LOG_CRITICAL("Unknown AST atom type: %d", atom->node.type);
         v = NULL;
     }
     return v;
@@ -38,11 +31,11 @@ Value *ir_from_ast_atom(AstAtom *atom)
 
 Value *ir_from_ast_list(AstList *ast_list)
 {
-    if (ast_list->type == LIST_EMPTY) {
+    if (ast_list->node.type == AST_LIST_EMPTY) {
         return value_new_list(NULL);
     }
-    Value *sexpr = ir_from_ast_sexpr(ast_list->ast.compound.sexpr);
-    Value *list = ir_from_ast_list(ast_list->ast.compound.list);
+    Value *sexpr = ir_from_ast_sexpr(ast_list->as.compound.sexpr);
+    Value *list = ir_from_ast_list(ast_list->as.compound.list);
     list->value.list = list_cons(list->value.list, sexpr);
     return list;
 }
@@ -53,37 +46,37 @@ Value *ir_from_ast_sexpr(AstSexpr *ast)
     Value *result;
     Value *quote;
     Value *sexpr;
-    switch (ast->type) {
-    case SEXPR_ATOM:
-        result = ir_from_ast_atom(ast->ast.atom);
+    switch (ast->node.type) {
+    case AST_SEXPR_ATOM:
+        result = ir_from_ast_atom(ast->as.atom);
         break;
-    case SEXPR_LIST:
-        result =  ir_from_ast_list(ast->ast.list);
+    case AST_SEXPR_LIST:
+        result =  ir_from_ast_list(ast->as.list);
         break;
-    case SEXPR_QUOTE:
+    case AST_SEXPR_QUOTE:
         result = value_new_list(NULL);
-        sexpr = ir_from_ast_sexpr(ast->ast.quoted);
+        sexpr = ir_from_ast_sexpr(ast->as.quoted);
         quote = value_new_symbol("quote");
         result->value.list = list_conj(result->value.list, quote);
         result->value.list = list_conj(result->value.list, sexpr);
         break;
-    case SEXPR_QUASIQUOTE:
+    case AST_SEXPR_QUASIQUOTE:
         result = value_new_list(NULL);
-        sexpr = ir_from_ast_sexpr(ast->ast.quoted);
+        sexpr = ir_from_ast_sexpr(ast->as.quoted);
         quote = value_new_symbol("quasiquote");
         result->value.list = list_conj(result->value.list, quote);
         result->value.list = list_conj(result->value.list, sexpr);
         break;
-    case SEXPR_UNQUOTE:
+    case AST_SEXPR_UNQUOTE:
         result = value_new_list(NULL);
-        sexpr = ir_from_ast_sexpr(ast->ast.quoted);
+        sexpr = ir_from_ast_sexpr(ast->as.quoted);
         quote = value_new_symbol("unquote");
         result->value.list = list_conj(result->value.list, quote);
         result->value.list = list_conj(result->value.list, sexpr);
         break;
-    case SEXPR_SPLICE_UNQUOTE:
+    case AST_SEXPR_SPLICE_UNQUOTE:
         result = value_new_list(NULL);
-        sexpr = ir_from_ast_sexpr(ast->ast.quoted);
+        sexpr = ir_from_ast_sexpr(ast->as.quoted);
         quote = value_new_symbol("splice-unquote");
         result->value.list = list_conj(result->value.list, quote);
         result->value.list = list_conj(result->value.list, sexpr);

@@ -1,10 +1,3 @@
-/*
- * value.h
- * Copyright (C) 2019 Marc Kirchner
- *
- * Distributed under terms of the MIT license.
- */
-
 #ifndef VALUE_H
 #define VALUE_H
 
@@ -16,7 +9,7 @@
 
 #define BOOL(v) (v->value.bool_)
 #define BUILTIN_FN(v) (v->value.builtin_fn)
-#define ERROR(v) (v->value.str)
+#define EXCEPTION(v) (v->value.str)
 #define FLOAT(v) (v->value.float_)
 #define FN(v) (v->value.fn)
 #define INT(v)  (v->value.int_)
@@ -27,7 +20,7 @@
 typedef enum {
     VALUE_BOOL,
     VALUE_BUILTIN_FN,
-    VALUE_ERROR,
+    VALUE_EXCEPTION,
     VALUE_FLOAT,
     VALUE_FN,
     VALUE_INT,
@@ -74,11 +67,11 @@ extern  Value *VALUE_CONST_NIL;
 bool is_symbol(const Value *value);
 bool is_macro(const Value *value);
 bool is_list(const Value *value);
-bool is_error(const Value *value);
+bool is_exception(const Value *value);
 Value *value_new_nil();
 Value *value_new_bool(const bool bool_);
-Value *value_new_error(const char *str);
-Value *value_make_error(const char* fmt, ...);
+Value *value_new_exception(const char *str);
+Value *value_make_exception(const char *fmt, ...);
 Value *value_new_int(int int_);
 Value *value_new_float(float float_);
 Value *value_new_builtin_fn(Value * (fn)(const Value *));

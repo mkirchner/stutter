@@ -1,10 +1,3 @@
-/*
- * prompt.c
- * Copyright (C) 2019 Marc Kirchner
- *
- * Distributed under terms of the MIT license.
- */
-
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,6 +9,7 @@
 #include "core.h"
 #include "env.h"
 #include "eval.h"
+#include "exc.h"
 #include "gc.h"
 #include "ir.h"
 #include "list.h"
@@ -78,7 +72,11 @@ Environment *global_env()
     env_set(env, "list?", value_new_builtin_fn(core_is_list));
     env_set(env, "empty?", value_new_builtin_fn(core_is_empty));
     env_set(env, "count", value_new_builtin_fn(core_count));
+    env_set(env, "nth", value_new_builtin_fn(core_nth));
+    env_set(env, "first", value_new_builtin_fn(core_first));
+    env_set(env, "rest", value_new_builtin_fn(core_rest));
 
+    env_set(env, "symbol", value_new_builtin_fn(core_symbol));
     env_set(env, "str", value_new_builtin_fn(core_str));
     env_set(env, "slurp", value_new_builtin_fn(core_slurp));
     env_set(env, "eval", value_new_builtin_fn(core_eval));
@@ -89,6 +87,9 @@ Environment *global_env()
 
     env_set(env, "map", value_new_builtin_fn(core_map));
     env_set(env, "apply", value_new_builtin_fn(core_apply));
+
+    env_set(env, "assert", value_new_builtin_fn(core_assert));
+    env_set(env, "throw", value_new_builtin_fn(core_throw));
 
     // add stutter basics
     size_t N_EXPRS = 1;
@@ -148,20 +149,20 @@ Value *core_eval(const Value *args)
 #define BOLD         "\033[1m"
 #define NO_BOLD      "\033[22m"
 
-const char* banner()
+const char *banner()
 {
-    const char* banner =
-    "         __        __  __\n"
-    "   _____/ /___  __/ /_/ /____  _____\n"
-    "  / ___/ __/ / / / __/ __/ _ \\/ ___/\n"
-    " (__  ) /_/ /_/ / /_/ /_/  __/ /\n"
-    "/____/\\__/\\__,_/\\__/\\__/\\___/_/";
+    const char *banner =
+        "         __        __  __\n"
+        "   _____/ /___  __/ /_/ /____  _____\n"
+        "  / ___/ __/ / / / __/ __/ _ \\/ ___/\n"
+        " (__  ) /_/ /_/ / /_/ /_/  __/ /\n"
+        "/____/\\__/\\__,_/\\__/\\__/\\___/_/";
     return banner;
 }
 
 void show_help()
 {
-    char* help =
+    char *help =
         " %s\n\n"
         BOLD "USAGE\n" NO_BOLD
         "  stutter [-h] [file]\n"
@@ -177,8 +178,8 @@ void show_help()
 
 int main(int argc, char *argv[])
 {
-    // set up garbage collection
-    gc_start(&gc, &argc);
+    // set up garbage collection, use extended setup for bigger mem limits
+    gc_start_ext(&gc, &argc, 16384, 16384, 0.2, 0.8, 0.5);
     // create env and tell GC to never collect it
     ENV = global_env();
     gc_make_static(&gc, ENV);
@@ -186,10 +187,10 @@ int main(int argc, char *argv[])
     int c;
     while ((c = getopt(argc, argv, "h")) != -1) {
         switch(c) {
-            case 'h':
-            default:
-                show_help();
-                exit(0);
+        case 'h':
+        default:
+            show_help();
+            exit(0);
         }
     }
     if (argc > 1) {
@@ -198,8 +199,21 @@ int main(int argc, char *argv[])
         Value *src = value_make_list(value_new_symbol("load-file"));
         src = value_new_list(list_conj(LIST(src), value_new_string(argv[optind])));
         Value *eval_result = eval(src, ENV);
-        core_prn(value_make_list(eval_result));
-        return eval_result != NULL ? 0 : 1;
+        if (eval_result) {
+            core_prn(value_make_list(eval_result));
+        } else {
+            if (exc_is_pending()) {
+                core_prn(exc_get());
+                exc_clear();
+            } else {
+                LOG_CRITICAL("Eval returned NULL.");
+            }
+        }
+        if (!eval_result) {
+            return 1;
+        } else {
+            return 0;
+        }
     }
 
     // REPL
@@ -220,6 +234,13 @@ int main(int argc, char *argv[])
             Value *eval_result = eval(expr, ENV);
             if (eval_result) {
                 core_prn(value_make_list(eval_result));
+            } else {
+                if (exc_is_pending()) {
+                    core_prn(exc_get());
+                    exc_clear();
+                } else {
+                    LOG_CRITICAL("Eval returned NULL.");
+                }
             }
         }
         free(input);

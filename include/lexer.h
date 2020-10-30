@@ -1,10 +1,3 @@
-/*
- * lexer.h
- * Copyright (C) 2019 Marc Kirchner
- *
- * Distributed under terms of the MIT license.
- */
-
 #ifndef __LEXER_H__
 #define __LEXER_H__
 
@@ -30,10 +23,12 @@ extern const char *token_type_names[];
 typedef struct {
     TokenType type;
     union {
-        char* str;
+        char *str;
         int int_;
         double double_;
     } value;
+    size_t line;
+    size_t column;
 } LexerToken;
 
 #define LEXER_TOKEN_VAL_AS_STR(t) (t->value.str)

@@ -1,17 +1,10 @@
-/*
- * test_djb2.c
- * Copyright (C) 2019 Marc Kirchner <Marc Kirchner@marvin>
- *
- * Distributed under terms of the MIT license.
- */
-
 #include <stdio.h>
 #include "minunit.h"
 
 #include "../src/djb2.c"
 
 
-static char* test_djb2()
+static char *test_djb2()
 {
     /* Basic testing for the djb2 hash: can we call it and
      * does it return a reasonable result?
@@ -25,7 +18,7 @@ static char* test_djb2()
 
 int tests_run = 0;
 
-static char* test_suite()
+static char *test_suite()
 {
     mu_run_test(test_djb2);
     return 0;

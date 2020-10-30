@@ -1,0 +1,89 @@
+(defin report-result
+  (lambda (result form)
+    (prn (if result "pass" "FAIL") " ... " form)))
+
+(defmacro check (form)
+  `(report-result ~form '~form))
+
+(define test-basics
+  (lambda ()
+    (do
+      (check (= '() '())))))
+
+(define test-arithmetic
+  (lambda ()
+    (do
+      (check (= (+ 1 2) 3))
+      (check (= (+ 5 (* 2 3)) 11))
+      (check (= (- (+ 5 (* 2 3)) 3) 8))
+      (check (= (/ (- (+ 5 (* 2 3)) 3) 4) 2))
+      (check (= (/ (- (+ 515 (* 87 311)) 302) 27) 1010))
+      (check (= (* -3 6) -18))
+      (check (= (/ (- (+ 515 (* -87 311)) 296) 27) -994)))))
+
+(define test-env
+  (lambda ()
+    (do
+      (check (= (let (x 3 y 5) (- y x)) 2))
+      (check (= (do (def! y0 (let (z 7) z)) y0) 7))
+      (check (= (let (p (+ 2 3) q (+ 2 p)) (+ p q)) 12))
+      (check (= 7 (let (b 12) (do (eval (read-string "(def aa 7)")) aa)))))))
+
+(define test-list
+  (lambda ()
+    (do
+      (check (= (list) '()))
+      (check (= (list? (list)) true))
+      (check (= (empty? (list)) true))
+      (check (= (empty? (list 1)) false))
+      (check (= (list 1 2 3) '(1 2 3)))
+      (check (= (count (list 1 2 3)) 3))
+      (check (= (count nil) 0))
+      (check (= (count (list)) 0)))))
+
+(define fib
+  (lambda (n)
+    (if (= n 0)
+      1
+      (if (= n 1)
+        1
+        (+ (fib (- n 1)) (fib (- n 2)))))))
+
+(define test-conditionals
+  (lambda ()
+    (do
+      (check (= (fib 4) 5))
+      (check (= (if true 1 2) 1))
+      (check (= (if false 1 2) 2))
+      (check (= (if "" 1 2) 1))
+      (check (= (if false 1 false) false))
+      (check (= (if true (+ 1 2) (+ 2 2)) 3))
+      (check (= (if false (+ 1 2) (+ 2 2)) 4))
+      (check (= (if nil 1 2) 2))
+      (check (= (if 0 1 2) 1))
+      (check (= (if (list) 1 2) 1))
+      (check (= (if (list 0 1 2) 1 2) 1))
+      (check (= (= (list) nil) false)))))
+
+(define test-apply
+  (lambda ()
+    (do
+      (check (= 5 (apply + (list 2 3))))
+      (check (= 9 (apply + 4 (list 5))))
+      (check (= (list) (apply list (list))))
+      (check (= true (apply symbol? (list (quote two)))))
+      (check (= 5 (apply (lambda (a b) (+ a b)) (list 2 3))))
+      (check (= 9 (apply (lambda (a b) (+ a b)) 4 (list 5)))))))
+
+(define test-map
+  (lambda ()
+    (do
+      (check (= (list 2 3 4) (map (lambda (x) (+ x 1)) (list 1 2 3)))))))
+
+(test-basics)
+(test-arithmetic)
+(test-env)
+(test-list)
+(test-conditionals)
+(test-apply)
+(test-map)

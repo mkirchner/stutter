@@ -1,10 +1,3 @@
-/*
- * array.h
- * Copyright (C) 2019 Marc Kirchner
- *
- * Distributed under terms of the MIT license.
- */
-
 #ifndef __ARRAY_H__
 #define __ARRAY_H__
 

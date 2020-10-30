@@ -1,21 +1,14 @@
-/*
- * test_ir.c
- * Copyright (C) 2019 Marc Kirchner <Marc Kirchner@marvin>
- *
- * Distributed under terms of the MIT license.
- */
-
 #include <stdio.h>
 #include <string.h>
 #include "minunit.h"
 #include "../src/ir.c"
 
-static char* test_ir()
+static char *test_ir()
 {
     // (add 5 7.0)
-    char* add = malloc(4 * sizeof(char));
+    char *add = malloc(4 * sizeof(char));
     strcpy(add, "add");
-    AstSexpr* ast =
+    AstSexpr *ast =
         ast_sexpr_from_list(
             ast_list_from_compound_list(
                 ast_sexpr_from_atom(
@@ -31,7 +24,7 @@ static char* test_ir()
     printf("\n");
 
     // (add (quote 5) 7.0)
-    AstSexpr* ast2 =
+    AstSexpr *ast2 =
         ast_sexpr_from_list(
             ast_list_from_compound_list(
                 ast_sexpr_from_atom(
@@ -51,7 +44,7 @@ static char* test_ir()
 
 int tests_run = 0;
 
-static char* test_suite()
+static char *test_suite()
 {
     int bos;
     gc_start(&gc, &bos);

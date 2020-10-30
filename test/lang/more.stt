@@ -1,0 +1,105 @@
+(define report-result
+  (lambda (result form)
+    (prn (if result "pass" "FAIL") " ... " form)))
+
+(defmacro check (form)
+  `(report-result ~form '~form))
+
+
+(define test-not
+  (lambda ()
+    (do
+      (check (= true (not false)))
+      (check (= true (not nil)))
+      (check (= false (not true)))
+      (check (= false (not "a")))
+      (check (= false (not 0))))))
+
+(define test-variadic-args
+  (lambda ()
+    (do
+      (check (= true ((lambda (a & more) (list? more)) 1 2 3)))
+      (check (= true ((lambda (a & more) (list? more)) 1)))
+      (check (= true ((lambda (& more) (list? more)))))
+      (check (= 0 ((lambda (& more) (count more)))))
+      (check (= 0 ((lambda (a b c & more) (count more)) 1 2 3)))
+      (check (= 3 ((lambda (& more) (count more)) 1 2 3))))))
+
+(define test-equality
+  (lambda ()
+    (do
+      (check (= (= 0 0) true))
+      (check (= (= 1 1) true))
+      (check (= (= 0 1) false))
+      (check (= (= true true) true))
+      (check (= (= false false) true))
+      (check (= (= false nil) false))
+      (check (= (= nil nil) true))
+      (check (= (= (list) (list)) true))
+      (check (= (= (list 0 1 2) (list 0 1 2)) true))
+      (check (= (= (list 0 2 1) (list 0 1 2)) false))
+      (check (= (= (list) (list 0 1 2)) false)))))
+
+(define test-user-fns
+  (lambda ()
+    (do
+      (check (= ((lambda (a b) (+ b a)) 3 4) 7))
+      (check (= ((lambda () 2)) 2))
+      (check (= ((lambda (f x) (f x)) (lambda (a) (+ 1 a)) 7) 8)))))
+
+(define test-closures
+  (lambda ()
+    (do
+      (check (= (((lambda (a) (lambda (b) (+ a b))) 5) 7) 12)))))
+
+(define sum2 (lambda (n acc) (if (= n 0) acc (sum2 (- n 1) (+ n acc)))))
+(define foo (lambda (n) (if (= n 0) 0 (bar (- n 1)))))
+(define bar (lambda (n) (if (= n 0) 0 (foo (- n 1)))))
+
+(define test-tco
+  (lambda ()
+    (do
+      (check (= (foo 10) 0))
+      (check (= (sum2 10 0) 55))
+      (check (= 2 (do (do 1 2)))))))
+
+(define test-builtins
+  (lambda ()
+    (do
+      (check (= true (symbol? (symbol "asdf"))))
+      (check (= true (= 'asdf (symbol "asdf")))))))
+
+(define test-exceptions
+  (lambda ()
+    (do
+      (check (= "c2" (try (try (throw "e1") (catch e (throw "e2"))) (catch e "c2"))))
+      (check (= "c2" (try (do (try "t1" (catch e "c1")) (throw "e1")) (catch e "c2")))))))
+
+(define test-seq-fns
+  (lambda ()
+    (do
+      (check (= 1 (nth (list 1) 0)))
+      (check (= 2 (nth (list 1 2) 1)))
+      (check (= nil (nth (list 1 2 nil) 2)))
+
+      (check (= nil (first '())))
+      (check (= nil (first nil)))
+      (check (= nil (first (list))))
+      (check (= 6 (first (list 6))))
+      (check (= 7 (first (list 7 8 9))))
+
+      (check (= '() (rest '())))
+      (check (= '() (rest nil)))
+      (check (= '() (rest (list))))
+      (check (= '() (rest (list 6))))
+      (check (= '(8 9) (rest (list 7 8 9)))))))
+
+;; (test-not)
+(test-variadic-args)
+(test-equality)
+(test-user-fns)
+(test-closures)
+(test-tco)
+(test-builtins)
+(test-exceptions)
+(test-seq-fns)

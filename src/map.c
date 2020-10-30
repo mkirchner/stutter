@@ -1,10 +1,3 @@
-/*
- * map.c
- * Copyright (C) 2019 Marc Kirchner
- *
- * Distributed under terms of the MIT license.
- */
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>

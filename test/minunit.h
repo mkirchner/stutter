@@ -1,12 +1,9 @@
-/*
- * minunit.h
- *
- * Based on: http://www.jera.com/techinfo/jtns/jtn002.html
- *
- */
-
 #ifndef MINUNIT_H
 #define MINUNIT_H
+
+/*
+ * Based on: http://www.jera.com/techinfo/jtns/jtn002.html
+ */
 
 #define mu_assert(test, message) do { if (!(test)) return message; } while (0)
 #define mu_run_test(test) do { char *message = test(); tests_run++; \

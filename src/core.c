@@ -1,23 +1,21 @@
-/*
- * core.c
- * Copyright (C) 2019 Marc Kirchner
- *
- * Distributed under terms of the MIT license.
- */
-
 #include "core.h"
 
+#include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <string.h>
 #include "apply.h"
 #include "eval.h"
+#include "exc.h"
 #include "log.h"
 
 
+#define NARGS(args) list_size(LIST(args))
+#define ARG(args, n) list_nth(LIST(args), n)
+
 #define CHECK_ARGLIST(args) do  {\
     if (!(args && args->type == VALUE_LIST)) {\
-        LOG_CRITICAL("Invalid argument list in core function");\
+        exc_set(value_make_exception("Invalid argument list in core function"));\
         return NULL;\
     }\
 } while (0)
@@ -25,7 +23,8 @@
 #define REQUIRE_VALUE_TYPE(value, t, msg) do  {\
     if (value->type != t) {\
         LOG_CRITICAL("%s: expected %s, got %s", msg, value_type_names[t], value_type_names[value->type]);\
-        return value_make_error("%s: expected %s, got %s", msg, value_type_names[t], value_type_names[value->type]);\
+        exc_set(value_make_exception("%s: expected %s, got %s", msg, value_type_names[t], value_type_names[value->type]));\
+        return NULL;\
     }\
 } while (0)
 
@@ -33,30 +32,59 @@
 #define REQUIRE_LIST_CARDINALITY(val, n, msg) do {\
     if (list_size(val->value.list) != n) {\
         LOG_CRITICAL("%s: expected %lu, got %lu", msg, n, list_size(val->value.list));\
-        return value_make_error("%s: expected %lu, got %lu", msg, n, list_size(val->value.list));\
+        exc_set(value_make_exception("%s: expected %lu, got %lu", msg, n, list_size(val->value.list)));\
+        return NULL;\
     }\
 } while (0)
 
 #define REQUIRE_LIST_CARDINALITY_GE(val, n, msg) do {\
     if (list_size(val->value.list) < (size_t) n) {\
         LOG_CRITICAL("%s: expected at least %lu, got %lu", msg, n, list_size(val->value.list));\
-        return value_make_error("%s: expected at least %lu, got %lu", msg, n, list_size(val->value.list));\
+        exc_set(value_make_exception("%s: expected at least %lu, got %lu", msg, n, list_size(val->value.list)));\
+        return NULL;\
     }\
 } while (0)
 
 
+bool is_truthy(const Value *v)
+{
+    /* we follow Clojure's lead: the only values that are considered
+     * logical false are `false` and `nil` */
+    assert(v);
+    switch(v->type) {
+    case VALUE_NIL:
+        return false;
+    case VALUE_EXCEPTION:
+        return false;
+    case VALUE_BOOL:
+        return v->value.bool_ == true;
+    case VALUE_INT:
+    case VALUE_FLOAT:
+    case VALUE_STRING:
+    case VALUE_SYMBOL:
+    case VALUE_LIST:
+    case VALUE_FN:
+    case VALUE_MACRO_FN:
+    case VALUE_BUILTIN_FN:
+        return true;
+    }
+}
+
 static bool is_true(const Value *v)
 {
+    assert(v);
     return v->type == VALUE_BOOL && v->value.bool_;
 }
 
 static bool is_false(const Value *v)
 {
+    assert(v);
     return v->type == VALUE_BOOL && !v->value.bool_;
 }
 
 static bool is_nil(const Value *v)
 {
+    assert(v);
     return v->type == VALUE_NIL;
 }
 
@@ -70,7 +98,7 @@ Value *core_is_list(const Value *args)
 {
     CHECK_ARGLIST(args);
     REQUIRE_LIST_CARDINALITY(args, 1ul, "list? requires exactly one parameter");
-    Value *arg0 = list_head(LIST(args));
+    Value *arg0 = ARG(args, 0);
     return arg0->type == VALUE_LIST ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
 }
 
@@ -78,9 +106,9 @@ Value *core_is_empty(const Value *args)
 {
     CHECK_ARGLIST(args);
     REQUIRE_LIST_CARDINALITY(args, 1ul, "empty? requires exactly one parameter");
-    Value *arg0 = list_head(LIST(args));
+    Value *arg0 = ARG(args, 0);
     REQUIRE_VALUE_TYPE(arg0, VALUE_LIST, "empty? requires a list type");
-    return list_size(LIST(arg0)) == 0 ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
+    return NARGS(arg0) == 0 ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
 }
 
 static float acc_add(float acc, float x)
@@ -104,10 +132,11 @@ static float acc_div(float acc, float x)
 }
 
 
-static Value *core_acc(const Value *args, float (*accumulate)(float, float))
+static Value *core_acc(const Value *args, float (*acc_fn)(float, float))
 {
     CHECK_ARGLIST(args);
     REQUIRE_LIST_CARDINALITY_GE(args, 1ul, "Require at least one argument");
+    assert(acc_fn);
     bool all_int = true;
     const List *list = args->value.list;
     Value *head = list_head(list);
@@ -118,17 +147,19 @@ static Value *core_acc(const Value *args, float (*accumulate)(float, float))
     } else if (head->type == VALUE_INT) {
         acc = (float) head->value.int_;
     } else {
-        return value_make_error("Non-numeric argument in accumulation");
+        exc_set(value_make_exception("Non-numeric argument in accumulation"));
+        return NULL;
     }
     list = list_tail(list);
     while ((head = list_head(list)) != NULL) {
         if (head->type == VALUE_FLOAT) {
-            acc = accumulate(acc, head->value.float_);
+            acc = acc_fn(acc, head->value.float_);
             all_int = false;
         } else if (head->type == VALUE_INT) {
-            acc = accumulate(acc, (float) head->value.int_);
+            acc = acc_fn(acc, (float) head->value.int_);
         } else {
-            return value_make_error("Non-numeric argument in accumulation");
+            exc_set(value_make_exception("Non-numeric argument in accumulation"));
+            return NULL;
         }
         list = list_tail(list);
     }
@@ -168,9 +199,10 @@ static Value *cmp_eq(const Value *a, const Value *b)
         case VALUE_NIL:
             /* NIL equals NIL */
             return VALUE_CONST_TRUE;
-        case VALUE_ERROR:
+        case VALUE_EXCEPTION:
             /* Errors do not support comparison */
-            return value_make_error("Comparison of error values is not supported");
+            exc_set(value_make_exception("Comparison of error values is not supported"));
+            return NULL;
         case VALUE_BOOL:
             return BOOL(a) == BOOL(b) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
         case VALUE_INT:
@@ -214,8 +246,13 @@ static Value *cmp_eq(const Value *a, const Value *b)
         return ((float) INT(a)) == FLOAT(b) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
     } else if (b->type == VALUE_INT && a->type == VALUE_FLOAT) {
         return ((float) INT(b)) == FLOAT(a) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
+    } else if (b->type == VALUE_NIL || a->type == VALUE_NIL) {
+        /* nil can be compared to anything but will yield false unless compared
+         * to itself */
+        return VALUE_CONST_FALSE;
     }
-    return value_make_error("Cannot compare incompatible types");
+    exc_set(value_make_exception("Cannot compare incompatible types"));
+    return NULL;
 }
 
 static Value *cmp_lt(const Value *a, const Value *b)
@@ -223,11 +260,14 @@ static Value *cmp_lt(const Value *a, const Value *b)
     if (a->type == b->type) {
         switch(a->type) {
         case VALUE_NIL:
-            return value_make_error("Cannot order NIL values");
-        case VALUE_ERROR:
-            return value_make_error("Cannot order ERROR values");
+            exc_set(value_make_exception("Cannot order NIL values"));
+            return NULL;
+        case VALUE_EXCEPTION:
+            exc_set(value_make_exception("Cannot order EXCEPTION values"));
+            return NULL;
         case VALUE_BOOL:
-            return value_make_error("Cannot order BOOLEAN values");
+            exc_set(value_make_exception("Cannot order BOOLEAN values"));
+            return NULL;
         case VALUE_INT:
             return INT(a) < INT(b) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
         case VALUE_FLOAT:
@@ -238,16 +278,19 @@ static Value *cmp_lt(const Value *a, const Value *b)
         case VALUE_BUILTIN_FN:
         case VALUE_FN:
         case VALUE_MACRO_FN:
-            return value_make_error("Cannot order functions");
+            exc_set(value_make_exception("Cannot order functions"));
+            return NULL;
         case VALUE_LIST:
-            return value_make_error("Cannot order lists");
+            exc_set(value_make_exception("Cannot order lists"));
+            return NULL;
         }
     } else if (a->type == VALUE_INT && b->type == VALUE_FLOAT) {
         return ((float) INT(a)) < FLOAT(b) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
     } else if (b->type == VALUE_INT && a->type == VALUE_FLOAT) {
         return FLOAT(a) < ((float) INT(b)) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
     }
-    return value_make_error("Cannot compare incompatible types");
+    exc_set(value_make_exception("Cannot compare incompatible types"));
+    return NULL;
 }
 
 static Value *cmp_leq(const Value *a, const Value *b)
@@ -255,11 +298,14 @@ static Value *cmp_leq(const Value *a, const Value *b)
     if (a->type == b->type) {
         switch(a->type) {
         case VALUE_NIL:
-            return value_make_error("Cannot order NIL values");
-        case VALUE_ERROR:
-            return value_make_error("Cannot order ERROR values");
+            exc_set(value_make_exception("Cannot order NIL values"));
+            return NULL;
+        case VALUE_EXCEPTION:
+            exc_set(value_make_exception("Cannot order EXCEPTION values"));
+            return NULL;
         case VALUE_BOOL:
-            return value_make_error("Cannot order BOOLEAN values");
+            exc_set(value_make_exception("Cannot order BOOLEAN values"));
+            return NULL;
         case VALUE_INT:
             return INT(a) <= INT(b) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
         case VALUE_FLOAT:
@@ -270,16 +316,19 @@ static Value *cmp_leq(const Value *a, const Value *b)
         case VALUE_BUILTIN_FN:
         case VALUE_FN:
         case VALUE_MACRO_FN:
-            return value_make_error("Cannot order functions");
+            exc_set(value_make_exception("Cannot order functions"));
+            return NULL;
         case VALUE_LIST:
-            return value_make_error("Cannot order lists");
+            exc_set(value_make_exception("Cannot order lists"));
+            return NULL;
         }
     } else if (a->type == VALUE_INT && b->type == VALUE_FLOAT) {
         return ((float) INT(a)) <= FLOAT(b) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
     } else if (b->type == VALUE_INT && a->type == VALUE_FLOAT) {
         return FLOAT(a) <= ((float) INT(b)) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
     }
-    return value_make_error("Cannot compare incompatible types");
+    exc_set(value_make_exception("Cannot compare incompatible types"));
+    return NULL;
 }
 
 static Value *cmp_gt(const Value *a, const Value *b)
@@ -287,11 +336,14 @@ static Value *cmp_gt(const Value *a, const Value *b)
     if (a->type == b->type) {
         switch(a->type) {
         case VALUE_NIL:
-            return value_make_error("Cannot order NIL values");
-        case VALUE_ERROR:
-            return value_make_error("Cannot order ERROR values");
+            exc_set(value_make_exception("Cannot order NIL values"));
+            return NULL;
+        case VALUE_EXCEPTION:
+            exc_set(value_make_exception("Cannot order EXCEPTION values"));
+            return NULL;
         case VALUE_BOOL:
-            return value_make_error("Cannot order BOOLEAN values");
+            exc_set(value_make_exception("Cannot order BOOLEAN values"));
+            return NULL;
         case VALUE_INT:
             return INT(a) > INT(b) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
         case VALUE_FLOAT:
@@ -302,16 +354,19 @@ static Value *cmp_gt(const Value *a, const Value *b)
         case VALUE_BUILTIN_FN:
         case VALUE_FN:
         case VALUE_MACRO_FN:
-            return value_make_error("Cannot order functions");
+            exc_set(value_make_exception("Cannot order functions"));
+            return NULL;
         case VALUE_LIST:
-            return value_make_error("Cannot order lists");
+            exc_set(value_make_exception("Cannot order lists"));
+            return NULL;
         }
     } else if (a->type == VALUE_INT && b->type == VALUE_FLOAT) {
         return ((float) INT(a)) > FLOAT(b) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
     } else if (b->type == VALUE_INT && a->type == VALUE_FLOAT) {
         return FLOAT(a) > ((float) INT(b)) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
     }
-    return value_make_error("Cannot compare incompatible types");
+    exc_set(value_make_exception("Cannot compare incompatible types"));
+    return NULL;
 }
 
 static Value *cmp_geq(const Value *a, const Value *b)
@@ -319,11 +374,14 @@ static Value *cmp_geq(const Value *a, const Value *b)
     if (a->type == b->type) {
         switch(a->type) {
         case VALUE_NIL:
-            return value_make_error("Cannot order NIL values");
-        case VALUE_ERROR:
-            return value_make_error("Cannot order ERROR values");
+            exc_set(value_make_exception("Cannot order NIL values"));
+            return NULL;
+        case VALUE_EXCEPTION:
+            exc_set(value_make_exception("Cannot order EXCEPTION values"));
+            return NULL;
         case VALUE_BOOL:
-            return value_make_error("Cannot order BOOLEAN values");
+            exc_set(value_make_exception("Cannot order BOOLEAN values"));
+            return NULL;
         case VALUE_INT:
             return INT(a) >= INT(b) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
         case VALUE_FLOAT:
@@ -334,16 +392,19 @@ static Value *cmp_geq(const Value *a, const Value *b)
         case VALUE_BUILTIN_FN:
         case VALUE_FN:
         case VALUE_MACRO_FN:
-            return value_make_error("Cannot order functions");
+            exc_set(value_make_exception("Cannot order functions"));
+            return NULL;
         case VALUE_LIST:
-            return value_make_error("Cannot order lists");
+            exc_set(value_make_exception("Cannot order lists"));
+            return NULL;
         }
     } else if (a->type == VALUE_INT && b->type == VALUE_FLOAT) {
         return ((float) INT(a)) >= FLOAT(b) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
     } else if (b->type == VALUE_INT && a->type == VALUE_FLOAT) {
         return FLOAT(a) >= ((float) INT(b)) ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
     }
-    return value_make_error("Cannot compare incompatible types");
+    exc_set(value_make_exception("Cannot compare incompatible types"));
+    return NULL;
 }
 
 static Value *compare(const Value *args, Value * (*comparison_fn)(const Value *, const Value *))
@@ -423,7 +484,7 @@ static char *core_str_inner(char *str, const Value *v)
         break;
     case VALUE_STRING:
     case VALUE_SYMBOL:
-    case VALUE_ERROR:
+    case VALUE_EXCEPTION:
         asprintf(&partial, "%s", STRING(v));
         str = str_append(str, strlen(str), partial, strlen(partial));
         free(partial);
@@ -514,9 +575,12 @@ Value *core_prn(const Value *args)
 Value *core_count(const Value *args)
 {
     CHECK_ARGLIST(args);
-    Value *list = list_head(LIST(args));
+    Value *list = ARG(args, 0);
+    if (is_nil(list)) {
+        return value_new_int(0);
+    }
     REQUIRE_VALUE_TYPE(list, VALUE_LIST, "count requires a list argument");
-    return value_new_int(list_size(LIST(list)));
+    return value_new_int(NARGS(list));
 }
 
 Value *core_slurp(const Value *args)
@@ -525,33 +589,34 @@ Value *core_slurp(const Value *args)
     REQUIRE_LIST_CARDINALITY(args, 1ul, "slurp takes exactly one argument");
     // This is not for binary streams since we're using ftell.
     // (It's portable, though)
-    Value *v = list_head(LIST(args));
+    Value *v = ARG(args, 0);
+    REQUIRE_VALUE_TYPE(v, VALUE_STRING, "slurp takes a string argument");
     Value *retval = NULL;
     FILE *f = NULL;
-    if (!(f = fopen(v->value.str, "r"))) {
-        retval = value_make_error("Failed to open file %s: %s", v->value.str, strerror(errno));
+    if (!(f = fopen(STRING(v), "r"))) {
+        exc_set(value_make_exception("Failed to open file %s: %s", STRING(v), strerror(errno)));
         goto out;
     }
     int ret;
     if ((ret = fseek(f, 0L, SEEK_END)) != 0) {
-        retval = value_make_error("Failed to determine file size for %s: %s",
-                                  v->value.str, strerror(errno));
+        exc_set(value_make_exception("Failed to determine file size for %s: %s",
+                                     STRING(v), strerror(errno)));
         goto out_file;
     }
     long fsize;
     if ((fsize = ftell(f)) < 0) {
-        retval = value_make_error("Failed to determine file size for %s: %s",
-                                  v->value.str, strerror(errno));
+        exc_set(value_make_exception("Failed to determine file size for %s: %s",
+                                     STRING(v), strerror(errno)));
         goto out_file;
     }
     char *buf = malloc(fsize + 1);
     if ((ret = fseek(f, 0L, SEEK_SET)) != 0) {
-        retval = value_make_error("Failed to read file %s", v->value.str);
+        exc_set(value_make_exception("Failed to read file %s", STRING(v)));
         goto out_buf;
     }
     size_t n_read;
     if ((n_read = fread(buf, 1, fsize, f)) < (size_t) fsize)   {
-        retval = value_make_error("Failed to read file %s", v->value.str);
+        exc_set(value_make_exception("Failed to read file %s", STRING(v)));
         goto out_buf;
     }
     buf[fsize] = '\0';
@@ -569,8 +634,8 @@ Value *core_cons(const Value *args)
 {
     CHECK_ARGLIST(args);
     REQUIRE_LIST_CARDINALITY(args, 2ul, "CONS takes exactly two arguments");
-    Value *first = list_nth(LIST(args), 0);
-    Value *second = list_nth(LIST(args), 1);
+    Value *first = ARG(args, 0);
+    Value *second = ARG(args, 1);
     REQUIRE_VALUE_TYPE(second, VALUE_LIST, "the second parameter to CONS must be a list");
     return value_new_list(list_cons(LIST(second), first));
 }
@@ -594,20 +659,26 @@ Value *core_map(const Value *args)
     /* (map f '(a b c ...)) */
     CHECK_ARGLIST(args);
     REQUIRE_LIST_CARDINALITY(args, 2ul, "MAP takes exactly two parameters");
-    Value *fn = list_nth(LIST(args), 0);
-    Value *fn_args = list_nth(LIST(args), 1);
+    Value *fn = ARG(args, 0);
+    Value *fn_args = ARG(args, 1);
 
     REQUIRE_VALUE_TYPE(fn_args, VALUE_LIST, "The second parameter to MAP must be a list");
     const List *mapped = list_new();
-    Value *tco_expr;
+    Value *tco_expr = NULL;
     Environment *tco_env;
     for (size_t i = 0; i < list_size(LIST(fn_args)); ++i) {
-        Value *result = apply(fn, value_make_list(list_nth(LIST(fn_args), i)),
+        Value *result = apply(fn, value_make_list(ARG(fn_args, i)),
                               &tco_expr, &tco_env);
-        if (is_error(result)) return result;
-        /* need to call eval since apply defers to eval for TCO support */
-        // FIXME: error management
-        mapped = list_conj(mapped, tco_expr ? eval(tco_expr, tco_env) : result);
+        /* apply() may defer to eval() because of TCO support, we
+         * need to catch that and eval the expression */
+        if (tco_expr && !exc_is_pending()) {
+            result = eval(tco_expr, tco_env);
+        }
+        if (!result) {
+            assert(exc_is_pending());
+            return NULL;
+        }
+        mapped = list_conj(mapped, result);
     }
     return value_new_list(mapped);
 }
@@ -617,14 +688,14 @@ Value *core_apply(const Value *args)
     /* (apply f a b c d ...) == (f a b c d ...) */
     CHECK_ARGLIST(args);
     REQUIRE_LIST_CARDINALITY_GE(args, 2ul, "APPLY requires at least two arguments");
-    Value *fn = list_head(LIST(args));
+    Value *fn = ARG(args, 0);
     Value *fn_args = value_new_list(list_tail(LIST(args)));
-    size_t n_args = list_size(LIST(fn_args));
+    size_t n_args = NARGS(fn_args);
 
     /* Merge the arguments w/ a potential list of arguments at the end of
      * the argument list */
-    if (is_list(list_nth(LIST(fn_args), n_args - 1))) {
-        const List* concat = list_new();
+    if (is_list(ARG(fn_args, n_args - 1))) {
+        const List *concat = list_new();
         for (const ListItem *j = LIST(fn_args)->begin; j != LIST(fn_args)->end; j = j->next) {
             concat = list_conj(concat, j->p);
         }
@@ -638,14 +709,21 @@ Value *core_apply(const Value *args)
     // FIXME: error management
     Value *result = apply(fn, fn_args, &tco_expr, &tco_env);
     /* need to call eval since apply defers to eval for TCO support */
-    return  tco_expr ? eval(tco_expr, tco_env) : result;
+    if (tco_expr && !exc_is_pending()) {
+        result = eval(tco_expr, tco_env);
+    }
+    if (!result) {
+        assert(exc_is_pending());
+        return NULL;
+    }
+    return result;
 }
 
 Value *core_is_nil(const Value *args)
 {
     CHECK_ARGLIST(args);
     REQUIRE_LIST_CARDINALITY(args, 1ul, "NIL? takes exactly one argument");
-    Value *expr = list_head(LIST(args));
+    Value *expr = ARG(args, 0);
     return value_new_bool(is_nil(expr));
 }
 
@@ -653,7 +731,7 @@ Value *core_is_true(const Value *args)
 {
     CHECK_ARGLIST(args);
     REQUIRE_LIST_CARDINALITY(args, 1ul, "TRUE? takes exactly one argument");
-    Value *expr = list_head(LIST(args));
+    Value *expr = ARG(args, 0);
     return value_new_bool(is_true(expr));
 }
 
@@ -661,7 +739,7 @@ Value *core_is_false(const Value *args)
 {
     CHECK_ARGLIST(args);
     REQUIRE_LIST_CARDINALITY(args, 1ul, "FALSE? takes exactly one argument");
-    Value *expr = list_head(LIST(args));
+    Value *expr = ARG(args, 0);
     return value_new_bool(is_false(expr));
 }
 
@@ -669,6 +747,92 @@ Value *core_is_symbol(const Value *args)
 {
     CHECK_ARGLIST(args);
     REQUIRE_LIST_CARDINALITY(args, 1ul, "SYMBOL? takes exactly one argument");
-    Value *expr = list_head(LIST(args));
+    Value *expr = ARG(args, 0);
     return value_new_bool(is_symbol(expr));
+}
+
+Value *core_symbol(const Value *args)
+{
+    CHECK_ARGLIST(args);
+    REQUIRE_LIST_CARDINALITY(args, 1ul, "SYMBOL takes exactly one argument");
+    Value *expr = ARG(args, 0);
+    return value_new_symbol(STRING(expr));
+}
+
+Value *core_assert(const Value *args)
+{
+    CHECK_ARGLIST(args);
+    size_t nargs = NARGS(args);
+    if (nargs < 1 || nargs > 2) {
+        exc_set(value_make_exception("Invalid argument list in core function: "
+                                     "core_assert takes 1 or 2 arguments."));
+        return NULL;
+    }
+    const Value *arg0 = ARG(args, 0);
+    const Value *arg1 = NULL;
+    if (nargs == 2) {
+        arg1 = ARG(args, 1);
+        REQUIRE_VALUE_TYPE(arg1, VALUE_STRING,
+                           "Second argument to assert must be a string");
+    }
+    if (is_truthy(arg0)) {
+        return VALUE_CONST_NIL;
+    }
+    if (nargs == 1) {
+        exc_set(value_make_exception("Assert failed: %s is not true.",
+                                     core_pr_str(arg0)->value.str));
+    } else {
+        exc_set(value_make_exception("Assert failed: %s", STRING(arg1)));
+    }
+    return NULL;
+}
+
+Value *core_throw(const Value *args)
+{
+    REQUIRE_LIST_CARDINALITY(args, 1ul, "THROW takes exactly one argument");
+    Value *value = ARG(args, 0);
+    exc_set(value); // FIXME: we expect .string to be valid...
+    return NULL;
+}
+
+Value *core_nth(const Value *args)
+{
+    // (nth collection index)
+    CHECK_ARGLIST(args);
+    REQUIRE_LIST_CARDINALITY(args, 2ul, "NTH takes exactly two arguments");
+    Value *coll = ARG(args, 0);
+    REQUIRE_VALUE_TYPE(coll, VALUE_LIST, "First argument to nth must be a collection");
+    Value *pos = ARG(args, 1);
+    REQUIRE_VALUE_TYPE(pos, VALUE_INT, "Second argument to nth must be an integer");
+    if (INT(pos) < 0 || (unsigned) INT(pos) >= NARGS(coll)) {
+       exc_set(value_make_exception("Index error"));
+        return NULL;
+    }
+    return ARG(coll, (unsigned) INT(pos));
+}
+
+Value *core_first(const Value *args)
+{
+    // (first coll)
+    CHECK_ARGLIST(args);
+    REQUIRE_LIST_CARDINALITY(args, 1ul, "FIRST takes exactly one argument");
+    Value *coll = ARG(args, 0);
+    if (is_nil(coll) || NARGS(coll) == 0) {
+        return VALUE_CONST_NIL;
+    }
+    REQUIRE_VALUE_TYPE(coll, VALUE_LIST, "Argument to FIRST must be a collection or NIL");
+    return ARG(coll, 0);
+}
+
+Value *core_rest(const Value *args)
+{
+    // (rest coll)
+    CHECK_ARGLIST(args);
+    REQUIRE_LIST_CARDINALITY(args, 1ul, "REST takes exactly one argument");
+    Value *coll = ARG(args, 0);
+    if (is_nil(coll) || NARGS(coll) <= 1) {
+        return value_new_list(NULL);
+    }
+    REQUIRE_VALUE_TYPE(coll, VALUE_LIST, "Argument to REST must be a collection or NIL");
+    return value_new_list(list_tail(LIST(coll)));
 }

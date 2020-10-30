@@ -25,6 +25,8 @@ endef
 .PHONY: all
 all: $(TARGETS)
 	$(foreach T,$(TARGETS),$(call execute-command,$(BUILD_DIR)/test/$(T)))
+	$(BUILD_DIR)/stutter lang/core.stt
+	$(BUILD_DIR)/stutter lang/more.stt
 
 .PHONY: clean
 clean:

@@ -1,10 +1,3 @@
-/*
- * ast.h
- * Copyright (C) 2019 Marc Kirchner
- *
- * Distributed under terms of the MIT license.
- */
-
 #ifndef __AST_H__
 #define __AST_H__
 
@@ -24,43 +17,56 @@ struct AstAtom;
 struct AstList;
 
 typedef enum {
-    SEXPR_LIST,
-    SEXPR_ATOM,
-    SEXPR_QUOTE,
-    SEXPR_QUASIQUOTE,
-    SEXPR_UNQUOTE,
-    SEXPR_SPLICE_UNQUOTE
-} AstSexprType;
+    AST_SEXPR_LIST,
+    AST_SEXPR_ATOM,
+    AST_SEXPR_QUOTE,
+    AST_SEXPR_QUASIQUOTE,
+    AST_SEXPR_UNQUOTE,
+    AST_SEXPR_SPLICE_UNQUOTE,
+    AST_LIST_COMPOUND,
+    AST_LIST_EMPTY,
+    AST_ATOM_SYMBOL,
+    AST_ATOM_INT,
+    AST_ATOM_FLOAT,
+    AST_ATOM_STRING
+} AstNodeType;
+
+typedef struct {
+    AstNodeType type;
+    // Location loc;  // FIXME
+} AstNode;
 
 typedef struct AstSexpr {
-    AstSexprType type;
+    AstNode node;
     union {
         struct AstList *list;
         struct AstAtom *atom;
         struct AstSexpr *quoted;
-        struct AstSexpr *unquoted;
-    } ast;
+    } as;
 } AstSexpr;
 
 typedef struct AstList {
-    enum {LIST_COMPOUND, LIST_EMPTY} type;
+    AstNode node;
     union {
         struct {
             struct AstSexpr *sexpr;
             struct AstList *list;
         } compound;
-    } ast;
+    } as;
 } AstList;
 
 typedef struct AstAtom {
-    enum { ATOM_SYMBOL, ATOM_INT, ATOM_FLOAT, ATOM_STRING } type;
+    AstNode node;
     union {
         char *symbol;
-        int int_;
-        double float_;
+        int integer;
+        double decimal;
         char *string;
-    } value;
+    } as;
 } AstAtom;
+
+AstNode *ast_new_node(size_t size, AstNodeType node_type);
+#define AST_NEW_NODE(ptr_type, node_type) (ptr_type*)ast_new_node(sizeof(type))
 
 AstSexpr *ast_new_sexpr();
 AstSexpr *ast_sexpr_from_list(AstList *list);
@@ -80,7 +86,7 @@ void ast_delete_sexpr(AstSexpr *s);
 void ast_delete_list(AstList *l);
 void ast_delete_atom(AstAtom *a);
 
-void ast_print(AstSexpr *ast);
+void ast_print(AstNode *ast);
 void ast_print_atom(AstAtom *ast, int indent);
 void ast_print_list(AstList *ast, int indent);
 void ast_print_sexpr(AstSexpr *ast, int indent);

@@ -1,0 +1,12 @@
+(define fac-rec
+  (lambda (n acc)
+    (if (<= n 1)
+      acc
+      (fac-rec (- n 1) (* acc n)))))
+
+(define fac
+  (lambda (n)
+    (fac-rec n 1)))
+
+
+(fac 5)
