@@ -26,8 +26,16 @@ int main(int argc, const char *argv[])
         add_history(input);
 
         Chunk *chunk = chunk_new();
-        if (compile(input, chunk) == OK) { // FIXME use read_()
+        CompilerError ret = compile(input, chunk);
+        switch(ret) {
+        case OK: // FIXME use read_()
             vm_interpret(vm, chunk);
+            break;
+        case NOT_IMPLEMENTED:
+            fprintf(stdout, "Not implemented yet.\n");
+            break;
+        default:
+            fprintf(stdout, "Failed to compile.\n");
         }
         free(input);
         vm_reset(vm);

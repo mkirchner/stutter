@@ -31,7 +31,7 @@ CompilerError compile(char* input, Chunk* chunk)
         LOG_CRITICAL("Could not parse input into AST.");
         return PARSER_ERROR;
     }
-    ast_print((AstNode*) ast);
+    // ast_print((AstNode*) ast);
     // Condense the AST
     Value *ast2 = ir_from_ast(ast);
     ast_delete_sexpr(ast);
@@ -39,12 +39,12 @@ CompilerError compile(char* input, Chunk* chunk)
         LOG_CRITICAL("Could not condense AST.");
         return PARSER_ERROR;
     }
-    if (compile_ast(ast2, chunk) == OK) {
+    CompilerError ret = compile_ast(ast2, chunk);
+    if (ret == OK) {
         chunk_add_instruction(chunk, 0, 0,
                               OP_RETURN, 0);
-        return OK;
     }
-    return COMPILER_ERROR;
+    return ret;
 }
 
 static Bytecode make_constant(Chunk *chunk, VmValue value)
