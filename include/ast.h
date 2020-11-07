@@ -67,7 +67,7 @@ typedef struct AstAtom {
 } AstAtom;
 
 AstNode *ast_new_node(size_t size, AstNodeType node_type);
-#define AST_NEW_NODE(ptr_type, node_type) (ptr_type*)ast_new_node(sizeof(type))
+#define AST_NEW_NODE(ptr_type, node_type) (ptr_type*)ast_new_node(sizeof(node_type))
 
 AstSexpr *ast_new_sexpr();
 AstSexpr *ast_sexpr_from_list(AstList *list);
