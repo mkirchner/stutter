@@ -12,13 +12,17 @@ static char *type_names[] = {
 
 static char *input[] = {"12 ( 34.5 ) \"Hello World!\" abc 23.b (12(23))) \n"
                         "\"this is a string\" vEryC0mplicated->NamE 'symbol ",
-                        "x "
+                        "x ",
+                        "\"Testing \\\"n escapes\" "
                        };
+
+static size_t n_inputs = 3;
 
 static char *expected[] = {"INT LPAREN FLOAT RPAREN STRING SYMBOL ERROR LPAREN "
                            "INT LPAREN INT RPAREN RPAREN RPAREN STRING SYMBOL "
                            "QUOTE SYMBOL ",
-                           "SYMBOL "
+                           "SYMBOL ",
+                           "STRING "
                           };
 
 static char *eval_lexer(char *input, char *expected)
@@ -57,9 +61,30 @@ static char *eval_lexer(char *input, char *expected)
     return 0;
 }
 
+static char *test_escapes()
+{
+    /* set up lexer to read from input file */
+    char* input = "\"This \\n is a \\t \\\"string\"";
+    char* result = "This \n is a \t \"string";
+    size_t n = strlen(input);
+    FILE *in_fd = fmemopen(input, n, "r");
+    mu_assert(in_fd != NULL, "Failed to open lexer test file");
+    Lexer *lexer = lexer_new(in_fd);
+    mu_assert(lexer != NULL, "Failed to create a lexer object");
+
+    LexerToken *tok = lexer_get_token(lexer);
+    mu_assert(tok != NULL && tok->type == LEXER_TOK_STRING,
+              "Expect a string token for escape strings");
+    mu_assert(strncmp(tok->value.str, result, n) == 0,
+              "Expect strings to be equal");
+    lexer_delete(lexer);
+    fclose(in_fd);
+    return 0;
+}
+
 static char *test_lexer()
 {
-    for (size_t i = 0; i < 2; ++i) {
+    for (size_t i = 0; i < n_inputs; ++i) {
         char *retval = eval_lexer(input[i], expected[i]);
         if (retval) {
             return retval;
@@ -73,6 +98,7 @@ int tests_run = 0;
 static char *test_suite()
 {
     mu_run_test(test_lexer);
+    mu_run_test(test_escapes);
     return 0;
 }
 
