@@ -2,6 +2,13 @@
 
 #include "lexer.h"
 #include "log.h"
+#include "value.h"
+
+/* control debugging verbosity at the file level */
+#ifndef DEBUG
+#undef LOGLEVEL
+#define LOGLEVEL LOGLEVEL_INFO
+#endif
 
 /*
  * Lexer extension to allow peeking
@@ -134,7 +141,7 @@ static ParseResult parser_parse_program(TokenStream *ts, Value **ast)
                 return PARSER_FAIL;
             }
             lexer_delete_token(tok);
-            *ast = list;
+            *ast = list_head(LIST(list));
             return PARSER_SUCCESS;
         }
         default: {
@@ -169,7 +176,7 @@ static ParseResult parser_parse_list(TokenStream *ts, Value **ast)
         case LEXER_TOK_EOF:
         case LEXER_TOK_RPAREN: {
             LOG_DEBUG("Line %lu, column %lu: L -> eps", ts->lexer->line_no, ts->lexer->char_no);
-            *ast = NULL;
+            *ast = value_new_list(NULL);
             return PARSER_SUCCESS;
         }
         case LEXER_TOK_INT:
@@ -194,7 +201,11 @@ static ParseResult parser_parse_list(TokenStream *ts, Value **ast)
                 return PARSER_FAIL;
             }
             Value *list = value_make_list(sexpr);
-            LIST(list) = list_conj(LIST(list), list2);
+            Value *head;
+            while((head = list_head(LIST(list2))) != NULL) {
+                LIST(list) = list_conj(LIST(list), head);
+                LIST(list2) = list_tail(LIST(list2));
+            }
             *ast = list;
             return PARSER_SUCCESS;
         }
@@ -224,11 +235,11 @@ static ParseResult parser_parse_sexpr(TokenStream *ts, Value **ast)
          * S -> ( L )
          */
         case LEXER_TOK_LPAREN: {
-            tokenstream_consume(ts);
+            tokenstream_consume(ts); // LPAREN
             Value *list = NULL;
             ParseResult success = parser_parse_list(ts, &list);
             if (success == PARSER_SUCCESS) {
-                tokenstream_consume(ts);
+                tokenstream_consume(ts); // RPAREN
                 *ast = list;
                 return PARSER_SUCCESS;
             }
