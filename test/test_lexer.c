@@ -75,7 +75,7 @@ static char *test_escapes()
     LexerToken *tok = lexer_get_token(lexer);
     mu_assert(tok != NULL && tok->type == LEXER_TOK_STRING,
               "Expect a string token for escape strings");
-    mu_assert(strncmp(tok->value.str, result, n) == 0,
+    mu_assert(strncmp(tok->as.str, result, n) == 0,
               "Expect strings to be equal");
     lexer_delete(lexer);
     fclose(in_fd);

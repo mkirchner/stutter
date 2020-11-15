@@ -51,24 +51,26 @@ void lexer_delete(Lexer *l)
 
 void lexer_delete_token(LexerToken *t)
 {
-    switch(t->type) {
-    case LEXER_TOK_INT:
-    case LEXER_TOK_FLOAT:
-    case LEXER_TOK_EOF:
-        break;
-    case LEXER_TOK_STRING:
-    case LEXER_TOK_ERROR:
-    case LEXER_TOK_SYMBOL:
-    case LEXER_TOK_LPAREN:
-    case LEXER_TOK_RPAREN:
-    case LEXER_TOK_QUOTE:
-    case LEXER_TOK_QUASIQUOTE:
-    case LEXER_TOK_UNQUOTE:
-    case LEXER_TOK_SPLICE_UNQUOTE:
-        free(t->value.str);
-        break;
+    if (t) {
+        switch(t->type) {
+        case LEXER_TOK_INT:
+        case LEXER_TOK_FLOAT:
+        case LEXER_TOK_EOF:
+            break;
+        case LEXER_TOK_STRING:
+        case LEXER_TOK_ERROR:
+        case LEXER_TOK_SYMBOL:
+        case LEXER_TOK_LPAREN:
+        case LEXER_TOK_RPAREN:
+        case LEXER_TOK_QUOTE:
+        case LEXER_TOK_QUASIQUOTE:
+        case LEXER_TOK_UNQUOTE:
+        case LEXER_TOK_SPLICE_UNQUOTE:
+            free(t->as.str);
+            break;
+        }
+        free(t);
     }
-    free(t);
 }
 
 static LexerToken *lexer_make_token(const Lexer *l,
@@ -82,10 +84,10 @@ static LexerToken *lexer_make_token(const Lexer *l,
         tok->column = l->char_no;
         switch(token_type) {
         case LEXER_TOK_INT:
-            tok->value.int_ = atoi(buf);
+            tok->as.int_ = atoi(buf);
             break;
         case LEXER_TOK_FLOAT:
-            tok->value.double_ = atof(buf);
+            tok->as.double_ = atof(buf);
             break;
         case LEXER_TOK_STRING:
         case LEXER_TOK_ERROR:
@@ -96,10 +98,10 @@ static LexerToken *lexer_make_token(const Lexer *l,
         case LEXER_TOK_QUASIQUOTE:
         case LEXER_TOK_UNQUOTE:
         case LEXER_TOK_SPLICE_UNQUOTE:
-            tok->value.str = strdup(buf);
+            tok->as.str = strdup(buf);
             break;
         case LEXER_TOK_EOF:
-            tok->value.str = NULL;
+            tok->as.str = NULL;
             break;
         }
     }
