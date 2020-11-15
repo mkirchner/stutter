@@ -11,10 +11,9 @@
 #include "eval.h"
 #include "exc.h"
 #include "gc.h"
-#include "ir.h"
 #include "list.h"
 #include "log.h"
-#include "reader.h"
+#include "parser.h"
 #include "value.h"
 
 Value *core_read_string(const Value *args);
@@ -113,16 +112,10 @@ Value *read_(char *input)
         return NULL;
     }
 
-    // Create the initial AST
-    Reader *reader = reader_new(stream);
-    AstSexpr *ast = reader_read(reader);
-    reader_delete(reader);
+    Value *ast = NULL;
+    ParseResult success = parser_parse(stream, &ast);
     fclose(stream);
-
-    // Condense the AST
-    Value *ast2 = ir_from_ast(ast);
-    ast_delete_sexpr(ast);
-    return ast2;
+    return success == PARSER_SUCCESS ? ast : NULL;
 }
 
 Value *core_read_string(const Value *args)
