@@ -36,7 +36,7 @@ Value *ir_from_ast_list(AstList *ast_list)
     }
     Value *sexpr = ir_from_ast_sexpr(ast_list->as.compound.sexpr);
     Value *list = ir_from_ast_list(ast_list->as.compound.list);
-    list->value.list = list_cons(list->value.list, sexpr);
+    list->value.list = list_prepend(list->value.list, sexpr);
     return list;
 }
 
@@ -57,29 +57,29 @@ Value *ir_from_ast_sexpr(AstSexpr *ast)
         result = value_new_list(NULL);
         sexpr = ir_from_ast_sexpr(ast->as.quoted);
         quote = value_new_symbol("quote");
-        result->value.list = list_conj(result->value.list, quote);
-        result->value.list = list_conj(result->value.list, sexpr);
+        result->value.list = list_append(result->value.list, quote);
+        result->value.list = list_append(result->value.list, sexpr);
         break;
     case AST_SEXPR_QUASIQUOTE:
         result = value_new_list(NULL);
         sexpr = ir_from_ast_sexpr(ast->as.quoted);
         quote = value_new_symbol("quasiquote");
-        result->value.list = list_conj(result->value.list, quote);
-        result->value.list = list_conj(result->value.list, sexpr);
+        result->value.list = list_append(result->value.list, quote);
+        result->value.list = list_append(result->value.list, sexpr);
         break;
     case AST_SEXPR_UNQUOTE:
         result = value_new_list(NULL);
         sexpr = ir_from_ast_sexpr(ast->as.quoted);
         quote = value_new_symbol("unquote");
-        result->value.list = list_conj(result->value.list, quote);
-        result->value.list = list_conj(result->value.list, sexpr);
+        result->value.list = list_append(result->value.list, quote);
+        result->value.list = list_append(result->value.list, sexpr);
         break;
     case AST_SEXPR_SPLICE_UNQUOTE:
         result = value_new_list(NULL);
         sexpr = ir_from_ast_sexpr(ast->as.quoted);
         quote = value_new_symbol("splice-unquote");
-        result->value.list = list_conj(result->value.list, quote);
-        result->value.list = list_conj(result->value.list, sexpr);
+        result->value.list = list_append(result->value.list, quote);
+        result->value.list = list_append(result->value.list, sexpr);
         break;
     }
     return result;

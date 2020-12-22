@@ -4,8 +4,8 @@
 #include "array.h"
 #include "env.h"
 #include "gc.h"
-#include "map.h"
 #include "list.h"
+#include "map.h"
 
 #define BOOL(v) (v->value.bool_)
 #define BUILTIN_FN(v) (v->value.builtin_fn)

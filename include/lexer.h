@@ -26,14 +26,14 @@ typedef struct {
         char *str;
         int int_;
         double double_;
-    } value;
+    } as;
     size_t line;
     size_t column;
 } LexerToken;
 
-#define LEXER_TOKEN_VAL_AS_STR(t) (t->value.str)
-#define LEXER_TOKEN_VAL_AS_INT(t) (t->value.int_)
-#define LEXER_TOKEN_VAL_AS_FLOAT(t) (t->value.double_)
+#define LEXER_TOKEN_VAL_AS_STR(t) (t->as.str)
+#define LEXER_TOKEN_VAL_AS_INT(t) (t->as.int_)
+#define LEXER_TOKEN_VAL_AS_FLOAT(t) (t->as.double_)
 
 typedef enum {
     LEXER_STATE_ZERO,
@@ -42,6 +42,7 @@ typedef enum {
     LEXER_STATE_FLOAT,
     LEXER_STATE_SYMBOL,
     LEXER_STATE_STRING,
+    LEXER_STATE_ESCAPESTRING,
     LEXER_STATE_UNQUOTE,
     LEXER_STATE_MINUS
 } LexerState;

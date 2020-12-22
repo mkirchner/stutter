@@ -1,5 +1,7 @@
 #include "minunit.h"
+#include <stdio.h>
 #include "../src/primes.c"
+
 
 static char *test_primes()
 {
@@ -20,7 +22,6 @@ int tests_run = 0;
 
 static char *test_suite()
 {
-    int bos;
     mu_run_test(test_primes);
     return 0;
 }

@@ -10,6 +10,7 @@ TARGETS=test_list \
 	test_ast \
 	test_array \
 	test_djb2 \
+	test_parser \
 	test_primes \
 	test_map \
 	test_lexer \
@@ -49,6 +50,7 @@ test_list: test_setup gc
 	$(CC) $(LDFLAGS) $(LDLIBS) \
 	       	$(BUILD_DIR)/lib/gc/src/gc.o \
 		$(BUILD_DIR)/lib/gc/src/log.o \
+	       	$(BUILD_DIR)/src/value.o \
 		$(BUILD_DIR)/test/test_list.o -o $(BUILD_DIR)/test/test_list
 
 #
@@ -122,8 +124,23 @@ test_map: test_setup gc
 	       	$(BUILD_DIR)/lib/gc/src/gc.o \
 	       	$(BUILD_DIR)/src/djb2.o \
 	       	$(BUILD_DIR)/src/list.o \
+	       	$(BUILD_DIR)/src/value.o \
 	       	$(BUILD_DIR)/src/primes.o \
 		$(BUILD_DIR)/test/test_map.o -o $(BUILD_DIR)/test/test_map
+
+#
+# test_parser
+#
+test_parser: test_setup gc
+	mkdir -p $(BUILD_DIR)/test/data
+	$(CC) $(CFLAGS) -MMD -c test_parser.c -o $(BUILD_DIR)/test/test_parser.o
+	$(CC) $(LDFLAGS) $(LDLIBS) \
+		$(BUILD_DIR)/lib/gc/src/log.o \
+	       	$(BUILD_DIR)/lib/gc/src/gc.o \
+	       	$(BUILD_DIR)/src/lexer.o \
+	       	$(BUILD_DIR)/src/list.o \
+	       	$(BUILD_DIR)/src/value.o \
+		$(BUILD_DIR)/test/test_parser.o -o $(BUILD_DIR)/test/test_parser
 
 #
 # test_primes

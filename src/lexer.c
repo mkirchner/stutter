@@ -22,6 +22,16 @@ static char *symbol_chars = "!&*+-0123456789<=>?@"
                             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                             "abcdefghijklmnopqrstuvwxyz";
 
+typedef enum {
+    KEY_BEL =  7,
+    KEY_BS  =  8,
+    KEY_HT  =  9,
+    KEY_LF  = 10,
+    KEY_VT  = 11,
+    KEY_FF  = 12,
+    KEY_CR  = 13
+} EscapeChars;
+
 Lexer *lexer_new(FILE *fp)
 {
     Lexer *lexer = (Lexer *) malloc(sizeof(Lexer));
@@ -41,24 +51,26 @@ void lexer_delete(Lexer *l)
 
 void lexer_delete_token(LexerToken *t)
 {
-    switch(t->type) {
-    case LEXER_TOK_INT:
-    case LEXER_TOK_FLOAT:
-    case LEXER_TOK_EOF:
-        break;
-    case LEXER_TOK_STRING:
-    case LEXER_TOK_ERROR:
-    case LEXER_TOK_SYMBOL:
-    case LEXER_TOK_LPAREN:
-    case LEXER_TOK_RPAREN:
-    case LEXER_TOK_QUOTE:
-    case LEXER_TOK_QUASIQUOTE:
-    case LEXER_TOK_UNQUOTE:
-    case LEXER_TOK_SPLICE_UNQUOTE:
-        free(t->value.str);
-        break;
+    if (t) {
+        switch(t->type) {
+        case LEXER_TOK_INT:
+        case LEXER_TOK_FLOAT:
+        case LEXER_TOK_EOF:
+            break;
+        case LEXER_TOK_STRING:
+        case LEXER_TOK_ERROR:
+        case LEXER_TOK_SYMBOL:
+        case LEXER_TOK_LPAREN:
+        case LEXER_TOK_RPAREN:
+        case LEXER_TOK_QUOTE:
+        case LEXER_TOK_QUASIQUOTE:
+        case LEXER_TOK_UNQUOTE:
+        case LEXER_TOK_SPLICE_UNQUOTE:
+            free(t->as.str);
+            break;
+        }
+        free(t);
     }
-    free(t);
 }
 
 static LexerToken *lexer_make_token(const Lexer *l,
@@ -72,10 +84,10 @@ static LexerToken *lexer_make_token(const Lexer *l,
         tok->column = l->char_no;
         switch(token_type) {
         case LEXER_TOK_INT:
-            tok->value.int_ = atoi(buf);
+            tok->as.int_ = atoi(buf);
             break;
         case LEXER_TOK_FLOAT:
-            tok->value.double_ = atof(buf);
+            tok->as.double_ = atof(buf);
             break;
         case LEXER_TOK_STRING:
         case LEXER_TOK_ERROR:
@@ -86,10 +98,10 @@ static LexerToken *lexer_make_token(const Lexer *l,
         case LEXER_TOK_QUASIQUOTE:
         case LEXER_TOK_UNQUOTE:
         case LEXER_TOK_SPLICE_UNQUOTE:
-            tok->value.str = strdup(buf);
+            tok->as.str = strdup(buf);
             break;
         case LEXER_TOK_EOF:
-            tok->value.str = NULL;
+            tok->as.str = NULL;
             break;
         }
     }
@@ -255,6 +267,10 @@ LexerToken *lexer_get_token(Lexer *l)
 
         case LEXER_STATE_STRING:
             if (c != '\"') {
+                if (c == '\\') {
+                    l->state = LEXER_STATE_ESCAPESTRING;
+                    break;
+                }
                 buf[bufpos++] = c;
                 if (c == '\n') lexer_advance_next_line(l);
             } else {
@@ -262,6 +278,49 @@ LexerToken *lexer_get_token(Lexer *l)
                 l->state = LEXER_STATE_ZERO;
                 return lexer_make_token(l, LEXER_TOK_STRING, buf);
             }
+            break;
+
+        case LEXER_STATE_ESCAPESTRING:
+            /* supports all C escape sequences except for hex and octal */
+            switch(c) {
+                case '\n':
+                    /* ignore escaped line feeds */
+                    break;
+                case '\\':
+                case '"':
+                    /* keep the char and go back to string processing */
+                    buf[bufpos++] = c;
+                    break;
+                case 'a':
+                    buf[bufpos++] = KEY_BEL;
+                    break;
+                case 'b':
+                    buf[bufpos++] = KEY_BS;
+                    break;
+                case 'f':
+                    buf[bufpos++] = KEY_FF;
+                    break;
+                case 'n':
+                    buf[bufpos++] = KEY_LF;
+                    break;
+                case 'r':
+                    buf[bufpos++] = KEY_CR;
+                    break;
+                case 't':
+                    buf[bufpos++] = KEY_HT;
+                    break;
+                case 'v':
+                    buf[bufpos++] = KEY_VT;
+                    break;
+                default:
+                    /* Invalid escape sequeence. Keep the sequence and go
+                     * back to string processing */
+                    buf[bufpos++] = '\\';
+                    ungetc(c, l->fp);
+                    l->char_no--;
+                    break;
+            }
+            l->state = LEXER_STATE_STRING;
             break;
 
         case LEXER_STATE_NUMBER:

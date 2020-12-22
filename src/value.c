@@ -161,7 +161,7 @@ Value *value_new_list(const List *l)
 Value *value_make_list(Value *v)
 {
     Value *r = value_new_list(NULL);
-    LIST(r) = list_conj(LIST(r), v);
+    LIST(r) = list_append(LIST(r), v);
     return r;
 }
 
