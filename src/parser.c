@@ -203,7 +203,7 @@ static ParseResult parser_parse_list(TokenStream *ts, Value **ast)
             Value *list = value_make_list(sexpr);
             Value *head;
             while((head = list_head(LIST(list2))) != NULL) {
-                LIST(list) = list_conj(LIST(list), head);
+                LIST(list) = list_append(LIST(list), head);
                 LIST(list2) = list_tail(LIST(list2));
             }
             *ast = list;
@@ -262,7 +262,7 @@ static ParseResult parser_parse_sexpr(TokenStream *ts, Value **ast)
             Value *sexpr;
             tokenstream_consume(ts);
             if (parser_parse_sexpr(ts, &sexpr) == PARSER_SUCCESS) {
-                LIST(quote) = list_conj(LIST(quote), sexpr);
+                LIST(quote) = list_append(LIST(quote), sexpr);
                 *ast = quote;
                 return PARSER_SUCCESS;
             }

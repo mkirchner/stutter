@@ -5,6 +5,10 @@
 
 static char *test_ir()
 {
+    /*
+     * FIXME: these are not real tests
+     */
+
     // (add 5 7.0)
     char *add = malloc(4 * sizeof(char));
     strcpy(add, "add");

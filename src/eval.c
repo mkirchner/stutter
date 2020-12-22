@@ -349,7 +349,7 @@ static Value *_quasiquote(Value *arg)
     /* If the argument is not a list then act like quote */
     if (!(is_list(arg) && list_size(LIST(arg)) > 0)) {
         Value *ret = value_make_list(value_new_symbol("quote"));
-        LIST(ret) = list_conj(LIST(ret), arg);
+        LIST(ret) = list_append(LIST(ret), arg);
         return ret;
     }
     /* arg is a list, let's peek at the first item */
@@ -372,14 +372,14 @@ static Value *_quasiquote(Value *arg)
             }
             Value *arg01 = list_nth(LIST(arg0), 1);
             Value *ast = value_make_list(value_new_symbol("concat"));
-            LIST(ast) = list_conj(LIST(ast), arg01);
-            LIST(ast) = list_conj(LIST(ast), _quasiquote(value_new_list(list_tail(LIST(arg)))));
+            LIST(ast) = list_append(LIST(ast), arg01);
+            LIST(ast) = list_append(LIST(ast), _quasiquote(value_new_list(list_tail(LIST(arg)))));
             return ast;
         }
     }
     Value *ast = value_make_list(value_new_symbol("cons"));
-    LIST(ast) = list_conj(LIST(ast), _quasiquote(arg0));
-    LIST(ast) = list_conj(LIST(ast), _quasiquote(value_new_list(list_tail(LIST(arg)))));
+    LIST(ast) = list_append(LIST(ast), _quasiquote(arg0));
+    LIST(ast) = list_append(LIST(ast), _quasiquote(value_new_list(list_tail(LIST(arg)))));
     return ast;
 }
 
@@ -461,7 +461,7 @@ static Value *eval_all(Value *expr, Environment *env)
             assert(exc_is_pending());
             return NULL;
         }
-        evaluated_list = list_conj(evaluated_list, evaluated_head);
+        evaluated_list = list_append(evaluated_list, evaluated_head);
         list = list_tail(list);
     }
     LIST(expr) = evaluated_list;

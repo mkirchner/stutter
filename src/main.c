@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
         /* In order to execute a file, explicitly construct a load-file
          * call to avoid interpretation of the filename. */
         Value *src = value_make_list(value_new_symbol("load-file"));
-        src = value_new_list(list_conj(LIST(src), value_new_string(argv[optind])));
+        src = value_new_list(list_append(LIST(src), value_new_string(argv[optind])));
         Value *eval_result = eval(src, ENV);
         if (eval_result) {
             core_prn(value_make_list(eval_result));

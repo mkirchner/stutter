@@ -637,18 +637,18 @@ Value *core_cons(const Value *args)
     Value *first = ARG(args, 0);
     Value *second = ARG(args, 1);
     REQUIRE_VALUE_TYPE(second, VALUE_LIST, "the second parameter to CONS must be a list");
-    return value_new_list(list_cons(LIST(second), first));
+    return value_new_list(list_prepend(LIST(second), first));
 }
 
 Value *core_concat(const Value *args)
 {
     CHECK_ARGLIST(args);
     const List *concat = list_new();
-    for (const ListItem *i = LIST(args)->begin; i != NULL; i = i->next) {
-        Value *v = (Value *) i->p;
+    for (const ListItem *i = LIST(args)->head; i != NULL; i = i->next) {
+        Value *v = i->val;
         REQUIRE_VALUE_TYPE(v, VALUE_LIST, "all parameters to CONCAT must be lists");
-        for (const ListItem *j = LIST(v)->begin; j != NULL; j = j->next) {
-            concat = list_conj(concat, j->p);
+        for (const ListItem *j = LIST(v)->head; j != NULL; j = j->next) {
+            concat = list_append(concat, j->val);
         }
     }
     return value_new_list(concat);
@@ -678,7 +678,7 @@ Value *core_map(const Value *args)
             assert(exc_is_pending());
             return NULL;
         }
-        mapped = list_conj(mapped, result);
+        mapped = list_append(mapped, result);
     }
     return value_new_list(mapped);
 }
@@ -692,15 +692,12 @@ Value *core_apply(const Value *args)
     Value *fn_args = value_new_list(list_tail(LIST(args)));
     size_t n_args = NARGS(fn_args);
 
-    /* Merge the arguments w/ a potential list of arguments at the end of
-     * the argument list */
-    if (is_list(ARG(fn_args, n_args - 1))) {
-        const List *concat = list_new();
-        for (const ListItem *j = LIST(fn_args)->begin; j != LIST(fn_args)->end; j = j->next) {
-            concat = list_conj(concat, j->p);
-        }
-        for (const ListItem *j = LIST(((Value *)(LIST(fn_args)->end->p)))->begin; j != NULL; j = j->next) {
-            concat = list_conj(concat, j->p);
+    /* The last argument may be a list; if it is, we need to prepend
+     * the other args to that list to yield the final list of arguments */
+    if (n_args > 0 && is_list(ARG(fn_args, n_args - 1))) {
+        const List *concat = list_dup(LIST(ARG(fn_args, n_args - 1)));
+        for (size_t i = 0; i < (n_args - 1); ++i) {
+            concat = list_prepend(concat, ARG(fn_args, i));
         }
         fn_args = value_new_list(concat);
     }
