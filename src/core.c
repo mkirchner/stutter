@@ -801,7 +801,7 @@ Value *core_nth(const Value *args)
     Value *pos = ARG(args, 1);
     REQUIRE_VALUE_TYPE(pos, VALUE_INT, "Second argument to nth must be an integer");
     if (INT(pos) < 0 || (unsigned) INT(pos) >= NARGS(coll)) {
-       exc_set(value_make_exception("Index error"));
+        exc_set(value_make_exception("Index error"));
         return NULL;
     }
     return ARG(coll, (unsigned) INT(pos));

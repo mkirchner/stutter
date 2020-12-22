@@ -22,7 +22,7 @@ static char *test_ast()
                             ast_atom_from_float(7.0)),
                         ast_list_empty()))));
 
-   mu_assert(strcmp(ast->as.list
+    mu_assert(strcmp(ast->as.list
                      ->as.compound.sexpr
                      ->as.atom
                      ->as.symbol, "add") == 0, "Wrong symbol name");
@@ -36,7 +36,7 @@ static char *test_ast()
               ->as.compound.list
               ->as.compound.sexpr
               ->as.atom
-              ->as.decimal== 7.0, "Wrong RHS float");
+              ->as.decimal == 7.0, "Wrong RHS float");
     // ast_print(ast);
     ast_delete_sexpr(ast);
     return 0;

@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include "ast.h"
 
-AstNode* ast_new_node(size_t size, AstNodeType node_type)
+AstNode *ast_new_node(size_t size, AstNodeType node_type)
 {
-    AstNode* node = malloc(size);
+    AstNode *node = malloc(size);
     node->type = node_type;
     return node;
 }
@@ -105,31 +105,31 @@ AstAtom *ast_atom_from_float(double number)
 {
     AstAtom *atom = malloc(sizeof(AstAtom));
     atom->node.type = AST_ATOM_FLOAT;
-    atom->as.decimal= number;
+    atom->as.decimal = number;
     return atom;
 }
 
-void ast_delete_node(AstNode* n)
+void ast_delete_node(AstNode *n)
 {
     switch(n->type) {
-        case AST_SEXPR_ATOM:
-        case AST_SEXPR_LIST:
-        case AST_SEXPR_QUOTE:
-        case AST_SEXPR_QUASIQUOTE:
-        case AST_SEXPR_SPLICE_UNQUOTE:
-        case AST_SEXPR_UNQUOTE:
-            ast_delete_sexpr((AstSexpr*) n);
-            break;
-        case AST_LIST_COMPOUND:
-        case AST_LIST_EMPTY:
-            ast_delete_list((AstList*) n);
-            break;
-        case AST_ATOM_SYMBOL:
-        case AST_ATOM_INT:
-        case AST_ATOM_FLOAT:
-        case AST_ATOM_STRING:
-            ast_delete_atom((AstAtom*) n);
-            break;
+    case AST_SEXPR_ATOM:
+    case AST_SEXPR_LIST:
+    case AST_SEXPR_QUOTE:
+    case AST_SEXPR_QUASIQUOTE:
+    case AST_SEXPR_SPLICE_UNQUOTE:
+    case AST_SEXPR_UNQUOTE:
+        ast_delete_sexpr((AstSexpr *) n);
+        break;
+    case AST_LIST_COMPOUND:
+    case AST_LIST_EMPTY:
+        ast_delete_list((AstList *) n);
+        break;
+    case AST_ATOM_SYMBOL:
+    case AST_ATOM_INT:
+    case AST_ATOM_FLOAT:
+    case AST_ATOM_STRING:
+        ast_delete_atom((AstAtom *) n);
+        break;
     }
 }
 
@@ -191,24 +191,24 @@ void ast_delete_atom(AstAtom *a)
 void ast_print(AstNode *ast)
 {
     switch(ast->type) {
-        case AST_SEXPR_ATOM:
-        case AST_SEXPR_LIST:
-        case AST_SEXPR_QUOTE:
-        case AST_SEXPR_QUASIQUOTE:
-        case AST_SEXPR_SPLICE_UNQUOTE:
-        case AST_SEXPR_UNQUOTE:
-            ast_print_sexpr((AstSexpr*) ast, 0);
-            break;
-        case AST_LIST_COMPOUND:
-        case AST_LIST_EMPTY:
-            ast_print_list((AstList*) ast, 0);
-            break;
-        case AST_ATOM_SYMBOL:
-        case AST_ATOM_STRING:
-        case AST_ATOM_INT:
-        case AST_ATOM_FLOAT:
-            ast_print_atom((AstAtom*) ast, 0);
-            break;
+    case AST_SEXPR_ATOM:
+    case AST_SEXPR_LIST:
+    case AST_SEXPR_QUOTE:
+    case AST_SEXPR_QUASIQUOTE:
+    case AST_SEXPR_SPLICE_UNQUOTE:
+    case AST_SEXPR_UNQUOTE:
+        ast_print_sexpr((AstSexpr *) ast, 0);
+        break;
+    case AST_LIST_COMPOUND:
+    case AST_LIST_EMPTY:
+        ast_print_list((AstList *) ast, 0);
+        break;
+    case AST_ATOM_SYMBOL:
+    case AST_ATOM_STRING:
+    case AST_ATOM_INT:
+    case AST_ATOM_FLOAT:
+        ast_print_atom((AstAtom *) ast, 0);
+        break;
     }
 }
 
