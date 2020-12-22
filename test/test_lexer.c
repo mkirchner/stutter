@@ -64,8 +64,8 @@ static char *eval_lexer(char *input, char *expected)
 static char *test_escapes()
 {
     /* set up lexer to read from input file */
-    char* input = "\"This \\n is a \\t \\\"string\"";
-    char* result = "This \n is a \t \"string";
+    char *input = "\"This \\n is a \\t \\\"string\"";
+    char *result = "This \n is a \t \"string";
     size_t n = strlen(input);
     FILE *in_fd = fmemopen(input, n, "r");
     mu_assert(in_fd != NULL, "Failed to open lexer test file");

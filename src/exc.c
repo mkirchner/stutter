@@ -9,8 +9,8 @@ void exc_set(const Value *error)
 {
     if (exc_is_pending()) {
         LOG_CRITICAL(
-             "Raised exception: '%s' but cannot raise without handling existing exception '%s'",
-             STRING(error), STRING(exc_current));
+            "Raised exception: '%s' but cannot raise without handling existing exception '%s'",
+            STRING(error), STRING(exc_current));
         assert(0);
     }
     exc_current = error;

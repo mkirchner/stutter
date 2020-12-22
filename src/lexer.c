@@ -283,42 +283,42 @@ LexerToken *lexer_get_token(Lexer *l)
         case LEXER_STATE_ESCAPESTRING:
             /* supports all C escape sequences except for hex and octal */
             switch(c) {
-                case '\n':
-                    /* ignore escaped line feeds */
-                    break;
-                case '\\':
-                case '"':
-                    /* keep the char and go back to string processing */
-                    buf[bufpos++] = c;
-                    break;
-                case 'a':
-                    buf[bufpos++] = KEY_BEL;
-                    break;
-                case 'b':
-                    buf[bufpos++] = KEY_BS;
-                    break;
-                case 'f':
-                    buf[bufpos++] = KEY_FF;
-                    break;
-                case 'n':
-                    buf[bufpos++] = KEY_LF;
-                    break;
-                case 'r':
-                    buf[bufpos++] = KEY_CR;
-                    break;
-                case 't':
-                    buf[bufpos++] = KEY_HT;
-                    break;
-                case 'v':
-                    buf[bufpos++] = KEY_VT;
-                    break;
-                default:
-                    /* Invalid escape sequeence. Keep the sequence and go
-                     * back to string processing */
-                    buf[bufpos++] = '\\';
-                    ungetc(c, l->fp);
-                    l->char_no--;
-                    break;
+            case '\n':
+                /* ignore escaped line feeds */
+                break;
+            case '\\':
+            case '"':
+                /* keep the char and go back to string processing */
+                buf[bufpos++] = c;
+                break;
+            case 'a':
+                buf[bufpos++] = KEY_BEL;
+                break;
+            case 'b':
+                buf[bufpos++] = KEY_BS;
+                break;
+            case 'f':
+                buf[bufpos++] = KEY_FF;
+                break;
+            case 'n':
+                buf[bufpos++] = KEY_LF;
+                break;
+            case 'r':
+                buf[bufpos++] = KEY_CR;
+                break;
+            case 't':
+                buf[bufpos++] = KEY_HT;
+                break;
+            case 'v':
+                buf[bufpos++] = KEY_VT;
+                break;
+            default:
+                /* Invalid escape sequeence. Keep the sequence and go
+                 * back to string processing */
+                buf[bufpos++] = '\\';
+                ungetc(c, l->fp);
+                l->char_no--;
+                break;
             }
             l->state = LEXER_STATE_STRING;
             break;
