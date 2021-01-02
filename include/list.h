@@ -10,19 +10,23 @@ struct Value;
  * A list item.
  *
  */
+// start snippet list-item-def
 typedef struct ListItem {
-    const struct Value *val; /**< pointer to an immutable `Value` instance */
-    struct ListItem *next;   /**< pointer to the next list item */
+    const struct Value *val;
+    struct ListItem *next;
 } ListItem;
+// end snippet list-item-def
 
 /**
  * A singly linked list of immutable values.
  *
  */
+// start snippet list-def
 typedef struct List {
-    struct ListItem *head; /**< pointer to the first item in the list */
-    size_t size;           /**< size of the list */
+    struct ListItem *head;
+    size_t size;
 } List;
+// end snippet list-def
 
 /**
  * Create a new list.
