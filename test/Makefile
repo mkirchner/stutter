@@ -8,7 +8,7 @@ BUILD_DIR=../build
 # targets are roughly in topological order
 TARGETS=test_list \
 	test_ast \
-	test_array \
+	test_vector \
 	test_djb2 \
 	test_parser \
 	test_primes \
@@ -54,12 +54,12 @@ test_list: test_setup gc
 		$(BUILD_DIR)/test/test_list.o -o $(BUILD_DIR)/test/test_list
 
 #
-# test_array
+# test_vector
 #
-test_array: test_setup
-	$(CC) $(CFLAGS) -MMD -c test_array.c -o $(BUILD_DIR)/test/test_array.o
+test_vector: test_setup
+	$(CC) $(CFLAGS) -MMD -c test_vector.c -o $(BUILD_DIR)/test/test_vector.o
 	$(CC) $(LDFLAGS) $(LDLIBS) \
-		$(BUILD_DIR)/test/test_array.o -o $(BUILD_DIR)/test/test_array
+		$(BUILD_DIR)/test/test_vector.o -o $(BUILD_DIR)/test/test_vector
 
 #
 # test_ast

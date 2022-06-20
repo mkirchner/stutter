@@ -1,11 +1,11 @@
 #ifndef VALUE_H
 #define VALUE_H
 
-#include "array.h"
 #include "env.h"
 #include "gc.h"
 #include "list.h"
 #include "map.h"
+#include "vector.h"
 
 #define BOOL(v) (v->value.bool_)
 #define BUILTIN_FN(v) (v->value.builtin_fn)
@@ -16,6 +16,7 @@
 #define LIST(v) (v->value.list)
 #define STRING(v) (v->value.str)
 #define SYMBOL(v) (v->value.str)
+#define VECTOR(v) (v->value.vector)
 
 typedef enum {
     VALUE_BOOL,
@@ -28,7 +29,8 @@ typedef enum {
     VALUE_MACRO_FN,
     VALUE_NIL,
     VALUE_STRING,
-    VALUE_SYMBOL
+    VALUE_SYMBOL,
+    VALUE_VECTOR
 } ValueType;
 
 extern const char *value_type_names[];
@@ -46,7 +48,7 @@ typedef struct Value {
         int int_;
         double float_;
         char *str;
-        Array *vector;
+        Vector *vector;
         const List *list;
         Map *map;
         struct Value *(*builtin_fn)(const struct Value *);

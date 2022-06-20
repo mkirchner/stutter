@@ -16,7 +16,8 @@ const char *value_type_names[] = {
     "VALUE_MACRO_FN",
     "VALUE_NIL",
     "VALUE_STRING",
-    "VALUE_SYMBOL"
+    "VALUE_SYMBOL",
+    "VALUE_VECTOR"
 };
 
 
