@@ -210,7 +210,9 @@ int main(int argc, char *argv[])
     }
 
     // REPL
-    fprintf(stdout, "%s %s\n\n", banner(), __STUTTER_VERSION__);
+    if (isatty(fileno(stdin))) {
+        fprintf(stdout, "%s %s\n\n", banner(), __STUTTER_VERSION__);
+    }
 
     while(true) {
         // char *input = readline("stutter> ");
@@ -239,7 +241,9 @@ int main(int argc, char *argv[])
         free(input);
     }
     gc_stop(&gc);
-    fprintf(stdout, "\n");
+    if (isatty(fileno(stdin))) {
+        fprintf(stdout, "\n");
+    }
     return 0;
 }
 
