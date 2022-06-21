@@ -102,6 +102,20 @@ Value *core_is_list(const Value *args)
     return arg0->type == VALUE_LIST ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
 }
 
+Value *core_vector(const Value *args)
+{
+    CHECK_ARGLIST(args);
+    return value_new_vector(LIST(args));
+}
+
+Value *core_is_vector(const Value *args)
+{
+    CHECK_ARGLIST(args);
+    REQUIRE_LIST_CARDINALITY(args, 1ul, "vector? requires exactly one parameter");
+    Value *arg0 = ARG(args, 0);
+    return arg0->type == VALUE_VECTOR ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
+}
+
 Value *core_is_empty(const Value *args)
 {
     CHECK_ARGLIST(args);
@@ -501,6 +515,17 @@ static char *core_str_inner(char *str, const Value *v)
             }
         }
         str = str_append(str, strlen(str), ")", 1);
+        break;
+    case VALUE_VECTOR:
+        str = str_append(str, strlen(str), "[", 1);
+        size_t vec_size = vector_size(VECTOR(v));
+        for (size_t i = 0; i < vec_size; ++i) {
+            str = core_str_inner(str, vector_typed_at(VECTOR(v), i, Value));
+            if (i < vec_size - 1) {
+                str = str_append(str, strlen(str), " ", 1);
+            }
+        }
+        str = str_append(str, strlen(str), "]", 1);
         break;
     case VALUE_FN:
     case VALUE_MACRO_FN:

@@ -54,6 +54,11 @@ bool is_list(const Value *value)
     return value->type == VALUE_LIST;
 }
 
+bool is_vector(const Value *value)
+{
+    return value->type == VALUE_VECTOR;
+}
+
 static Value *value_new(ValueType type)
 {
     Value *v = (Value *) gc_malloc(&gc, sizeof(Value));
@@ -166,6 +171,33 @@ Value *value_make_list(Value *v)
     return r;
 }
 
+Value *value_new_vector(const List *l)
+{
+    Value *v = value_new(VALUE_VECTOR);
+    VECTOR(v) = vector_new(sizeof(Value));
+    if (l) {
+        for (const ListItem *i = l->head; i != NULL; i = i->next) {
+            vector_push_back(VECTOR(v), i->val, 1);
+        }
+    }
+    return v;
+}
+
+Value *value_make_vector(Value *v)
+{
+    Value *r = value_new_vector(NULL);
+    if (!v) return r;
+    if (v->type == VALUE_VECTOR) {
+        VECTOR(r) = vector_dup(VECTOR(v));
+    } else if (v->type == VALUE_LIST) {
+        for (const ListItem *i = LIST(v)->head;
+                i != NULL; i = i->next) {
+            vector_push_back(VECTOR(r), i->val, 1);
+        }
+    }
+    return r;
+}
+
 void value_print(const Value *v)
 {
     if (!v) return;
@@ -197,6 +229,13 @@ void value_print(const Value *v)
             tail = list_tail(tail);
         }
         fprintf(stderr, ")");
+        break;
+    case VALUE_VECTOR:
+        fprintf(stderr, "[ ");
+        for (size_t i = 0; i < vector_size(VECTOR(v)); ++i) {
+            value_print(vector_typed_at(VECTOR(v), i, Value));
+        }
+        fprintf(stderr, "]");
         break;
     case VALUE_FN:
         fprintf(stderr, "lambda: ");

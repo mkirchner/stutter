@@ -93,6 +93,18 @@ static char *test_vector()
     mu_assert(*vector_typed_pop_front(a, int) == 3, "Pop front 3 fail");
     mu_assert(vector_typed_pop_front(a, int) == NULL, "Pop on empty vector must return NULL");
 
+    int i4[11] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    vector_push_back(a, i4, 11);
+    Vector *cpy = vector_dup(a);
+    mu_assert(vector_size(a) == vector_size(cpy), "Size of copy must equal size of original");
+    for (size_t k = 0; k < 11; ++k) {
+        vector_pop_front(a);
+    }
+    for (int k = 0; k < 11; ++k) {
+        mu_assert(*vector_typed_pop_front(cpy, int) == k, "Copy must be invaraint to modification of original");
+    }
+
+
     // clean up
     vector_delete(a);
     return 0;

@@ -6,8 +6,7 @@
 
 Vector *vector_new(const size_t item_size)
 {
-    // default to 2 elements for empty vectors
-    return vector_new_with_capacity(item_size, 2);
+    return vector_new_with_capacity(item_size, 1);
 }
 
 Vector *vector_new_with_capacity(const size_t item_size, const size_t capacity)
@@ -20,10 +19,21 @@ Vector *vector_new_with_capacity(const size_t item_size, const size_t capacity)
     return vector;
 }
 
-void vector_delete(Vector *a)
+Vector *vector_dup(const Vector *vec)
 {
-    free(a->p);
-    free(a);
+    Vector *copy = malloc(sizeof(Vector));
+    copy->bytes = vec->bytes;
+    copy->size = vec->size;
+    copy->capacity = vec->capacity;
+    copy->p = calloc(copy->capacity, copy->bytes);
+    memcpy(copy->p, vec->p, copy->bytes * copy->size);
+    return copy;
+}
+
+void vector_delete(Vector *vec)
+{
+    free(vec->p);
+    free(vec);
 }
 
 static uint64_t next_power_of_2(uint64_t v)
