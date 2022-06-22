@@ -21,7 +21,7 @@
 } while (0)
 
 #define REQUIRE_VALUE_TYPE(value, t, msg) do  {\
-    if (value->type != t) {\
+    if (!(value->type & (t))) {\
         LOG_CRITICAL("%s: expected %s, got %s", msg, value_type_names[t], value_type_names[value->type]);\
         exc_set(value_make_exception("%s: expected %s, got %s", msg, value_type_names[t], value_type_names[value->type]));\
         return NULL;\
@@ -295,6 +295,9 @@ static Value *cmp_lt(const Value *a, const Value *b)
             exc_set(value_make_exception("Cannot order functions"));
             return NULL;
         case VALUE_LIST:
+            exc_set(value_make_exception("Cannot order lists"));
+            return NULL;
+        case VALUE_VECTOR:
             exc_set(value_make_exception("Cannot order lists"));
             return NULL;
         }
@@ -600,12 +603,13 @@ Value *core_prn(const Value *args)
 Value *core_count(const Value *args)
 {
     CHECK_ARGLIST(args);
-    Value *list = ARG(args, 0);
-    if (is_nil(list)) {
-        return value_new_int(0);
+    const Value *seq = ARG(args, 0);
+    size_t cnt = 0;
+    if (!is_nil(seq)) {
+        REQUIRE_VALUE_TYPE(seq, VALUE_LIST | VALUE_VECTOR, "count requires a sequence argument");
+        cnt = is_list(seq) ? list_size(LIST(seq)) : vector_size(VECTOR(seq));
     }
-    REQUIRE_VALUE_TYPE(list, VALUE_LIST, "count requires a list argument");
-    return value_new_int(NARGS(list));
+    return value_new_int(cnt);
 }
 
 Value *core_slurp(const Value *args)
@@ -822,14 +826,19 @@ Value *core_nth(const Value *args)
     CHECK_ARGLIST(args);
     REQUIRE_LIST_CARDINALITY(args, 2ul, "NTH takes exactly two arguments");
     Value *coll = ARG(args, 0);
-    REQUIRE_VALUE_TYPE(coll, VALUE_LIST, "First argument to nth must be a collection");
+    REQUIRE_VALUE_TYPE(coll, VALUE_LIST | VALUE_VECTOR, "First argument to nth must be a list or a vector");
     Value *pos = ARG(args, 1);
     REQUIRE_VALUE_TYPE(pos, VALUE_INT, "Second argument to nth must be an integer");
     if (INT(pos) < 0 || (unsigned) INT(pos) >= NARGS(coll)) {
         exc_set(value_make_exception("Index error"));
         return NULL;
     }
-    return ARG(coll, (unsigned) INT(pos));
+    if (is_list(coll)) {
+        return list_nth(LIST(coll), INT(pos));
+    } else {
+        return vector_typed_at(VECTOR(coll), INT(pos), Value);
+    }
+    return NULL;
 }
 
 Value *core_first(const Value *args)
@@ -837,12 +846,18 @@ Value *core_first(const Value *args)
     // (first coll)
     CHECK_ARGLIST(args);
     REQUIRE_LIST_CARDINALITY(args, 1ul, "FIRST takes exactly one argument");
-    Value *coll = ARG(args, 0);
-    if (is_nil(coll) || NARGS(coll) == 0) {
+    const Value *coll = ARG(args, 0);
+    if (is_nil(coll)) {
         return VALUE_CONST_NIL;
     }
-    REQUIRE_VALUE_TYPE(coll, VALUE_LIST, "Argument to FIRST must be a collection or NIL");
-    return ARG(coll, 0);
+    REQUIRE_VALUE_TYPE(coll, VALUE_LIST | VALUE_VECTOR, "Argument to FIRST must be a collection or NIL");
+    if (is_list(coll)) {
+        if (list_size(LIST(coll)) == 0) return VALUE_CONST_NIL;
+        return ARG(coll, 0);
+    } else {
+        if (vector_size(VECTOR(coll)) == 0) return VALUE_CONST_NIL;
+        return vector_typed_at(VECTOR(coll), 0, Value);
+    }
 }
 
 Value *core_rest(const Value *args)

@@ -19,18 +19,18 @@
 #define VECTOR(v) (v->value.vector)
 
 typedef enum {
-    VALUE_BOOL,
-    VALUE_BUILTIN_FN,
-    VALUE_EXCEPTION,
-    VALUE_FLOAT,
-    VALUE_FN,
-    VALUE_INT,
-    VALUE_LIST,
-    VALUE_MACRO_FN,
-    VALUE_NIL,
-    VALUE_STRING,
-    VALUE_SYMBOL,
-    VALUE_VECTOR
+    VALUE_BOOL       = 1 << 0,
+    VALUE_BUILTIN_FN = 1 << 1,
+    VALUE_EXCEPTION  = 1 << 2,
+    VALUE_FLOAT      = 1 << 3,
+    VALUE_FN         = 1 << 4,
+    VALUE_INT        = 1 << 5,
+    VALUE_LIST       = 1 << 6,
+    VALUE_MACRO_FN   = 1 << 7,
+    VALUE_NIL        = 1 << 8,
+    VALUE_STRING     = 1 << 9,
+    VALUE_SYMBOL     = 1 << 10,
+    VALUE_VECTOR     = 1 << 11
 } ValueType;
 
 extern const char *value_type_names[];
