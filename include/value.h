@@ -1,11 +1,11 @@
 #ifndef VALUE_H
 #define VALUE_H
 
-#include "array.h"
 #include "env.h"
 #include "gc.h"
 #include "list.h"
 #include "map.h"
+#include "vector.h"
 
 #define BOOL(v) (v->value.bool_)
 #define BUILTIN_FN(v) (v->value.builtin_fn)
@@ -16,19 +16,21 @@
 #define LIST(v) (v->value.list)
 #define STRING(v) (v->value.str)
 #define SYMBOL(v) (v->value.str)
+#define VECTOR(v) (v->value.vector)
 
 typedef enum {
-    VALUE_BOOL,
-    VALUE_BUILTIN_FN,
-    VALUE_EXCEPTION,
-    VALUE_FLOAT,
-    VALUE_FN,
-    VALUE_INT,
-    VALUE_LIST,
-    VALUE_MACRO_FN,
-    VALUE_NIL,
-    VALUE_STRING,
-    VALUE_SYMBOL
+    VALUE_BOOL       = 1 << 0,
+    VALUE_BUILTIN_FN = 1 << 1,
+    VALUE_EXCEPTION  = 1 << 2,
+    VALUE_FLOAT      = 1 << 3,
+    VALUE_FN         = 1 << 4,
+    VALUE_INT        = 1 << 5,
+    VALUE_LIST       = 1 << 6,
+    VALUE_MACRO_FN   = 1 << 7,
+    VALUE_NIL        = 1 << 8,
+    VALUE_STRING     = 1 << 9,
+    VALUE_SYMBOL     = 1 << 10,
+    VALUE_VECTOR     = 1 << 11
 } ValueType;
 
 extern const char *value_type_names[];
@@ -46,7 +48,7 @@ typedef struct Value {
         int int_;
         double float_;
         char *str;
-        Array *vector;
+        Vector *vector;
         const List *list;
         Map *map;
         struct Value *(*builtin_fn)(const struct Value *);
@@ -67,6 +69,7 @@ extern  Value *VALUE_CONST_NIL;
 bool is_symbol(const Value *value);
 bool is_macro(const Value *value);
 bool is_list(const Value *value);
+bool is_vector(const Value *value);
 bool is_exception(const Value *value);
 Value *value_new_nil();
 Value *value_new_bool(const bool bool_);
@@ -81,6 +84,10 @@ Value *value_new_string(const char *str);
 Value *value_new_symbol(const char *str);
 Value *value_new_list(const List *l);
 Value *value_make_list(Value *v);
+Value *value_new_list(const List *l);
+Value *value_make_list(Value *v);
+Value *value_new_vector(const List *l);
+Value *value_make_vector(Value *v);
 Value *value_head(const Value *v);
 Value *value_tail(const Value *v);
 void value_delete(Value *v);

@@ -1,29 +1,39 @@
-#include "array.h"
+#include "vector.h"
 
 #include <stdlib.h>
 #include <string.h>
 
 
-Array *array_new(const size_t item_size)
+Vector *vector_new(const size_t item_size)
 {
-    // default to 2 elements for empty arrays
-    return array_new_with_capacity(item_size, 2);
+    return vector_new_with_capacity(item_size, 1);
 }
 
-Array *array_new_with_capacity(const size_t item_size, const size_t capacity)
+Vector *vector_new_with_capacity(const size_t item_size, const size_t capacity)
 {
-    Array *array = malloc(sizeof(Array));
-    array->p = calloc(capacity, item_size);
-    array->bytes = item_size;
-    array->capacity = capacity;
-    array->size = 0;
-    return array;
+    Vector *vector = malloc(sizeof(Vector));
+    vector->p = calloc(capacity, item_size);
+    vector->bytes = item_size;
+    vector->capacity = capacity;
+    vector->size = 0;
+    return vector;
 }
 
-void array_delete(Array *a)
+Vector *vector_dup(const Vector *vec)
 {
-    free(a->p);
-    free(a);
+    Vector *copy = malloc(sizeof(Vector));
+    copy->bytes = vec->bytes;
+    copy->size = vec->size;
+    copy->capacity = vec->capacity;
+    copy->p = calloc(copy->capacity, copy->bytes);
+    memcpy(copy->p, vec->p, copy->bytes * copy->size);
+    return copy;
+}
+
+void vector_delete(Vector *vec)
+{
+    free(vec->p);
+    free(vec);
 }
 
 static uint64_t next_power_of_2(uint64_t v)
@@ -40,7 +50,7 @@ static uint64_t next_power_of_2(uint64_t v)
     return v;
 }
 
-static void array_resize(Array *a, size_t requested_capacity)
+static void vector_resize(Vector *a, size_t requested_capacity)
 {
     size_t new_capacity = next_power_of_2(requested_capacity);
     if (a->size > new_capacity) a->size = new_capacity;
@@ -48,25 +58,25 @@ static void array_resize(Array *a, size_t requested_capacity)
     a->capacity = new_capacity;
 }
 
-void *array_at(Array *a, size_t i)
+void *vector_at(Vector *a, size_t i)
 {
     return (void *) (a->p + i * a->bytes);
 }
 
-void array_push_back(Array *a, const void *value, size_t n)
+void vector_push_back(Vector *a, const void *value, size_t n)
 {
     size_t total = n + a->size;
-    array_resize(a, total);
+    vector_resize(a, total);
     char *pos = a->p + (a->size * a->bytes);
     memcpy(pos, value, n * a->bytes);
     a->size += n;
 }
 
-void array_push_front(Array *a, const void *value, size_t n)
+void vector_push_front(Vector *a, const void *value, size_t n)
 {
     size_t total = n + a->size;
     // allocate sufficient memory
-    array_resize(a, total);
+    vector_resize(a, total);
     // shift contents away from the front
     size_t width = n * a->bytes;
     char *pos = a->p + width;
@@ -77,14 +87,14 @@ void array_push_front(Array *a, const void *value, size_t n)
     a->size += n;
 }
 
-void *array_pop_back(Array *a)
+void *vector_pop_back(Vector *a)
 {
     if (a->size == 0) return NULL;
     a->size--;
     return a->p + a->size * a->bytes;
 }
 
-void *array_pop_front(Array *a)
+void *vector_pop_front(Vector *a)
 {
     if (a->size == 0)
         return NULL;
@@ -97,7 +107,7 @@ void *array_pop_front(Array *a)
     return (void *) (a->p + a->size * a->bytes);
 }
 
-void array_shrink(Array *a)
+void vector_shrink(Vector *a)
 {
-    array_resize(a, a->size);
+    vector_resize(a, a->size);
 }

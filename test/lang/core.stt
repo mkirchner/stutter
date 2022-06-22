@@ -41,6 +41,19 @@
       (check (= (count nil) 0))
       (check (= (count (list)) 0)))))
 
+(define test-vector
+  (lambda ()
+    (do
+      (check (= (vector? (vector)) true))
+      (check (= (vector? (vector 1 2 3)) true))
+      (check (= (count (vector 1 2 3)) 3))
+      (check (= (nth (vector 1 2 3) 2) 3))
+      (check (= (first (vector 1 2 3)) 1))
+      (check (= (list? (first (vector '(1 2) 3))) true))
+      (check (= (count (vector)) 0))
+      (check (= (empty? (vector)) true))
+      (check (= (empty? (vector 1)) false)))))
+
 (define fib
   (lambda (n)
     (if (= n 0)
@@ -84,6 +97,7 @@
 (test-arithmetic)
 (test-env)
 (test-list)
+(test-vector)
 (test-conditionals)
 (test-apply)
 (test-map)
