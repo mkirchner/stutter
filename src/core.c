@@ -120,9 +120,10 @@ Value *core_is_empty(const Value *args)
 {
     CHECK_ARGLIST(args);
     REQUIRE_LIST_CARDINALITY(args, 1ul, "empty? requires exactly one parameter");
-    Value *arg0 = ARG(args, 0);
-    REQUIRE_VALUE_TYPE(arg0, VALUE_LIST, "empty? requires a list type");
-    return NARGS(arg0) == 0 ? VALUE_CONST_TRUE : VALUE_CONST_FALSE;
+    const Value *seq = ARG(args, 0);
+    REQUIRE_VALUE_TYPE(seq, VALUE_LIST | VALUE_VECTOR, "empty? requires a list type");
+    size_t cnt = is_list(seq) ? list_size(LIST(seq)) : vector_size(VECTOR(seq));
+    return cnt ? VALUE_CONST_FALSE : VALUE_CONST_TRUE;
 }
 
 static float acc_add(float acc, float x)
